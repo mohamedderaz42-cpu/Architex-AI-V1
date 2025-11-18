@@ -106,13 +106,35 @@ export const useArchitex = () => {
     setIsLoading(true);
     try {
         const scopes = ['username', 'payments'];
-        const onIncompletePaymentFound = (payment: any) => {
+        
+        // IMPORTANT: Handle incomplete payments (Sandbox/Testnet Requirement)
+        const onIncompletePaymentFound = async (payment: any) => {
             console.log('Incomplete payment found:', payment);
-            // In a real app, you'd want to check this payment against your backend
-            // and complete it if necessary.
+            try {
+                // Attempt to complete the payment on the server
+                // The payment object from Pi SDK contains 'transaction' if the user signed it
+                if (payment.transaction && payment.transaction.txid) {
+                    await fetch(`${BACKEND_URL}/complete_payment`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            paymentId: payment.identifier, 
+                            txid: payment.transaction.txid 
+                        }),
+                    });
+                    console.log("Recovered and completed payment:", payment.identifier);
+                } else {
+                    // Use the generic completion endpoint to check status or cancel
+                    // For now, we just log it. In production, you might cancel it if it's too old.
+                    console.warn("Payment found but no transaction ID yet.");
+                }
+            } catch (e) {
+                console.error("Failed to recover payment", e);
+            }
         };
 
         const piUser = await Pi.authenticate(scopes, onIncompletePaymentFound);
+        console.log("Pi Auth Successful. User:", piUser.username);
         await refreshUserData(piUser);
         setPhase('dashboard');
     } catch (err) {
@@ -143,30 +165,41 @@ export const useArchitex = () => {
               const paymentData = { amount, memo, metadata };
               const callbacks = {
                   onReadyForServerApproval: async (paymentId: string) => {
+                      console.log("Approval needed for", paymentId);
                       try {
-                        await fetch(`${BACKEND_URL}/approve_payment`, {
+                        const res = await fetch(`${BACKEND_URL}/approve_payment`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ paymentId }),
                         });
-                      } catch(e) { console.error("Approval Error", e); }
+                        if(!res.ok) throw new Error("Server approval failed");
+                      } catch(e) { 
+                          console.error("Approval Error", e); 
+                          // Throwing here stops the Pi SDK flow
+                          throw e;
+                      }
                   },
                   onReadyForServerCompletion: async (paymentId: string, txid: string) => {
+                      console.log("Completion needed for", paymentId, txid);
                       try {
-                        await fetch(`${BACKEND_URL}/complete_payment`, {
+                        const res = await fetch(`${BACKEND_URL}/complete_payment`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ paymentId, txid }),
                         });
+                        if(!res.ok) throw new Error("Server completion failed");
                         resolve(txid);
-                      } catch(e) { console.error("Completion Error", e); resolve(null); }
+                      } catch(e) { 
+                          console.error("Completion Error", e); 
+                          resolve(null); 
+                      }
                   },
                   onCancel: (paymentId: string) => {
-                      console.log("Payment cancelled", paymentId);
+                      console.log("Payment cancelled by user", paymentId);
                       resolve(null);
                   },
-                  onError: (error: Error) => {
-                      console.error('Pi Payment Error:', error);
+                  onError: (error: Error, payment: any) => {
+                      console.error('Pi Payment Error:', error, payment);
                       resolve(null);
                   },
               };
@@ -174,10 +207,15 @@ export const useArchitex = () => {
               await Pi.createPayment(paymentData, callbacks);
 
           } catch (error) {
-              console.error("Pi SDK Payment failed (likely not in Pi Browser). Simulating successful payment for demo.", error);
-              // Fallback: Simulate a successful payment flow for development/demo
-              await new Promise(resolveWait => setTimeout(resolveWait, 2000)); // Fake network delay
-              resolve(`sim_tx_${Date.now()}`);
+              // Only fallback to simulation if strictly necessary or dev mode
+              if (process.env.NODE_ENV === 'development' && !window.navigator.userAgent.includes('PiBrowser')) {
+                  console.warn("Simulating successful payment (Dev Mode).");
+                  await new Promise(resolveWait => setTimeout(resolveWait, 1500));
+                  resolve(`sim_tx_${Date.now()}`);
+              } else {
+                  console.error("Payment failed.", error);
+                  resolve(null);
+              }
           }
       });
   };

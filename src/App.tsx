@@ -106,6 +106,11 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full bg-brand-dark text-slate-100 flex flex-col items-center p-4 overflow-hidden antialiased">
+      {/* Sandbox Indicator */}
+      <div className="fixed top-0 left-0 w-full bg-pi-gold/80 text-brand-dark text-xs font-bold text-center py-1 z-[100] backdrop-blur-sm">
+          TESTNET SANDBOX MODE
+      </div>
+
       <div className={`absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-1000 ${phase === 'intro' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         <div className={`transition-all duration-700 ease-out ${isMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
           <GlassPanel className="p-8 text-center"><ArchitexLogo className="w-24 h-24 mx-auto mb-6" /><h1 className="text-4xl font-bold text-white tracking-wider">Architex</h1><p className="mt-2 text-slate-300">The Future of Design, Decentralized.</p></GlassPanel>
