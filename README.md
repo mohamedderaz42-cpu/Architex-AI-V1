@@ -1,20 +1,42 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Architex - The Future of Design
 
-# Run and deploy your AI Studio app
+Architex is a decentralized application (dApp) built on the Pi Network that revolutionizes interior design using AI and blockchain technology.
 
-This contains everything you need to run your app locally.
+## Features
 
-View your app in AI Studio: https://ai.studio/apps/drive/1b6gKIr-ZuiFzy3ZAbd7f32O8aDbqwfYS
+*   **Room Scanner**: Utilize SLAM technology to capture room dimensions.
+*   **AI Design Studio**: Generate 3D visualizations of interior styles.
+*   **Marketplace**: Trade eco-friendly materials and NFTs using Pi and ARCHI tokens.
+*   **Service Hub**: Hire certified professionals for installation.
+*   **DAO Governance**: Vote on platform proposals using staked tokens.
 
-## Run Locally
+## Tech Stack
 
-**Prerequisites:**  Node.js
+*   **Frontend**: React, Vite, Tailwind CSS
+*   **Backend**: Node.js, Express (Vercel Serverless Functions)
+*   **Blockchain**: Pi Network SDK
 
+## Setup & Installation
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+1.  Clone the repository.
+2.  Install dependencies:
+    ```bash
+    npm install
+    ```
+3.  Create a `.env` file with your Pi Network API Key (if running locally with backend):
+    ```
+    PI_API_KEY=your_api_key_here
+    ```
+4.  Run the development server:
+    ```bash
+    npm run dev
+    ```
+
+## Deployment
+
+This project is configured for deployment on **Vercel**.
+
+1.  Push the code to a GitHub repository.
+2.  Import the project in Vercel.
+3.  Add the `PI_API_KEY` to the Environment Variables in Vercel project settings if connecting to the real Pi Network API.
+4.  Deploy.
