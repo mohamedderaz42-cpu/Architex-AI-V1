@@ -133,76 +133,69 @@ export const useArchitex = () => {
   const startScan = () => { setIsScanning(true); setCurrentScanStep(0); setScanProgress(0); const totalDuration = 8000; const stepDuration = totalDuration / guidedScanInstructions.length; scanIntervalRef.current = window.setInterval(() => { setCurrentScanStep(prevStep => { const nextStep = prevStep + 1; if (nextStep >= guidedScanInstructions.length) { clearInterval(scanIntervalRef.current!); setIsScanning(false); setShowPaymentModal(true); return prevStep; } return nextStep; }); setScanProgress(prev => prev + (100 / guidedScanInstructions.length)); }, stepDuration); };
   const cancelScan = () => { if (scanIntervalRef.current) { clearInterval(scanIntervalRef.current); } setIsScanning(false); setScanProgress(0); setCurrentScanStep(0); };
   
+  /**
+   * Generic Pi Payment Processor
+   * Handles the Create -> Approve -> Complete lifecycle for any payment.
+   */
+  const processPiPayment = async (amount: number, memo: string, metadata: object): Promise<string | null> => {
+      return new Promise(async (resolve) => {
+          try {
+              const paymentData = { amount, memo, metadata };
+              const callbacks = {
+                  onReadyForServerApproval: async (paymentId: string) => {
+                      try {
+                        await fetch(`${BACKEND_URL}/approve_payment`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ paymentId }),
+                        });
+                      } catch(e) { console.error("Approval Error", e); }
+                  },
+                  onReadyForServerCompletion: async (paymentId: string, txid: string) => {
+                      try {
+                        await fetch(`${BACKEND_URL}/complete_payment`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ paymentId, txid }),
+                        });
+                        resolve(txid);
+                      } catch(e) { console.error("Completion Error", e); resolve(null); }
+                  },
+                  onCancel: (paymentId: string) => {
+                      console.log("Payment cancelled", paymentId);
+                      resolve(null);
+                  },
+                  onError: (error: Error) => {
+                      console.error('Pi Payment Error:', error);
+                      resolve(null);
+                  },
+              };
+              
+              await Pi.createPayment(paymentData, callbacks);
+
+          } catch (error) {
+              console.error("Pi SDK Payment failed (likely not in Pi Browser). Simulating successful payment for demo.", error);
+              // Fallback: Simulate a successful payment flow for development/demo
+              await new Promise(resolveWait => setTimeout(resolveWait, 2000)); // Fake network delay
+              resolve(`sim_tx_${Date.now()}`);
+          }
+      });
+  };
+
   const confirmPayment = async () => {
       setIsProcessingPayment(true);
+      const txid = await processPiPayment(0.50, "Architex 3D Model Generation", { forProjectId: `proj_scan_${Date.now()}` });
       
-      const handleBackendCompletion = async (paymentId: string, txid: string) => {
-        try {
-            const response = await fetch(`${BACKEND_URL}/complete_payment`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ paymentId, txid }),
-            });
-
-            if (response.ok) {
-                const newProject = await api.generateModelFromScan();
-                setProjects(prev => [newProject, ...prev]);
-            } else {
-                throw new Error('Backend failed to complete payment.');
-            }
-        } catch (error) {
-            console.error(error);
-            // Even if backend fails in demo, we add the project to UI
-            const newProject = await api.generateModelFromScan();
-            setProjects(prev => [newProject, ...prev]);
-        } finally {
-            setIsProcessingPayment(false);
-            setShowPaymentModal(false);
-            setActiveTab('design');
-        }
-      };
-
-      try {
-          const paymentData = {
-              amount: 0.50,
-              memo: "Architex 3D Model Generation",
-              metadata: { forProjectId: `proj_scan_${Date.now()}` },
-          };
-
-          const callbacks = {
-              onReadyForServerApproval: async (paymentId: string) => {
-                  try {
-                      await fetch(`${BACKEND_URL}/approve_payment`, {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ paymentId }),
-                      });
-                  } catch (error) {
-                      console.error('Server approval failed:', error);
-                      // In demo, we might proceed anyway or stop.
-                  }
-              },
-              onReadyForServerCompletion: handleBackendCompletion,
-              onCancel: (paymentId: string) => {
-                  setIsProcessingPayment(false);
-                  setShowPaymentModal(false);
-              },
-              onError: (error: Error) => {
-                  console.error('Pi Payment Error:', error);
-                  setIsProcessingPayment(false);
-                  setShowPaymentModal(false);
-              },
-          };
-          
-          await Pi.createPayment(paymentData, callbacks);
-
-      } catch (error) {
-          console.error("Pi SDK Payment failed (likely not in Pi Browser). Simulating successful payment for demo.", error);
-          // Fallback: Simulate a successful payment flow for development/demo
-          await new Promise(resolve => setTimeout(resolve, 2000)); // Fake network delay
-          await handleBackendCompletion(`sim_pay_${Date.now()}`, `sim_tx_${Date.now()}`);
+      if (txid) {
+          const newProject = await api.generateModelFromScan();
+          setProjects(prev => [newProject, ...prev]);
+          setActiveTab('design');
       }
+      
+      setIsProcessingPayment(false);
+      setShowPaymentModal(false);
   };
+  
   const cancelPayment = () => setShowPaymentModal(false);
 
   // --- Bounty, Agreement, and Escrow Flow ---
@@ -217,7 +210,18 @@ export const useArchitex = () => {
   const handleReleaseFunds = async (bounty: BountyEntity) => { const updatedBounty = await api.releaseEscrow(bounty.id); setBounties(prev => prev.map(b => b.id === updatedBounty.id ? updatedBounty : b)); setSelectedBounty(updatedBounty); if (updatedBounty.winnerId) { setUserToRate(updatedBounty.winnerId); setShowRatingModal(true); } };
   const handleRaiseDispute = (bounty: BountyEntity) => { setSelectedBounty(bounty); setShowDisputeResolutionModal(true); };
   const handleConfirmDispute = async (bounty: BountyEntity) => { const updatedBounty = await api.raiseDispute(bounty.id); setBounties(prev => prev.map(b => b.id === updatedBounty.id ? updatedBounty : b)); setSelectedBounty(updatedBounty); };
-  const handleSelectArbitrator = async (bounty: BountyEntity, arbitrator: ArbitratorEntity) => { const updatedBounty = await api.selectArbitrator(bounty.id, arbitrator.id); setBounties(prev => prev.map(b => b.id === updatedBounty.id ? updatedBounty : b)); setSelectedBounty(updatedBounty); };
+  
+  const handleSelectArbitrator = async (bounty: BountyEntity, arbitrator: ArbitratorEntity) => { 
+      // Payment Integration: Arbitrator Fee
+      if (arbitrator.fee > 0) {
+          const txid = await processPiPayment(arbitrator.fee, `Arbitrator Fee: ${arbitrator.name}`, { bountyId: bounty.id, arbitratorId: arbitrator.id });
+          if (!txid) return; // User cancelled
+      }
+      const updatedBounty = await api.selectArbitrator(bounty.id, arbitrator.id); 
+      setBounties(prev => prev.map(b => b.id === updatedBounty.id ? updatedBounty : b)); 
+      setSelectedBounty(updatedBounty); 
+  };
+  
   const handleResolveArbitration = async (bounty: BountyEntity, decision: 'Release' | 'Refund') => { const updatedBounty = await api.resolveArbitration(bounty.id, decision); setBounties(prev => prev.map(b => b.id === updatedBounty.id ? updatedBounty : b)); setSelectedBounty(updatedBounty); };
   
   // --- NFT Minting ---
@@ -242,7 +246,27 @@ export const useArchitex = () => {
   // --- Service Provider ---
   const handleGetQuotes = () => { setShowProjectDetailsModal(false); setActiveTab('market'); };
   const handleInitiateHiring = async (provider: UserEntity) => { if (!selectedProject) return; const agreement = await api.createServiceAgreement(user!.id, provider.id, selectedProject.id, 500); setActiveServiceAgreement(agreement); const arbitrators = await api.listArbitrators(); setAvailableArbitrators(arbitrators); setShowServiceAgreementModal(true); };
-  const handleConfirmServiceHiring = async (validatorId?: string) => { if (!activeServiceAgreement) return; await api.fundServiceEscrow(activeServiceAgreement.id, validatorId); setShowServiceAgreementModal(false); setActiveServiceAgreement(null); };
+  
+  const handleConfirmServiceHiring = async (validatorId?: string) => { 
+      if (!activeServiceAgreement) return; 
+      
+      // Calculate total cost including validator fee
+      let totalCost = activeServiceAgreement.price;
+      if (validatorId) {
+          const validator = arbitrators.find(a => a.id === validatorId);
+          if (validator) totalCost += validator.fee;
+      }
+
+      // Payment Integration: Service Escrow
+      const txid = await processPiPayment(totalCost, `Service Escrow: ${activeServiceAgreement.id}`, { agreementId: activeServiceAgreement.id, validatorId });
+      
+      if (txid) {
+        await api.fundServiceEscrow(activeServiceAgreement.id, validatorId); 
+        setShowServiceAgreementModal(false); 
+        setActiveServiceAgreement(null); 
+      }
+  };
+  
   const handleConfirmServiceCompletion = async (agreement: ServiceAgreementEntity) => { await api.confirmServiceCompletion(agreement.id, 'client'); };
   
   // --- Reputation & DAO ---

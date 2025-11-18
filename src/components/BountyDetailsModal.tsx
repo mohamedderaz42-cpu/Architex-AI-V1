@@ -14,7 +14,7 @@ interface BountyDetailsModalProps {
     onFund: (bounty: BountyEntity) => void;
     onRelease: (bounty: BountyEntity) => void;
     onDispute: (bounty: BountyEntity) => void;
-    onSelectArbitrator: (arbitrator: ArbitratorEntity) => void;
+    onSelectArbitrator: (arbitrator: ArbitratorEntity) => Promise<void>;
     onOpenLegalShield: () => void;
     onResolve: (bounty: BountyEntity, decision: 'Release' | 'Refund') => void;
 }
@@ -70,7 +70,7 @@ export const BountyDetailsModal: React.FC<BountyDetailsModalProps> = ({ bounty, 
                  return (
                     <div>
                         <h4 className="text-lg font-semibold text-center text-white mb-2">Select an Arbitrator</h4>
-                        <ArbitrationInterface arbitrators={arbitrators} onSelect={onSelectArbitrator} />
+                        <ArbitrationInterface arbitrators={arbitrators} onSelect={(a) => onSelectArbitrator(a)} />
                     </div>
                 );
             case 'Arbitration':

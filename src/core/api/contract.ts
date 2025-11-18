@@ -1,3 +1,4 @@
+
 import { ProjectEntity, UserEntity, MaterialEntity, TokenEntity, LiquidityPoolEntity, BountyEntity, ArbitratorEntity, ProductEntity, ShippingZone, PromotionEntity, OrderEntity, OrderStatus, ServiceProviderProfile, ServiceAgreementEntity, ReputationEvent, ProposalEntity, ProofOfInstallationStatus, DesignChallengeEntity, ChallengeSubmissionEntity } from '../schemas/entities';
 import { PiCoinIcon } from '../../components/icons/PiCoinIcon';
 import { ArchitexLogo } from '../../components/icons/ArchitexLogo';
@@ -182,7 +183,15 @@ export const releaseEscrow = async (bountyId: string): Promise<BountyEntity> => 
 export const raiseDispute = async (bountyId: string): Promise<BountyEntity> => { const idx = mockBounties.findIndex(b => b.id === bountyId); if (idx === -1) throw new Error("Bounty not found"); mockBounties[idx].status = 'In Dispute'; return {...mockBounties[idx]}; }
 export const listArbitrators = async (): Promise<ArbitratorEntity[]> => { return [...mockArbitrators]; };
 export const listAvailableArbitrators = async (projectId: string): Promise<ArbitratorEntity[]> => { return mockArbitrators.filter(a => !a.conflictsWithProjectIds?.includes(projectId)); };
-export const selectArbitrator = async (bountyId: string, arbitratorId: string): Promise<BountyEntity> => { const bIdx = mockBounties.findIndex(b => b.id === bountyId); if (bIdx === -1) throw new Error("Bounty not found"); const a = mockArbitrators.find(a => a.id === arbitratorId); if (!a) throw new Error("Arbitrator not found"); const tIdx = mockUserTokens.findIndex(t => t.symbol === 'PiUSD'); if(mockUserTokens[tIdx].balance < a.fee) throw new Error("Insufficient PiUSD for arbitrator fee."); mockUserTokens[tIdx].balance -= a.fee; mockBounties[bIdx].status = 'Arbitration'; return {...mockBounties[bIdx]}; };
+export const selectArbitrator = async (bountyId: string, arbitratorId: string): Promise<BountyEntity> => { 
+    const bIdx = mockBounties.findIndex(b => b.id === bountyId); 
+    if (bIdx === -1) throw new Error("Bounty not found"); 
+    const a = mockArbitrators.find(a => a.id === arbitratorId); 
+    if (!a) throw new Error("Arbitrator not found"); 
+    // Assumption: Fee is paid via Pi Payment in the UI layer (useArchitex), so we don't deduct PiUSD here to avoid double counting/blocking.
+    mockBounties[bIdx].status = 'Arbitration'; 
+    return {...mockBounties[bIdx]}; 
+};
 export const resolveArbitration = async (bountyId: string, decision: 'Release' | 'Refund'): Promise<BountyEntity> => { const idx = mockBounties.findIndex(b => b.id === bountyId); if (idx === -1) throw new Error("Bounty not found"); mockBounties[idx].status = 'Complete'; mockBounties[idx].escrowState = decision === 'Release' ? 'Released' : 'Refunded'; if (decision === 'Refund') { const tIdx = mockUserTokens.findIndex(t => t.symbol === 'ARCHI'); mockUserTokens[tIdx].balance += mockBounties[idx].reward; } return {...mockBounties[idx]}; };
 export const listVendorProducts = async (): Promise<ProductEntity[]> => { return [...mockProducts]; };
 export const listShippingZones = async (): Promise<ShippingZone[]> => { return [...mockShippingZones]; };
@@ -197,7 +206,17 @@ export const getProjectDetails = async (projectId: string): Promise<ProjectEntit
 export const createServiceAgreement = async (clientId: string, providerId: string, projectId: string, price: number): Promise<ServiceAgreementEntity> => { const newAgreement: ServiceAgreementEntity = { id: `sa_${Date.now()}`, clientId, providerId, projectId, price, scope: `Installation services for project ${projectId}`, status: 'pending', createdAt: new Date().toISOString() }; mockServiceAgreements.push(newAgreement); return newAgreement; };
 export const listServiceAgreements = async (): Promise<ServiceAgreementEntity[]> => { return [...mockServiceAgreements]; };
 export const getServiceLevelAgreementText = async (agreement: ServiceAgreementEntity): Promise<string> => { return `This Service Level Agreement...`; };
-export const fundServiceEscrow = async (agreementId: string, validatorId?: string): Promise<ServiceAgreementEntity> => { const idx = mockServiceAgreements.findIndex(sa => sa.id === agreementId); if (idx === -1) throw new Error('Agreement not found'); mockServiceAgreements[idx].status = 'funded'; if (validatorId) mockServiceAgreements[idx].qualityAssuranceValidatorId = validatorId; return { ...mockServiceAgreements[idx] }; };
+export const fundServiceEscrow = async (agreementId: string, validatorId?: string): Promise<ServiceAgreementEntity> => { 
+    const idx = mockServiceAgreements.findIndex(sa => sa.id === agreementId); 
+    if (idx === -1) throw new Error('Agreement not found'); 
+    
+    // Log smart contract event
+    console.log(`[Smart Contract] Funding Service Escrow for Agreement ${agreementId}. Validator: ${validatorId || 'None'}`);
+    
+    mockServiceAgreements[idx].status = 'funded'; 
+    if (validatorId) mockServiceAgreements[idx].qualityAssuranceValidatorId = validatorId; 
+    return { ...mockServiceAgreements[idx] }; 
+};
 export const confirmServiceCompletion = async (agreementId: string, userType: 'client' | 'validator'): Promise<ServiceAgreementEntity> => { const idx = mockServiceAgreements.findIndex(sa => sa.id === agreementId); if (idx === -1) throw new Error('Agreement not found'); const agreement = mockServiceAgreements[idx]; if (userType === 'client') agreement.status = 'client-confirmed'; if (userType === 'validator' && agreement.status === 'client-confirmed') agreement.status = 'validator-confirmed'; const isComplete = agreement.status === 'client-confirmed' && !agreement.qualityAssuranceValidatorId || agreement.status === 'validator-confirmed'; if (isComplete) { agreement.status = 'complete'; const provider = mockServiceProviders.find(p => p.id === agreement.providerId); if(provider) { provider.trustScore = Math.min(100, provider.trustScore + 2); } } return { ...agreement }; };
 export const submitRating = async (userId: string, rating: number, comment: string): Promise<boolean> => { reputationEvents.push({ id: `rev_${Date.now()}`, userId, type: 'RatingReceived', value: rating, description: comment, timestamp: new Date().toISOString() }); return true; };
 export const calculateTrustScore = async (userId: string): Promise<number> => { const userEvents = reputationEvents.filter(e => e.userId === userId); let score = 50; for (const event of userEvents) { score += event.value; } mockUser.trustScore = Math.max(0, Math.min(100, score)); return mockUser.trustScore; };
