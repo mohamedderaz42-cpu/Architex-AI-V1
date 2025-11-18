@@ -116,7 +116,7 @@ export const useArchitex = () => {
         await refreshUserData(piUser);
         setPhase('dashboard');
     } catch (err) {
-        console.error("Pi Authentication failed. Falling back to mock data.", err);
+        console.error("Pi Authentication failed or not in Pi Browser. Falling back to mock mode.", err);
         // Fallback to mock data if auth fails (e.g., when not in Pi Browser)
         await refreshUserData();
         setPhase('dashboard');
@@ -132,8 +132,36 @@ export const useArchitex = () => {
   // --- Scanning & Payment ---
   const startScan = () => { setIsScanning(true); setCurrentScanStep(0); setScanProgress(0); const totalDuration = 8000; const stepDuration = totalDuration / guidedScanInstructions.length; scanIntervalRef.current = window.setInterval(() => { setCurrentScanStep(prevStep => { const nextStep = prevStep + 1; if (nextStep >= guidedScanInstructions.length) { clearInterval(scanIntervalRef.current!); setIsScanning(false); setShowPaymentModal(true); return prevStep; } return nextStep; }); setScanProgress(prev => prev + (100 / guidedScanInstructions.length)); }, stepDuration); };
   const cancelScan = () => { if (scanIntervalRef.current) { clearInterval(scanIntervalRef.current); } setIsScanning(false); setScanProgress(0); setCurrentScanStep(0); };
+  
   const confirmPayment = async () => {
       setIsProcessingPayment(true);
+      
+      const handleBackendCompletion = async (paymentId: string, txid: string) => {
+        try {
+            const response = await fetch(`${BACKEND_URL}/complete_payment`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ paymentId, txid }),
+            });
+
+            if (response.ok) {
+                const newProject = await api.generateModelFromScan();
+                setProjects(prev => [newProject, ...prev]);
+            } else {
+                throw new Error('Backend failed to complete payment.');
+            }
+        } catch (error) {
+            console.error(error);
+            // Even if backend fails in demo, we add the project to UI
+            const newProject = await api.generateModelFromScan();
+            setProjects(prev => [newProject, ...prev]);
+        } finally {
+            setIsProcessingPayment(false);
+            setShowPaymentModal(false);
+            setActiveTab('design');
+        }
+      };
+
       try {
           const paymentData = {
               amount: 0.50,
@@ -151,32 +179,10 @@ export const useArchitex = () => {
                       });
                   } catch (error) {
                       console.error('Server approval failed:', error);
-                      setIsProcessingPayment(false);
-                      setShowPaymentModal(false);
+                      // In demo, we might proceed anyway or stop.
                   }
               },
-              onReadyForServerCompletion: async (paymentId: string, txid: string) => {
-                  try {
-                      const response = await fetch(`${BACKEND_URL}/complete_payment`, {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ paymentId, txid }),
-                      });
-
-                      if (response.ok) {
-                          const newProject = await api.generateModelFromScan();
-                          setProjects(prev => [newProject, ...prev]);
-                      } else {
-                          throw new Error('Backend failed to complete payment.');
-                      }
-                  } catch (error) {
-                      console.error(error);
-                  } finally {
-                      setIsProcessingPayment(false);
-                      setShowPaymentModal(false);
-                      setActiveTab('design');
-                  }
-              },
+              onReadyForServerCompletion: handleBackendCompletion,
               onCancel: (paymentId: string) => {
                   setIsProcessingPayment(false);
                   setShowPaymentModal(false);
@@ -191,8 +197,10 @@ export const useArchitex = () => {
           await Pi.createPayment(paymentData, callbacks);
 
       } catch (error) {
-          console.error("Failed to create Pi payment:", error);
-          setIsProcessingPayment(false);
+          console.error("Pi SDK Payment failed (likely not in Pi Browser). Simulating successful payment for demo.", error);
+          // Fallback: Simulate a successful payment flow for development/demo
+          await new Promise(resolve => setTimeout(resolve, 2000)); // Fake network delay
+          await handleBackendCompletion(`sim_pay_${Date.now()}`, `sim_tx_${Date.now()}`);
       }
   };
   const cancelPayment = () => setShowPaymentModal(false);
