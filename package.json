@@ -1,6 +1,6 @@
 {
   "name": "architex-project",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Architex Pi App",
   "main": "server.js",
   "scripts": {
