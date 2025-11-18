@@ -1,74 +1,105 @@
+
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const axios = require('axios');
 const app = express();
+
+const PI_API_KEY = process.env.PI_API_KEY;
+const PI_API_URL = 'https://api.minepi.com';
 
 app.use(cors());
 app.use(express.json());
 
-// In-memory store to simulate database for payments
+// In-memory store (Note: In serverless functions like Vercel, this resets frequently. 
+// For production, verify against the transaction ID or use a database like MongoDB/Postgres)
 const payments = {};
 
 /**
- * Endpoint for the frontend to call when the Pi SDK is ready for server approval.
- * In a real application, this is where you would:
- * 1. Verify the payment details with Pi Network's API.
- * 2. Check if the payment is for a valid product/service in your database.
- * 3. Submit the payment to the blockchain for processing.
+ * Endpoint: /api/approve_payment
+ * Called by the frontend when Pi SDK returns onReadyForServerApproval
  */
-app.post('/approve_payment', (req, res) => {
+app.post('/approve_payment', async (req, res) => {
   const { paymentId } = req.body;
   if (!paymentId) {
     return res.status(400).json({ error: 'paymentId is required' });
   }
 
-  console.log(`[SERVER] Received approval request for paymentId: ${paymentId}`);
+  console.log(`[VERCEL API] Processing approval for paymentId: ${paymentId}`);
 
-  // Simulate storing the payment state
-  payments[paymentId] = { status: 'approved' };
-  
-  // TODO: In a real app, you would make a POST request to:
-  // https://api.pi.network/v2/payments/{paymentId}/approve
-  // with your server's API key.
+  if (!PI_API_KEY) {
+    console.warn('[VERCEL API] PI_API_KEY is missing. Requests to Pi Network will fail.');
+    return res.status(500).json({ error: 'Server configuration error: Missing API Key' });
+  }
 
-  console.log(`[SERVER] Simulated approval for paymentId: ${paymentId}`);
-  res.json({ success: true, message: 'Payment approved for processing.' });
+  try {
+    // Call Pi Network API to approve the payment
+    const response = await axios.post(
+      `${PI_API_URL}/v2/payments/${paymentId}/approve`,
+      {}, // Body is empty
+      {
+        headers: {
+          'Authorization': `Key ${PI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    console.log(`[VERCEL API] Payment ${paymentId} approved successfully.`);
+    res.json({ success: true, message: 'Payment approved for processing.' });
+
+  } catch (error) {
+    console.error('[VERCEL API] Failed to approve payment:', error.response?.data || error.message);
+    res.status(500).json({ 
+      error: 'Failed to approve payment on Pi Network',
+      details: error.response?.data 
+    });
+  }
 });
 
 /**
- * Endpoint for the frontend to call when the Pi SDK is ready for server completion.
- * In a real application, this is where you would:
- * 1. Verify the transaction (txid) on the Pi blockchain.
- * 2. Fulfill the user's order (e.g., grant access to a feature, create the 3D model).
- * 3. Mark the payment as complete in your database.
+ * Endpoint: /api/complete_payment
+ * Called by the frontend when Pi SDK returns onReadyForServerCompletion
  */
-app.post('/complete_payment', (req, res) => {
+app.post('/complete_payment', async (req, res) => {
   const { paymentId, txid } = req.body;
   if (!paymentId || !txid) {
     return res.status(400).json({ error: 'paymentId and txid are required' });
   }
   
-  console.log(`[SERVER] Received completion request for paymentId: ${paymentId} with txid: ${txid}`);
+  console.log(`[VERCEL API] Completing paymentId: ${paymentId} with txid: ${txid}`);
 
-  // Check if payment was 'approved' first
-  if (!payments[paymentId] || payments[paymentId].status !== 'approved') {
-    return res.status(400).json({ error: 'Payment not approved or not found.' });
+  if (!PI_API_KEY) {
+     return res.status(500).json({ error: 'Server configuration error: Missing API Key' });
   }
 
-  // Simulate updating the payment state
-  payments[paymentId].status = 'completed';
-  payments[paymentId].txid = txid;
+  try {
+    // Call Pi Network API to complete the payment
+    const response = await axios.post(
+      `${PI_API_URL}/v2/payments/${paymentId}/complete`,
+      { txid },
+      {
+        headers: {
+          'Authorization': `Key ${PI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
 
-  // TODO: In a real app, you would make a POST request to:
-  // https://api.pi.network/v2/payments/{paymentId}/complete
-  // with your server's API key to finalize the transaction.
+    console.log(`[VERCEL API] Payment ${paymentId} completed and verified on blockchain.`);
+    
+    // Here is where you would typically deliver the digital asset to the user in your database
+    // e.g., database.updateUser({ ... unlockFeature: true ... })
 
-  console.log(`[SERVER] Simulated completion for paymentId: ${paymentId}`);
-  
-  // You can now safely deliver the digital product/service
-  console.log(`[SERVER] Product/Service delivered for paymentId: ${paymentId}`);
+    res.json({ success: true, message: 'Payment completed and product delivered.' });
 
-  res.json({ success: true, message: 'Payment completed and product delivered.' });
+  } catch (error) {
+    console.error('[VERCEL API] Failed to complete payment:', error.response?.data || error.message);
+    res.status(500).json({ 
+      error: 'Failed to complete payment on Pi Network',
+      details: error.response?.data 
+    });
+  }
 });
 
-// Export the app for serverless environments like Vercel
 module.exports = app;
