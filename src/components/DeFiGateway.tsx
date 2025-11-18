@@ -1,0 +1,81 @@
+import React, { useState } from 'react';
+import { GlassPanel } from './GlassPanel';
+import { SwapInterface } from './SwapInterface';
+import { LiquidityInterface } from './LiquidityInterface';
+import { BountiesInterface } from './BountiesInterface';
+import { BountyEntity, UserEntity, ArbitratorEntity, ProposalEntity } from '../core/schemas/entities';
+import { SecurityStatus } from './SecurityStatus';
+import { PromoBanner } from './PromoBanner';
+import { DataApiInterface } from './DataApiInterface';
+import { VendorPortal } from './VendorPortal';
+import { ServiceMarketplace } from './ServiceMarketplace';
+import { WrenchIcon } from './icons/WrenchIcon';
+import { ShieldIcon } from './icons/ShieldIcon';
+import { ArbitratorMarketplace } from './ArbitratorMarketplace';
+import { DaoInterface } from './DaoInterface';
+import { VoteIcon } from './icons/VoteIcon';
+
+
+type DeFiTab = 'swap' | 'liquidity' | 'bounties' | 'data' | 'vendor' | 'services' | 'arbitrators' | 'dao';
+
+interface DeFiGatewayProps {
+    bounties: BountyEntity[];
+    onCreateBounty: () => void;
+    onBountySelect: (bounty: BountyEntity) => void;
+    serviceProviders: UserEntity[];
+    onHireProvider: (provider: UserEntity) => void;
+    arbitrators: ArbitratorEntity[];
+    proposals: ProposalEntity[];
+    user: UserEntity | null;
+    onStake: (amount: number) => void;
+    onUnstake: (amount: number) => void;
+    onVote: (proposalId: string, vote: 'for' | 'against') => void;
+    onExecuteProposal: (proposalId: string) => void;
+    onViewTos: () => void;
+}
+
+export const DeFiGateway: React.FC<DeFiGatewayProps> = ({ bounties, onCreateBounty, onBountySelect, serviceProviders, onHireProvider, arbitrators, proposals, user, onStake, onUnstake, onVote, onExecuteProposal, onViewTos }) => {
+    const [activeTab, setActiveTab] = useState<DeFiTab>('bounties');
+
+    const renderTabContent = () => {
+        switch (activeTab) {
+            case 'swap': return <SwapInterface />;
+            case 'liquidity': return <LiquidityInterface />;
+            case 'bounties': return <BountiesInterface bounties={bounties} onCreateBounty={onCreateBounty} onBountySelect={onBountySelect} />;
+            case 'data': return <DataApiInterface />;
+            case 'vendor': return <VendorPortal />;
+            case 'services': return <ServiceMarketplace providers={serviceProviders} onHire={onHireProvider} />;
+            case 'arbitrators': return <ArbitratorMarketplace arbitrators={arbitrators} />;
+            case 'dao': return user && <DaoInterface user={user} proposals={proposals} onStake={onStake} onUnstake={onUnstake} onVote={onVote} onExecute={onExecuteProposal} onViewTos={onViewTos}/>;
+            default: return null;
+        }
+    };
+    
+    return (
+        <div className="w-full h-full flex flex-col">
+            <div className="text-center mb-4">
+                <h2 className="text-2xl font-bold text-white">Marketplace</h2>
+                <p className="text-slate-400 mt-1 text-sm">Trade assets and commission professionals.</p>
+            </div>
+            
+            <GlassPanel className="flex-grow p-2 flex flex-col min-h-0">
+                <div className="flex-shrink-0 flex items-center justify-center p-1 bg-slate-900/50 rounded-full mb-4 overflow-x-auto">
+                    <button onClick={() => setActiveTab('bounties')} className={`px-3 py-2 rounded-full font-semibold text-xs sm:text-sm transition-colors duration-300 whitespace-nowrap ${activeTab === 'bounties' ? 'bg-eco-green/80 text-white' : 'text-slate-300'}`}>Bounties</button>
+                    <button onClick={() => setActiveTab('services')} className={`px-3 py-2 rounded-full font-semibold text-xs sm:text-sm transition-colors duration-300 whitespace-nowrap ${activeTab === 'services' ? 'bg-eco-green/80 text-white' : 'text-slate-300'}`}>Services</button>
+                    <button onClick={() => setActiveTab('vendor')} className={`px-3 py-2 rounded-full font-semibold text-xs sm:text-sm transition-colors duration-300 whitespace-nowrap ${activeTab === 'vendor' ? 'bg-eco-green/80 text-white' : 'text-slate-300'}`}>Vendor Hub</button>
+                    <button onClick={() => setActiveTab('dao')} className={`px-3 py-2 rounded-full font-semibold text-xs sm:text-sm transition-colors duration-300 whitespace-nowrap ${activeTab === 'dao' ? 'bg-eco-green/80 text-white' : 'text-slate-300'}`}>DAO</button>
+                    <button onClick={() => setActiveTab('arbitrators')} className={`px-3 py-2 rounded-full font-semibold text-xs sm:text-sm transition-colors duration-300 whitespace-nowrap ${activeTab === 'arbitrators' ? 'bg-eco-green/80 text-white' : 'text-slate-300'}`}>Arbitrators</button>
+                    <button onClick={() => setActiveTab('swap')} className={`px-3 py-2 rounded-full font-semibold text-xs sm:text-sm transition-colors duration-300 whitespace-nowrap ${activeTab === 'swap' ? 'bg-eco-green/80 text-white' : 'text-slate-300'}`}>Swap</button>
+                </div>
+                {activeTab === 'bounties' && <div className="px-2"><PromoBanner /></div>}
+                <div className="flex-grow overflow-y-auto">
+                    {renderTabContent()}
+                </div>
+            </GlassPanel>
+
+            <div className="mt-4">
+                <SecurityStatus />
+            </div>
+        </div>
+    );
+};

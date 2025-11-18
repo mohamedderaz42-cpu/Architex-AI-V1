@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Architex - The Future of Design</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'eco-green': '#10B981',
+              'pi-gold': '#FDB300',
+              'ai-violet': '#8B5CF6',
+              'brand-dark': '#020617',
+            },
+            boxShadow: {
+              'glow-violet': '0 0 20px 5px rgba(139, 92, 246, 0.3)',
+              'glow-green': '0 0 20px 5px rgba(16, 185, 129, 0.3)',
+            }
+          }
+        }
+      }
+    </script>
+    <script src="https://sdk.pi-network.dev/v2/pi-sdk.js"></script>
+    <script>Pi.init({ version: "2.0", sandbox: true });</script>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
+  }
+}
+</script>
+</head>
+  <body class="bg-brand-dark">
+    <div id="root"></div>
+    <script type="module" src="/src/index.tsx"></script>
+  </body>
+</html>

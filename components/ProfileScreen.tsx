@@ -1,0 +1,114 @@
+import React, { useState } from 'react';
+import { UserEntity, ProjectEntity, OrderEntity, ServiceAgreementEntity } from '../core/schemas/entities';
+import { GlassPanel } from './GlassPanel';
+import { SystemStatus } from './SystemStatus';
+import { AcceleratorSubscription } from './AcceleratorSubscription';
+import { AdBanner } from './AdBanner';
+import { OrderCard } from './OrderCard';
+import { ServiceAgreementCard } from './ServiceAgreementCard';
+
+interface ProfileScreenProps {
+    user: UserEntity;
+    projects: ProjectEntity[];
+    orders: OrderEntity[];
+    serviceAgreements: ServiceAgreementEntity[];
+    onConfirmDelivery: (orderId: string) => void;
+    onRequestReturn: (orderId: string) => void;
+    onConfirmServiceCompletion: (agreement: ServiceAgreementEntity) => void;
+    onClose: () => void;
+}
+
+type ProfileTab = 'gallery' | 'orders' | 'services';
+
+export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, projects, orders, serviceAgreements, onConfirmDelivery, onRequestReturn, onConfirmServiceCompletion, onClose }) => {
+    const publicProjects = projects.filter(p => p.isPublic);
+    const [activeTab, setActiveTab] = useState<ProfileTab>('gallery');
+
+    const renderTabContent = () => {
+        switch (activeTab) {
+            case 'gallery':
+                return (
+                    <div className="grid grid-cols-2 gap-4">
+                        {publicProjects.map(project => (
+                            <div key={project.id} className="rounded-lg overflow-hidden relative aspect-square group">
+                                <img src={project.thumbnailUrl} alt={project.name} className="w-full h-full object-cover"/>
+                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                                    <span className="text-white text-sm font-semibold">{project.name}</span>
+                                </div>
+                            </div>
+                        ))}
+                        {!publicProjects.length && (
+                            <div className="col-span-2 text-center text-slate-500 py-8">
+                                No public projects yet.
+                            </div>
+                        )}
+                    </div>
+                );
+            case 'orders':
+                 return (
+                    <div className="space-y-3">
+                        {orders.map(order => (
+                            <OrderCard 
+                                key={order.id} 
+                                order={order}
+                                onConfirmDelivery={onConfirmDelivery}
+                                onRequestReturn={onRequestReturn}
+                            />
+                        ))}
+                        {!orders.length && (
+                             <div className="col-span-2 text-center text-slate-500 py-8">
+                                No orders found.
+                            </div>
+                        )}
+                    </div>
+                 );
+            case 'services':
+                return (
+                    <div className="space-y-3">
+                        {serviceAgreements.map(agreement => (
+                           <ServiceAgreementCard 
+                                key={agreement.id}
+                                agreement={agreement}
+                                onConfirmCompletion={onConfirmServiceCompletion}
+                           />
+                        ))}
+                        {!serviceAgreements.length && (
+                             <div className="col-span-2 text-center text-slate-500 py-8">
+                                No active service agreements.
+                            </div>
+                        )}
+                    </div>
+                )
+        }
+    }
+
+    return (
+        <div className="fixed inset-0 bg-brand-dark/80 backdrop-blur-md flex items-center justify-center z-[60] p-4">
+            <GlassPanel className="w-full max-w-md h-[90vh] flex flex-col p-6 animate-fade-in">
+                <div className="flex-shrink-0 text-center relative">
+                    <button onClick={onClose} className="absolute top-0 left-0 text-slate-400 hover:text-white text-2xl font-mono">&times;</button>
+                    {user.avatarUrl && (
+                        <img src={user.avatarUrl} alt="User Avatar" className="w-24 h-24 rounded-full mx-auto border-2 border-ai-violet" />
+                    )}
+                    <h2 className="text-2xl font-bold text-white mt-4">{user.piUsername}</h2>
+                    <p className="text-sm text-slate-400 truncate">{user.walletAddress}</p>
+                    <div className="mt-4 inline-flex items-center bg-eco-green/20 text-eco-green px-3 py-1 rounded-full text-sm font-semibold">
+                        Trust Score: {user.trustScore}
+                    </div>
+                </div>
+
+                <div className="flex-grow mt-6 flex flex-col min-h-0">
+                    <div className="flex-shrink-0 flex items-center justify-center p-1 bg-slate-900/50 rounded-full mb-4">
+                        <button onClick={() => setActiveTab('gallery')} className={`px-4 py-1.5 rounded-full font-semibold text-sm transition-colors duration-300 ${activeTab === 'gallery' ? 'bg-slate-700 text-white' : 'text-slate-300'}`}>Gallery</button>
+                        <button onClick={() => setActiveTab('orders')} className={`px-4 py-1.5 rounded-full font-semibold text-sm transition-colors duration-300 ${activeTab === 'orders' ? 'bg-slate-700 text-white' : 'text-slate-300'}`}>My Orders</button>
+                        <button onClick={() => setActiveTab('services')} className={`px-4 py-1.5 rounded-full font-semibold text-sm transition-colors duration-300 ${activeTab === 'services' ? 'bg-slate-700 text-white' : 'text-slate-300'}`}>Services</button>
+                    </div>
+
+                    <div className="flex-grow overflow-y-auto pr-2">
+                      {renderTabContent()}
+                    </div>
+                </div>
+            </GlassPanel>
+        </div>
+    );
+};
