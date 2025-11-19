@@ -26,15 +26,18 @@
     </script>
     <script src="https://sdk.pi-network.dev/v2/pi-sdk.js"></script>
     <script>
-      try {
-        if (typeof Pi !== 'undefined') {
-          Pi.init({ version: "2.0", sandbox: true });
-        } else {
-          console.warn("Pi SDK not loaded yet. Functionality may be limited.");
+      document.addEventListener("DOMContentLoaded", function() {
+        try {
+          if (window.Pi) {
+            window.Pi.init({ version: "2.0", sandbox: true });
+            console.log("Pi SDK Initialized successfully.");
+          } else {
+            console.warn("Pi SDK not found on window object.");
+          }
+        } catch (e) {
+          console.error("Error initializing Pi SDK:", e);
         }
-      } catch (e) {
-        console.error("Error initializing Pi SDK:", e);
-      }
+      });
     </script>
   <script type="importmap">
 {

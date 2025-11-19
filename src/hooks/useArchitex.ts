@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity } from '../core/schemas/entities';
 import * as api from '../core/api/contract';
@@ -234,7 +233,15 @@ export const useArchitex = () => {
                       console.error('Pi Payment Error:', error, payment);
                       // Provide actionable advice for the user
                       const msg = error.message || "Transaction failed";
-                      setPaymentError(`Payment Failed: ${msg}. \n\n💡 Hint: Ensure your Pi Browser Wallet is on TESTNET and has sufficient Test-Pi.`);
+                      setPaymentError(
+                          `Payment Failed: ${msg}.\n\n` +
+                          `⚠️ WALLET MISMATCH DETECTED?\n` +
+                          `Make sure you are using the correct Testnet Wallet.\n` +
+                          `1. Open wallet.pi\n` +
+                          `2. Ensure 'Testnet' is selected.\n` +
+                          `3. Ensure you have enough Test-Pi balance.\n` +
+                          `The app uses the wallet currently logged into your browser.`
+                      );
                       resolve(null);
                   },
               };

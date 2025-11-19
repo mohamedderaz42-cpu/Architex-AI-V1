@@ -4,6 +4,9 @@ import { GlassPanel } from './GlassPanel';
 import { Model3dIcon } from './icons/Model3dIcon';
 import { PiCoinIcon } from './icons/PiCoinIcon';
 import { XCircleIcon } from './icons/XCircleIcon';
+import { UserIcon } from './icons/UserIcon';
+import { ArchitexLogo } from './icons/ArchitexLogo';
+import { ChevronRightIcon } from './icons/ChevronRightIcon';
 
 interface PaymentModalProps {
     onConfirm: () => void;
@@ -19,19 +22,45 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ onConfirm, onCancel,
                 <Model3dIcon className="w-20 h-20 mx-auto text-ai-violet mb-4" />
                 <h2 className="text-2xl font-bold text-white">Model Generation</h2>
                 <p className="text-slate-300 mt-2">
-                    Your room scan is complete. Generate a high-fidelity 3D model for 0.50 Pi.
+                    Your room scan is complete. Generate a high-fidelity 3D model.
                 </p>
 
-                <div className="my-8 p-4 bg-slate-900/50 rounded-xl border border-white/10">
-                    <div className="flex justify-between items-center">
+                <div className="my-6 bg-slate-900/50 rounded-xl border border-white/10 overflow-hidden">
+                    <div className="p-4 border-b border-white/5 flex justify-between items-center">
                         <span className="text-slate-400 font-medium">Service Fee:</span>
                         <div className="flex items-center space-x-2">
                             <PiCoinIcon className="w-6 h-6 text-pi-gold" />
                             <span className="text-2xl font-bold text-white">0.50</span>
                         </div>
                     </div>
-                    <p className="text-xs text-slate-500 mt-2 text-center">
-                        ⚠️ Ensure your Pi Browser is using the <b>Testnet Wallet</b> and has sufficient funds.
+                    
+                     <div className="p-4 bg-slate-800/30 flex items-center justify-between">
+                        <div className="flex flex-col items-center">
+                            <div className="w-10 h-10 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center mb-2">
+                                <UserIcon className="w-5 h-5 text-slate-300" />
+                            </div>
+                            <span className="text-[10px] text-slate-400 uppercase font-bold">From You</span>
+                        </div>
+                        
+                        <div className="flex-grow flex flex-col items-center justify-center px-2 opacity-50">
+                             <ChevronRightIcon className="w-5 h-5 text-slate-500 animate-pulse" />
+                        </div>
+        
+                        <div className="flex flex-col items-center">
+                            <div className="w-10 h-10 rounded-full bg-ai-violet/20 border border-ai-violet/50 flex items-center justify-center mb-2">
+                                <ArchitexLogo className="w-5 h-5" />
+                            </div>
+                            <span className="text-[10px] text-ai-violet uppercase font-bold">To App</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div className="mb-6 p-2 bg-yellow-500/10 border border-yellow-500/30 rounded-lg text-left">
+                    <p className="text-xs text-yellow-200 font-bold mb-1 flex items-center">
+                         ⚠️ CHECK YOUR WALLET
+                    </p>
+                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                        The payment comes from the wallet <b>active in your browser</b>. Ensure it is set to <b>Testnet</b> and has Test-Pi. The App Wallet (Receiver) is handled automatically.
                     </p>
                 </div>
                 
