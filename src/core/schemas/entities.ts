@@ -90,6 +90,18 @@ export interface LiquidityPoolEntity {
     totalValueLocked: number;
 }
 
+// --- Smart Contract Logic Entities ---
+export interface VestingSchedule {
+    id: string;
+    beneficiaryId: string;
+    totalAmount: number;
+    releasedAmount: number;
+    startTime: string; // ISO Date
+    cliff: number; // Seconds
+    duration: number; // Seconds
+    revocable: boolean;
+}
+
 export interface BountyEntity {
     id: string;
     projectId: string;

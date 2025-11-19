@@ -30,6 +30,7 @@ export const useArchitex = () => {
   const [arbitrators, setArbitrators] = useState<ArbitratorEntity[]>([]);
   const [availableArbitrators, setAvailableArbitrators] = useState<ArbitratorEntity[]>([]);
   const [user, setUser] = useState<UserEntity | null>(null);
+  const [userTokens, setUserTokens] = useState<TokenEntity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isProfileVisible, setIsProfileVisible] = useState(false);
 
@@ -111,7 +112,7 @@ export const useArchitex = () => {
   useEffect(() => { setIsMounted(true); }, []);
   
   const refreshUserData = async (piUser?: any) => {
-      const [userData, userProjects, publicProjs, userBounties, arbitratorsData, ordersData, serviceProvidersData, proposalsData, agreementsData, challengesData, productsData] = await Promise.all([
+      const [userData, userProjects, publicProjs, userBounties, arbitratorsData, ordersData, serviceProvidersData, proposalsData, agreementsData, challengesData, productsData, tokensData] = await Promise.all([
         api.authenticateWithPi(), 
         api.listProjects(), 
         api.listPublicProjects(),
@@ -122,7 +123,8 @@ export const useArchitex = () => {
         api.listProposals(), 
         api.listServiceAgreements(), 
         api.listDesignChallenges(),
-        api.listVendorProducts()
+        api.listVendorProducts(),
+        api.getUserTokens()
       ]);
 
       if(piUser) {
@@ -141,6 +143,7 @@ export const useArchitex = () => {
       setServiceAgreements(agreementsData);
       setDesignChallenges(challengesData);
       setProducts(productsData);
+      setUserTokens(tokensData);
       return { ordersData };
   };
 
@@ -453,8 +456,10 @@ export const useArchitex = () => {
   const handleCreateBounty = async (bountyDetails: Omit<BountyEntity, 'id' | 'createdAt' | 'status' | 'escrowState'>) => { 
       await api.createBounty(bountyDetails); 
       const updatedBounties = await api.listBounties(); 
+      const updatedTokens = await api.getUserTokens();
       setBounties(updatedBounties); 
-      addToast('Bounty Published', 'success');
+      setUserTokens(updatedTokens);
+      addToast('Bounty Published (10% Fee Applied)', 'success');
   };
   const handleSelectBounty = async (bounty: BountyEntity) => { const available = await api.listAvailableArbitrators(bounty.projectId); setAvailableArbitrators(available); setSelectedBounty(bounty); };
   const closeBountyDetailsModal = () => setSelectedBounty(null);
@@ -482,7 +487,25 @@ export const useArchitex = () => {
   // --- NFT Minting ---
   const openMintNftModal = (project: ProjectEntity) => { setProjectToMint(project); setShowMintNftModal(true); };
   const closeMintNftModal = () => { setProjectToMint(null); setShowMintNftModal(false); };
-  const handleMintNft = async (projectId: string) => { const updatedProject = await api.mintProjectAsNft(projectId); setProjects(prevProjects => prevProjects.map(p => p.id === updatedProject.id ? updatedProject : p)); addToast('NFT Minted Successfully', 'success'); };
+  const handleMintNft = async (projectId: string) => { 
+      const updatedProject = await api.mintProjectAsNft(projectId); 
+      setProjects(prevProjects => prevProjects.map(p => p.id === updatedProject.id ? updatedProject : p)); 
+      const updatedTokens = await api.getUserTokens();
+      setUserTokens(updatedTokens);
+      addToast('NFT Minted Successfully (Fee Paid)', 'success'); 
+  };
+
+  // --- Vesting Claim ---
+  const handleClaimVestedTokens = async () => {
+      try {
+          const result = await api.claimVestedTokens(user!.id);
+          addToast(`Successfully claimed ${result.claimed.toLocaleString()} ARCHI`, 'success');
+          const updatedTokens = await api.getUserTokens();
+          setUserTokens(updatedTokens);
+      } catch (e: any) {
+          addToast(e.message, 'error');
+      }
+  };
 
   // --- E-Commerce ---
   useEffect(() => {
@@ -647,6 +670,8 @@ export const useArchitex = () => {
     // Admin
     isAdminModalOpen, openAdminModal, closeAdminModal,
     // Chat
-    isChatOpen, openChat, closeChat, messages, handleSendMessage, chatContextId
+    isChatOpen, openChat, closeChat, messages, handleSendMessage, chatContextId,
+    // Wallet
+    userTokens, handleClaimVestedTokens
   };
 };

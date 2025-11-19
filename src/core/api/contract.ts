@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type, Modality } from "@google/genai";
-import { ProjectEntity, UserEntity, MaterialEntity, TokenEntity, LiquidityPoolEntity, BountyEntity, ArbitratorEntity, ProductEntity, ShippingZone, PromotionEntity, OrderEntity, OrderStatus, ServiceProviderProfile, ServiceAgreementEntity, ReputationEvent, ProposalEntity, ProofOfInstallationStatus, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, BillOfMaterialsEntry, ProposalComment, CartItem, MessageEntity } from '../schemas/entities';
+import { ProjectEntity, UserEntity, MaterialEntity, TokenEntity, LiquidityPoolEntity, BountyEntity, ArbitratorEntity, ProductEntity, ShippingZone, PromotionEntity, OrderEntity, OrderStatus, ServiceProviderProfile, ServiceAgreementEntity, ReputationEvent, ProposalEntity, ProofOfInstallationStatus, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, BillOfMaterialsEntry, ProposalComment, CartItem, MessageEntity, VestingSchedule } from '../schemas/entities';
 import { PiCoinIcon } from '../../components/icons/PiCoinIcon';
 import { ArchitexLogo } from '../../components/icons/ArchitexLogo';
 
@@ -206,6 +206,19 @@ const defaultMaterials: MaterialEntity[] = [
     { id: 'mat_02', name: 'Recycled Aluminum', description: '90% recycled content, lightweight.', supplierId: 'supp_02', ecoRating: 8.8, price: 80, imageUrl: 'https://placehold.co/100x100/B0BEC5/000000/png?text=Alum' },
 ];
 
+const defaultVestingSchedules: VestingSchedule[] = [
+    {
+        id: 'vest_01',
+        beneficiaryId: 'user_01',
+        totalAmount: 100000,
+        releasedAmount: 25000,
+        startTime: new Date(Date.now() - 86400000 * 90).toISOString(), // Started 90 days ago
+        cliff: 0,
+        duration: 31536000, // 1 Year
+        revocable: false
+    }
+];
+
 
 // --- LIVE STATE (Loaded from LocalStorage) ---
 let mockProjects = load('projects', defaultProjects);
@@ -214,12 +227,18 @@ export let mockUserTokens = load('tokens', defaultUserTokens); // Export for Swa
 let mockBounties = load('bounties', defaultBounties);
 let mockOrders = load('orders', defaultOrders);
 let mockUser = load('user', defaultUser);
-let mockProducts = load('products', defaultProducts); // Now loading rich products
+let mockProducts = load('products', defaultProducts); 
 let mockMaterials = load('materials', defaultMaterials);
+let mockVestingSchedules = load<VestingSchedule[]>('vestingSchedules', defaultVestingSchedules);
 let mockMessages = load<MessageEntity[]>('messages', [
     { id: 'msg_01', contextId: 'proj_01', senderId: 'sys', senderName: 'System', text: 'Project initialized.', timestamp: new Date(Date.now() - 86400000 * 3).toISOString(), isSystem: true },
     { id: 'msg_02', contextId: 'proj_01', senderId: 'user_01', senderName: 'ArchieBot', text: 'I need to change the floor texture.', timestamp: new Date(Date.now() - 86400000 * 2).toISOString() }
 ]);
+
+// --- TOKENOMICS CONSTANTS ---
+export const TOKEN_TOTAL_SUPPLY = 1_000_000_000;
+export const TOKEN_SYMBOL = 'ARCHI';
+export let treasuryBalance = load('treasuryBalance', 250000); // Seeded treasury
 
 const mockArbitrators: ArbitratorEntity[] = [
     { id: 'arb_01', name: 'Judge Pi', specialty: 'Residential Design', fee: 50, resolutionRate: 98, casesResolved: 152, avatarUrl: 'https://placehold.co/100x100/020617/FDB300/png?text=JP', conflictsWithProjectIds: ['proj_03'] },
@@ -281,6 +300,50 @@ export const authenticateWithPi = async (): Promise<UserEntity> => {
     return { ...mockUser }; 
 };
 
+export const getUserTokens = async (): Promise<TokenEntity[]> => {
+    return [...mockUserTokens];
+};
+
+// --- Vesting Contract Logic ---
+export const getVestingSchedule = async (userId: string): Promise<VestingSchedule | undefined> => {
+    return mockVestingSchedules.find(v => v.beneficiaryId === userId);
+};
+
+export const claimVestedTokens = async (userId: string): Promise<{ claimed: number, newBalance: number }> => {
+    const idx = mockVestingSchedules.findIndex(v => v.beneficiaryId === userId);
+    if (idx === -1) throw new Error("No vesting schedule found.");
+    
+    const schedule = mockVestingSchedules[idx];
+    const now = Date.now();
+    const startTime = new Date(schedule.startTime).getTime();
+    const durationMillis = schedule.duration * 1000;
+    const cliffMillis = schedule.cliff * 1000;
+
+    if (now < startTime + cliffMillis) {
+        throw new Error("Cliff period not yet reached.");
+    }
+
+    const timeElapsed = Math.min(now - startTime, durationMillis);
+    const vested = Math.floor(schedule.totalAmount * (timeElapsed / durationMillis));
+    const claimable = vested - schedule.releasedAmount;
+
+    if (claimable <= 0) {
+        throw new Error("No tokens available to claim at this time.");
+    }
+
+    // Update Schedule
+    mockVestingSchedules[idx].releasedAmount += claimable;
+    save('vestingSchedules', mockVestingSchedules);
+
+    // Update User Balance
+    const tIdx = mockUserTokens.findIndex(t => t.symbol === 'ARCHI');
+    mockUserTokens[tIdx].balance += claimable;
+    updateTokens([...mockUserTokens]);
+
+    return { claimed: claimable, newBalance: mockUserTokens[tIdx].balance };
+};
+
+
 export const listProjects = async (): Promise<ProjectEntity[]> => { 
     return [...mockProjects]; 
 };
@@ -336,7 +399,6 @@ export const verifyAdminMfa = async (code: string): Promise<boolean> => {
 // --- AI POWERED FUNCTIONS ---
 
 export const getRoomAnalysis = async (): Promise<ScanAnalysis> => {
-    // Real AI call using Gemini to act as a surveyor simulation
     try {
         if (apiKey) {
              const response = await ai.models.generateContent({
@@ -361,7 +423,6 @@ export const getRoomAnalysis = async (): Promise<ScanAnalysis> => {
         console.error("AI Analysis failed, falling back to mock", e);
     }
 
-    // Fallback Mock
     await new Promise(resolve => setTimeout(resolve, 1500));
     return {
         dimensions: "14' x 18' (approx. 252 sq ft)",
@@ -418,7 +479,6 @@ export const generateAIProject = async (params: { roomType: string, style: strin
 
         } catch (e) {
             console.error("AI Generation failed", e);
-            // Fallback handled by initialization values
         }
     }
 
@@ -500,14 +560,21 @@ export const addLiquidity = async (amountA: number, amountB: number): Promise<bo
 export const listBounties = async (): Promise<BountyEntity[]> => { return [...mockBounties]; };
 
 export const createBounty = async (bounty: Omit<BountyEntity, 'id' | 'createdAt' | 'status' | 'escrowState'>): Promise<BountyEntity> => { 
+    // Designer Bounty Marketplace Contract Logic
+    // Enforce 10% Commission
     const platformFee = bounty.reward * 0.10; 
     const totalCost = bounty.reward + platformFee; 
+    
     const idx = mockUserTokens.findIndex(t => t.symbol === 'ARCHI'); 
+    if (mockUserTokens[idx].balance < totalCost) { throw new Error('Insufficient ARCHI balance including 10% commission.'); } 
     
-    if (mockUserTokens[idx].balance < totalCost) { throw new Error('Insufficient ARCHI balance.'); } 
-    
+    // Deduct User Balance
     mockUserTokens[idx].balance -= totalCost; 
     updateTokens([...mockUserTokens]);
+
+    // Transfer Fee to Treasury
+    treasuryBalance += platformFee;
+    save('treasuryBalance', treasuryBalance);
 
     const newBounty: BountyEntity = { ...bounty, id: `bty_${Date.now()}`, status: 'Open', escrowState: 'Unfunded', createdAt: new Date().toISOString() }; 
     mockBounties.unshift(newBounty); 
@@ -516,15 +583,23 @@ export const createBounty = async (bounty: Omit<BountyEntity, 'id' | 'createdAt'
 }
 
 export const mintProjectAsNft = async (projectId: string): Promise<ProjectEntity> => { 
+    // NFT Factory Contract Logic
+    // Fixed Fee payable in ARCHI
     const MINT_FEE = 250; 
     const idx = mockUserTokens.findIndex(t => t.symbol === 'ARCHI'); 
-    if (mockUserTokens[idx].balance < MINT_FEE) { throw new Error('Insufficient ARCHI balance for minting fee.'); } 
+    
+    if (mockUserTokens[idx].balance < MINT_FEE) { throw new Error('Insufficient ARCHI balance for minting fee (250 ARCHI).'); } 
     
     const pIdx = mockProjects.findIndex(p => p.id === projectId); 
     if (pIdx === -1) { throw new Error('Project not found'); } 
     
+    // Deduct User Balance
     mockUserTokens[idx].balance -= MINT_FEE; 
     updateTokens([...mockUserTokens]);
+
+    // Transfer Fee to Treasury
+    treasuryBalance += MINT_FEE;
+    save('treasuryBalance', treasuryBalance);
     
     mockProjects[pIdx].isNft = true; 
     mockProjects[pIdx].updatedAt = new Date().toISOString(); 
@@ -537,12 +612,6 @@ export const getDynamicAgreementText = async (bounty: BountyEntity): Promise<str
 export const fundEscrow = async (bountyId: string): Promise<BountyEntity> => { 
     const idx = mockBounties.findIndex(b => b.id === bountyId); 
     if (idx === -1) throw new Error("Bounty not found"); 
-    
-    // Assuming funding happens via external payment or token deduction. Here we assume tokens.
-    const b = mockBounties[idx]; 
-    // Note: In createBounty we already deducted tokens for 'reward'. 
-    // If 'Escrow' implies holding it, we already took it. 
-    // If this is a second step, we just update state.
     
     mockBounties[idx].escrowState = 'Funded'; 
     mockBounties[idx].status = 'In Progress'; 
@@ -583,7 +652,6 @@ export const selectArbitrator = async (bountyId: string, arbitratorId: string): 
     const a = mockArbitrators.find(a => a.id === arbitratorId); 
     if (!a) throw new Error("Arbitrator not found"); 
     
-    // Fee deduction handled in UI via Payment
     mockBounties[bIdx].status = 'Arbitration'; 
     save('bounties', mockBounties);
     return {...mockBounties[bIdx]}; 
@@ -607,7 +675,6 @@ export const resolveArbitration = async (bountyId: string, decision: 'Release' |
 };
 
 export const listVendorProducts = async (): Promise<ProductEntity[]> => { 
-    // Return from local state to allow updates
     return [...mockProducts]; 
 };
 export const listShippingZones = async (): Promise<ShippingZone[]> => { return [...mockShippingZones]; };
@@ -616,10 +683,7 @@ export const listPromotions = async (): Promise<PromotionEntity[]> => { return [
 export const createPromotion = async (promo: Omit<PromotionEntity, 'id'>): Promise<PromotionEntity> => { const newPromo: PromotionEntity = { ...promo, id: `promo_${Date.now()}`, }; mockPromotions.unshift(newPromo); return newPromo; };
 export const listOrders = async (): Promise<OrderEntity[]> => { return [...mockOrders]; };
 
-// NEW CONTRACT FUNCTION: formalize cart checkout
 export const createOrder = async (items: CartItem[], totalAmount: number): Promise<OrderEntity> => {
-    // In a real app, this would interact with the Pi Payment API and backend
-    // Here we update local state
     const newOrder: OrderEntity = {
         id: `ord_${Date.now()}`,
         userId: mockUser.id,
@@ -634,7 +698,6 @@ export const createOrder = async (items: CartItem[], totalAmount: number): Promi
     return newOrder;
 };
 
-// NEW CONTRACT FUNCTION: Calculate Sustainability
 export const calculateProjectSustainability = (materials: BillOfMaterialsEntry[]): number => {
     if (!materials.length) return 0;
     const totalScore = materials.reduce((acc, item) => acc + (item.ecoImpactScore || 0), 0);
@@ -691,9 +754,6 @@ export const confirmServiceCompletion = async (agreementId: string, userType: 'c
     const isComplete = agreement.status === 'client-confirmed' && !agreement.qualityAssuranceValidatorId || agreement.status === 'validator-confirmed'; 
     if (isComplete) { 
         agreement.status = 'complete'; 
-        // Trust score update simulation
-        // const provider = mockServiceProviders.find(p => p.id === agreement.providerId); 
-        // if(provider) { provider.trustScore = Math.min(100, provider.trustScore + 2); } 
     } 
     save('serviceAgreements', mockServiceAgreements);
     return { ...agreement }; 
@@ -716,10 +776,7 @@ export const calculateTrustScore = async (userId: string): Promise<number> => {
 
 export const listProposals = async (): Promise<ProposalEntity[]> => { 
     mockProposals.forEach(p => { 
-        // Mock time passing for voting status
-        // if (new Date() > new Date(p.endsAt) && p.status === 'Voting') { 
-        //     p.status = p.forVotes > p.againstVotes && p.turnout >= p.quorum ? 'Passed' : 'Failed'; 
-        // } 
+        // Mock time passing
     }); 
     return [...mockProposals]; 
 };
@@ -760,7 +817,6 @@ export const voteOnProposal = async (proposalId: string, vote: 'for' | 'against'
     return { ...mockProposals[idx] }; 
 };
 
-// --- New Functions for P9.4/5 ---
 export const executeProposal = async(proposalId: string): Promise<ProposalEntity> => {
     console.log(`[AdminBot] Attempting to execute proposal ${proposalId}...`);
     await new Promise(resolve => setTimeout(resolve, 1500));
@@ -798,7 +854,6 @@ export const submitProposalComment = async (proposalId: string, text: string): P
 };
 
 export const submitProofOfInstallation = async(orderId: string, photoData: string): Promise<OrderEntity> => {
-    console.log(`API: Received proof of installation for order ${orderId}`);
     await new Promise(resolve => setTimeout(resolve, 1000));
     const idx = mockOrders.findIndex(o => o.id === orderId);
     if (idx === -1) throw new Error('Order not found');
@@ -808,29 +863,23 @@ export const submitProofOfInstallation = async(orderId: string, photoData: strin
 }
 
 export const verifyProofOfInstallation = async(orderId: string): Promise<OrderEntity> => {
-    console.log(`API: Verifying proof for order ${orderId}...`);
     await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate AI verification
     const idx = mockOrders.findIndex(o => o.id === orderId);
     if (idx === -1) throw new Error('Order not found');
     
-    // Simulate successful verification
     mockOrders[idx].proofOfInstallationStatus = 'verified';
     
-    // Calculate and award cashback (e.g., 2% of order total in ARCHI)
     const CASHBACK_RATE = 0.02;
     const cashbackAmount = mockOrders[idx].total * CASHBACK_RATE;
     const archiIndex = mockUserTokens.findIndex(t => t.symbol === 'ARCHI');
     mockUserTokens[archiIndex].balance += cashbackAmount;
     updateTokens([...mockUserTokens]);
     
-    console.log(`API: Awarded ${cashbackAmount} ARCHI as cashback.`);
-    
-    // Add reputation event
     reputationEvents.push({
         id: `rev_${Date.now()}`,
         userId: mockOrders[idx].userId,
         type: 'ProofOfInstallation',
-        value: 5, // Positive reputation for contributing
+        value: 5, 
         description: `Verified physical installation for order ${orderId}`,
         timestamp: new Date().toISOString(),
     });
@@ -848,7 +897,7 @@ export const shareToPiFeed = async (projectId: string): Promise<{ success: boole
             await navigator.share({
                 title: project?.name || 'Architex Project',
                 text: `Check out this amazing design on Architex!`,
-                url: window.location.href // In a real app, this would be a deep link
+                url: window.location.href 
             });
             return { success: true, message: 'Shared successfully!' };
         } catch (err) {
@@ -857,7 +906,6 @@ export const shareToPiFeed = async (projectId: string): Promise<{ success: boole
         }
     }
 
-    console.log(`[PiSocialAPI] Fallback sharing project ${projectId}.`);
     await new Promise(resolve => setTimeout(resolve, 1200));
     return { success: true, message: 'Shared to Pi Feed (Mock)!' };
 };
@@ -920,6 +968,5 @@ export const finalizeChallenge = async (challengeId: string): Promise<DesignChal
     }
     
     save('challenges', mockDesignChallenges);
-    console.log(`[Contract] Challenge ${challengeId} finalized. Winner is ${winner.submitterName}. ${mockDesignChallenges[challengeIndex].reward} ARCHI awarded.`);
     return { ...mockDesignChallenges[challengeIndex] };
 };

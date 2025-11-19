@@ -77,7 +77,9 @@ const AppContent: React.FC = () => {
     selectedProposal, showProposalDetailsModal, openProposalDetails, closeProposalDetails, handleSubmitComment,
     // Admin & Chat
     isAdminModalOpen, openAdminModal, closeAdminModal,
-    isChatOpen, openChat, closeChat, messages, handleSendMessage, chatContextId
+    isChatOpen, openChat, closeChat, messages, handleSendMessage, chatContextId,
+    // Wallet
+    userTokens, handleClaimVestedTokens
   } = useArchitex();
 
   const renderDashboardContent = () => {
@@ -179,10 +181,12 @@ const AppContent: React.FC = () => {
             user={user} 
             projects={projects} 
             orders={orders} 
-            serviceAgreements={serviceAgreements} 
+            serviceAgreements={serviceAgreements}
+            userTokens={userTokens} 
             onConfirmDelivery={handleConfirmDelivery} 
             onRequestReturn={handleRequestReturn} 
             onConfirmServiceCompletion={handleConfirmServiceCompletion} 
+            onClaimVestedTokens={handleClaimVestedTokens}
             onClose={toggleProfile} 
           />
       )}

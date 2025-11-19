@@ -1,27 +1,30 @@
 
 import React, { useState } from 'react';
-import { UserEntity, ProjectEntity, OrderEntity, ServiceAgreementEntity } from '../core/schemas/entities';
+import { UserEntity, ProjectEntity, OrderEntity, ServiceAgreementEntity, TokenEntity } from '../core/schemas/entities';
 import { GlassPanel } from './GlassPanel';
 import { SystemStatus } from './SystemStatus';
 import { AcceleratorSubscription } from './AcceleratorSubscription';
 import { AdBanner } from './AdBanner';
 import { OrderCard } from './OrderCard';
 import { ServiceAgreementCard } from './ServiceAgreementCard';
+import { WalletPanel } from './WalletPanel'; 
 
 interface ProfileScreenProps {
     user: UserEntity;
     projects: ProjectEntity[];
     orders: OrderEntity[];
     serviceAgreements: ServiceAgreementEntity[];
+    userTokens: TokenEntity[];
     onConfirmDelivery: (orderId: string) => void;
     onRequestReturn: (orderId: string) => void;
     onConfirmServiceCompletion: (agreement: ServiceAgreementEntity) => void;
+    onClaimVestedTokens: () => Promise<void>;
     onClose: () => void;
 }
 
-type ProfileTab = 'gallery' | 'orders' | 'services';
+type ProfileTab = 'gallery' | 'orders' | 'services' | 'wallet';
 
-export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, projects, orders, serviceAgreements, onConfirmDelivery, onRequestReturn, onConfirmServiceCompletion, onClose }) => {
+export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, projects, orders, serviceAgreements, userTokens, onConfirmDelivery, onRequestReturn, onConfirmServiceCompletion, onClaimVestedTokens, onClose }) => {
     const publicProjects = projects.filter(p => p.isPublic);
     const [activeTab, setActiveTab] = useState<ProfileTab>('gallery');
 
@@ -79,7 +82,9 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, projects, or
                             </div>
                         )}
                     </div>
-                )
+                );
+            case 'wallet':
+                return <WalletPanel userTokens={userTokens} onClaim={onClaimVestedTokens} />;
         }
     }
 
@@ -99,10 +104,11 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, projects, or
                 </div>
 
                 <div className="flex-grow mt-6 flex flex-col min-h-0">
-                    <div className="flex-shrink-0 flex items-center justify-center p-1 bg-slate-900/50 rounded-full mb-4">
-                        <button onClick={() => setActiveTab('gallery')} className={`px-4 py-1.5 rounded-full font-semibold text-sm transition-colors duration-300 ${activeTab === 'gallery' ? 'bg-slate-700 text-white' : 'text-slate-300'}`}>Gallery</button>
-                        <button onClick={() => setActiveTab('orders')} className={`px-4 py-1.5 rounded-full font-semibold text-sm transition-colors duration-300 ${activeTab === 'orders' ? 'bg-slate-700 text-white' : 'text-slate-300'}`}>My Orders</button>
-                        <button onClick={() => setActiveTab('services')} className={`px-4 py-1.5 rounded-full font-semibold text-sm transition-colors duration-300 ${activeTab === 'services' ? 'bg-slate-700 text-white' : 'text-slate-300'}`}>Services</button>
+                    <div className="flex-shrink-0 flex items-center justify-center p-1 bg-slate-900/50 rounded-full mb-4 overflow-x-auto no-scrollbar">
+                        <button onClick={() => setActiveTab('gallery')} className={`px-3 py-1.5 rounded-full font-semibold text-xs transition-colors duration-300 ${activeTab === 'gallery' ? 'bg-slate-700 text-white' : 'text-slate-300'}`}>Gallery</button>
+                        <button onClick={() => setActiveTab('orders')} className={`px-3 py-1.5 rounded-full font-semibold text-xs transition-colors duration-300 ${activeTab === 'orders' ? 'bg-slate-700 text-white' : 'text-slate-300'}`}>Orders</button>
+                        <button onClick={() => setActiveTab('services')} className={`px-3 py-1.5 rounded-full font-semibold text-xs transition-colors duration-300 ${activeTab === 'services' ? 'bg-slate-700 text-white' : 'text-slate-300'}`}>Services</button>
+                        <button onClick={() => setActiveTab('wallet')} className={`px-3 py-1.5 rounded-full font-semibold text-xs transition-colors duration-300 ${activeTab === 'wallet' ? 'bg-slate-700 text-white' : 'text-slate-300'}`}>Wallet</button>
                     </div>
 
                     <div className="flex-grow overflow-y-auto pr-2">
