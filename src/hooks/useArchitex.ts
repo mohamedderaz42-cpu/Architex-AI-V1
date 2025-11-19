@@ -692,6 +692,8 @@ export const useArchitex = () => {
     // Wallet & Incentives
     userTokens, handleClaimVestedTokens, handleClaimStakingRewards, oracleData,
     // Legal
-    signedAgreements
+    signedAgreements,
+    // System Test
+    runIntegrationTest: api.runIntegrationTest
   };
 };

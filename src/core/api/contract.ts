@@ -1,5 +1,6 @@
+
 import { GoogleGenAI, Type, Modality } from "@google/genai";
-import { ProjectEntity, UserEntity, MaterialEntity, TokenEntity, LiquidityPoolEntity, BountyEntity, ArbitratorEntity, ProductEntity, ShippingZone, PromotionEntity, OrderEntity, OrderStatus, ServiceProviderProfile, ServiceAgreementEntity, ReputationEvent, ProposalEntity, ProofOfInstallationStatus, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, BillOfMaterialsEntry, ProposalComment, CartItem, MessageEntity, VestingSchedule, OracleData, FuzzTestResult, SignedAgreement } from '../schemas/entities';
+import { ProjectEntity, UserEntity, MaterialEntity, TokenEntity, LiquidityPoolEntity, BountyEntity, ArbitratorEntity, ProductEntity, ShippingZone, PromotionEntity, OrderEntity, OrderStatus, ServiceProviderProfile, ServiceAgreementEntity, ReputationEvent, ProposalEntity, ProofOfInstallationStatus, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, BillOfMaterialsEntry, ProposalComment, CartItem, MessageEntity, VestingSchedule, OracleData, FuzzTestResult, SignedAgreement, IntegrationTestResult, IntegrationTestStep } from '../schemas/entities';
 import { PiCoinIcon } from '../../components/icons/PiCoinIcon';
 import { ArchitexLogo } from '../../components/icons/ArchitexLogo';
 
@@ -253,6 +254,15 @@ export const TOKEN_SYMBOL = 'ARCHI';
 export let treasuryBalance = load('treasuryBalance', 250000); // Seeded treasury
 export let escrowBalance = load('escrowBalance', 0); // Total value in escrow
 
+// --- LAUNCH PARAMETERS (For Admin Bot) ---
+export const LAUNCH_PARAMETERS = {
+    BOUNTY_COMMISSION_RATE: 0.10, // 10% to Treasury
+    NFT_MINT_FEE: 250, // ARCHI to Treasury
+    QUORUM_PERCENTAGE: 0.20,
+    STAKING_APY: 0.15,
+    LIQUIDITY_MINING_APY: 0.25
+};
+
 // --- ORACLE STATE ---
 export let oracleState: OracleData = load('oracleState', {
     price: 21.5, // 1 PiUSD = 21.5 ARCHI
@@ -303,8 +313,6 @@ let mockChallengeSubmissions = load<ChallengeSubmissionEntity[]>('submissions', 
 ]);
 
 const TOTAL_VOTING_POWER = 1000000; 
-const STAKING_APY = 0.15; // 15% APY for Designer Staking
-const MINING_APY = 0.25; // 25% APY for Liquidity Mining
 
 // --- HELPERS ---
 // Helper to persist token balance changes easily
@@ -495,7 +503,7 @@ export const stakeArchi = async (amount: number): Promise<UserEntity> => {
     const now = new Date();
     const lastClaim = new Date(mockUser.stakingPosition.lastClaimTime);
     const timeDiff = (now.getTime() - lastClaim.getTime()) / (1000 * 60 * 60 * 24 * 365); // Years
-    const pendingReward = mockUser.stakingPosition.amount * STAKING_APY * timeDiff;
+    const pendingReward = mockUser.stakingPosition.amount * LAUNCH_PARAMETERS.STAKING_APY * timeDiff;
     
     mockUser.stakingPosition.unclaimedRewards += pendingReward;
     mockUser.stakingPosition.amount += amount;
@@ -514,7 +522,7 @@ export const unstakeArchi = async (amount: number): Promise<UserEntity> => {
     const now = new Date();
     const lastClaim = new Date(mockUser.stakingPosition.lastClaimTime);
     const timeDiff = (now.getTime() - lastClaim.getTime()) / (1000 * 60 * 60 * 24 * 365);
-    const pendingReward = mockUser.stakingPosition.amount * STAKING_APY * timeDiff;
+    const pendingReward = mockUser.stakingPosition.amount * LAUNCH_PARAMETERS.STAKING_APY * timeDiff;
     
     mockUser.stakingPosition.unclaimedRewards += pendingReward;
     mockUser.stakingPosition.amount -= amount;
@@ -535,7 +543,7 @@ export const claimStakingRewards = async (): Promise<UserEntity> => {
     const now = new Date();
     const lastClaim = new Date(mockUser.stakingPosition.lastClaimTime);
     const timeDiff = (now.getTime() - lastClaim.getTime()) / (1000 * 60 * 60 * 24 * 365);
-    const pendingReward = mockUser.stakingPosition.amount * STAKING_APY * timeDiff;
+    const pendingReward = mockUser.stakingPosition.amount * LAUNCH_PARAMETERS.STAKING_APY * timeDiff;
     const totalReward = mockUser.stakingPosition.unclaimedRewards + pendingReward;
 
     if (totalReward <= 0) throw new Error("No rewards to claim");
@@ -567,7 +575,7 @@ export const stakeLpTokens = async (amount: number): Promise<UserEntity> => {
     const now = new Date();
     const lastClaim = new Date(mockUser.miningPosition.lastClaimTime);
     const timeDiff = (now.getTime() - lastClaim.getTime()) / (1000 * 60 * 60 * 24 * 365);
-    const pendingReward = mockUser.miningPosition.lpTokenAmount * MINING_APY * timeDiff; // Higher APY for mining
+    const pendingReward = mockUser.miningPosition.lpTokenAmount * LAUNCH_PARAMETERS.LIQUIDITY_MINING_APY * timeDiff; // Higher APY for mining
 
     mockUser.miningPosition.unclaimedRewards += pendingReward;
     mockUser.miningPosition.lpTokenAmount += amount; // We assume LP tokens were burned/transferred from wallet
@@ -583,7 +591,7 @@ export const claimMiningRewards = async (): Promise<UserEntity> => {
     const now = new Date();
     const lastClaim = new Date(mockUser.miningPosition.lastClaimTime);
     const timeDiff = (now.getTime() - lastClaim.getTime()) / (1000 * 60 * 60 * 24 * 365);
-    const pendingReward = mockUser.miningPosition.lpTokenAmount * MINING_APY * timeDiff;
+    const pendingReward = mockUser.miningPosition.lpTokenAmount * LAUNCH_PARAMETERS.LIQUIDITY_MINING_APY * timeDiff;
     const totalReward = mockUser.miningPosition.unclaimedRewards + pendingReward;
     
     if (totalReward <= 0) throw new Error("No rewards to claim");
@@ -827,9 +835,8 @@ export const addLiquidity = async (amountA: number, amountB: number): Promise<bo
 export const listBounties = async (): Promise<BountyEntity[]> => { return [...mockBounties]; };
 
 export const createBounty = async (bounty: Omit<BountyEntity, 'id' | 'createdAt' | 'status' | 'escrowState'>): Promise<BountyEntity> => { 
-    // Designer Bounty Marketplace Contract Logic
-    // Enforce 10% Commission
-    const platformFee = bounty.reward * 0.10; 
+    // REVENUE ROUTING: Enforce 10% Commission to Treasury
+    const platformFee = bounty.reward * LAUNCH_PARAMETERS.BOUNTY_COMMISSION_RATE; 
     const totalCost = bounty.reward + platformFee; 
     
     const idx = mockUserTokens.findIndex(t => t.symbol === 'ARCHI'); 
@@ -839,10 +846,29 @@ export const createBounty = async (bounty: Omit<BountyEntity, 'id' | 'createdAt'
     mockUserTokens[idx].balance -= totalCost; 
     updateTokens([...mockUserTokens]);
 
-    // Transfer Fee to Treasury
+    // 1. Route Fee to Treasury (Multi-Sig)
     treasuryBalance += platformFee;
     save('treasuryBalance', treasuryBalance);
 
+    // 2. Hold Reward (Simulated here, funded officially in fundEscrow step usually, 
+    // but for simplicity we reserve it now or assume fundEscrow pulls from wallet again. 
+    // To match fundEscrow logic: fundEscrow pulls the reward. createBounty pulls the FEE? 
+    // Let's align: createBounty pulls fee. fundEscrow pulls reward.
+    // Re-adjusting to match typical flow: createBounty just lists it. 
+    // But to prevent spam, we take fee now.
+    
+    // Correct Flow:
+    // createBounty -> Deducts Fee (to Treasury)
+    // fundEscrow -> Deducts Reward (to Escrow)
+    
+    // The code above deducted both. Let's fix to deduct only fee here? 
+    // No, previous implementation deducted both. Let's stick to standard escrow flow:
+    // Deduct FEE now. User funds REWARD later.
+    // Rolling back deduction of reward.
+    
+    mockUserTokens[idx].balance += bounty.reward; // Refund reward portion, keep fee deducted.
+    updateTokens([...mockUserTokens]); // Persist refund.
+    
     const newBounty: BountyEntity = { ...bounty, id: `bty_${Date.now()}`, status: 'Open', escrowState: 'Unfunded', createdAt: new Date().toISOString() }; 
     mockBounties.unshift(newBounty); 
     save('bounties', mockBounties);
@@ -850,12 +876,11 @@ export const createBounty = async (bounty: Omit<BountyEntity, 'id' | 'createdAt'
 }
 
 export const mintProjectAsNft = async (projectId: string): Promise<ProjectEntity> => { 
-    // NFT Factory Contract Logic
-    // Fixed Fee payable in ARCHI
-    const MINT_FEE = 250; 
+    // REVENUE ROUTING: 100% of Mint Fee to Treasury
+    const MINT_FEE = LAUNCH_PARAMETERS.NFT_MINT_FEE; 
     const idx = mockUserTokens.findIndex(t => t.symbol === 'ARCHI'); 
     
-    if (mockUserTokens[idx].balance < MINT_FEE) { throw new Error('Insufficient ARCHI balance for minting fee (250 ARCHI).'); } 
+    if (mockUserTokens[idx].balance < MINT_FEE) { throw new Error('Insufficient ARCHI balance for minting fee.'); } 
     
     const pIdx = mockProjects.findIndex(p => p.id === projectId); 
     if (pIdx === -1) { throw new Error('Project not found'); } 
@@ -864,7 +889,7 @@ export const mintProjectAsNft = async (projectId: string): Promise<ProjectEntity
     mockUserTokens[idx].balance -= MINT_FEE; 
     updateTokens([...mockUserTokens]);
 
-    // Transfer Fee to Treasury
+    // Route to Treasury
     treasuryBalance += MINT_FEE;
     save('treasuryBalance', treasuryBalance);
     
@@ -883,23 +908,24 @@ export const fundEscrow = async (bountyId: string): Promise<BountyEntity> => {
     if (idx === -1) throw new Error("Bounty not found"); 
     
     const bounty = mockBounties[idx];
+    const tIdx = mockUserTokens.findIndex(t => t.symbol === 'ARCHI');
     
-    // Sign Agreement first (auto-sign for flow simplicity if not exists, but UI handles it)
+    if (mockUserTokens[tIdx].balance < bounty.reward) {
+         throw new Error("Insufficient ARCHI to fund escrow.");
+    }
+
+    // Sign Agreement first
     await signAgreement('Bounty', bountyId, await getDynamicAgreementText(bounty));
 
-    // Move funds from User (already deducted in createBounty? No, createBounty deduces reward + fee, but bounty logic usually reserves it. 
-    // In this improved flow: createBounty takes FEE. fundEscrow takes REWARD.
-    // Re-reading createBounty: it takes totalCost (reward + fee). So funds are already in "Contract" (User Balance deducted).
-    // We need to move them to "Escrow Balance".
-    
-    // In createBounty, we deducted funds. They effectively went to "Platform Pending". 
-    // Now we explicitly mark them as "Escrowed".
+    // REVENUE ROUTING: 100% of Reward to Escrow Contract
+    mockUserTokens[tIdx].balance -= bounty.reward;
+    updateTokens([...mockUserTokens]);
+
+    escrowBalance += bounty.reward;
+    save('escrowBalance', escrowBalance);
     
     mockBounties[idx].escrowState = 'Funded'; 
     mockBounties[idx].status = 'In Progress'; 
-    
-    escrowBalance += bounty.reward;
-    save('escrowBalance', escrowBalance);
     save('bounties', mockBounties);
     return {...mockBounties[idx]}; 
 };
@@ -914,7 +940,7 @@ export const releaseEscrow = async (bountyId: string): Promise<BountyEntity> => 
     mockBounties[idx].escrowState = 'Released'; 
     mockBounties[idx].status = 'Complete'; 
     
-    // Move funds from Escrow to Winner (Simulated)
+    // REVENUE ROUTING: Funds leave Escrow to Winner (External Wallet)
     escrowBalance -= bounty.reward;
     save('escrowBalance', escrowBalance);
 
@@ -958,16 +984,16 @@ export const resolveArbitration = async (bountyId: string, decision: 'Release' |
     mockBounties[idx].status = 'Complete'; 
     mockBounties[idx].escrowState = decision === 'Release' ? 'Released' : 'Refunded'; 
     
+    // REVENUE ROUTING: Funds leave Escrow
     escrowBalance -= bounty.reward;
     save('escrowBalance', escrowBalance);
 
     if (decision === 'Refund') { 
-        // Return funds to User
+        // Return funds to User Wallet
         const tIdx = mockUserTokens.findIndex(t => t.symbol === 'ARCHI'); 
         mockUserTokens[tIdx].balance += bounty.reward; 
         updateTokens([...mockUserTokens]);
     } 
-    // If Release: Funds go to winner (implied external wallet)
     
     save('bounties', mockBounties);
     return {...mockBounties[idx]}; 
@@ -1045,7 +1071,8 @@ export const fundServiceEscrow = async (agreementId: string, validatorId?: strin
     mockServiceAgreements[idx].status = 'funded'; 
     if (validatorId) mockServiceAgreements[idx].qualityAssuranceValidatorId = validatorId; 
     
-    escrowBalance += agreement.price; // Should be PiUSD logic, effectively same simulated pool
+    // REVENUE ROUTING: 100% of Price to Escrow
+    escrowBalance += agreement.price; 
     save('escrowBalance', escrowBalance);
     save('serviceAgreements', mockServiceAgreements);
     return { ...mockServiceAgreements[idx] }; 
@@ -1062,6 +1089,7 @@ export const confirmServiceCompletion = async (agreementId: string, userType: 'c
     const isComplete = agreement.status === 'client-confirmed' && !agreement.qualityAssuranceValidatorId || agreement.status === 'validator-confirmed'; 
     if (isComplete) { 
         agreement.status = 'complete'; 
+        // REVENUE ROUTING: Release from Escrow to Provider
         escrowBalance -= agreement.price;
         save('escrowBalance', escrowBalance);
     } 
@@ -1354,5 +1382,71 @@ export const executeFuzzTest = async (): Promise<FuzzTestResult> => {
         status: 'Passed',
         logs: [...logs, "All invariants held secure."],
         coverage: 100
+    };
+};
+
+// --- SYSTEM INTEGRATION TEST (Final Verification) ---
+
+export const runIntegrationTest = async (): Promise<IntegrationTestResult> => {
+    const steps: IntegrationTestStep[] = [];
+    const initialTreasury = treasuryBalance;
+    const initialEscrow = escrowBalance;
+    let success = true;
+
+    // Helper to log steps
+    const logStep = (name: string, result: 'Passed' | 'Failed', details: string) => {
+        steps.push({ name, status: result, details });
+        if (result === 'Failed') success = false;
+    };
+
+    // 1. Create Bounty Flow Verification
+    try {
+        const reward = 1000;
+        const fee = reward * LAUNCH_PARAMETERS.BOUNTY_COMMISSION_RATE;
+        
+        // Setup test user balance if needed
+        const archiIdx = mockUserTokens.findIndex(t => t.symbol === 'ARCHI');
+        if (mockUserTokens[archiIdx].balance < reward + fee) {
+            mockUserTokens[archiIdx].balance += 2000; // Grant tokens for test
+        }
+        
+        // Step 1: Create Bounty (Fee should go to Treasury)
+        const preCreateTreasury = treasuryBalance;
+        const bounty = await createBounty({ projectId: 'test_proj', title: 'Test Bounty', description: 'Integration Test', reward });
+        
+        if (treasuryBalance === preCreateTreasury + fee) {
+            logStep("Revenue Routing (Fee)", "Passed", `Treasury increased by exact fee amount (${fee} ARCHI).`);
+        } else {
+            logStep("Revenue Routing (Fee)", "Failed", `Treasury mismatch. Expected +${fee}, got +${treasuryBalance - preCreateTreasury}`);
+        }
+
+        // Step 2: Fund Escrow (Reward should go to Escrow Contract)
+        const preFundEscrow = escrowBalance;
+        await fundEscrow(bounty.id);
+        
+        if (escrowBalance === preFundEscrow + reward) {
+            logStep("Escrow Locking", "Passed", `Escrow balance increased by exact reward amount (${reward} ARCHI).`);
+        } else {
+            logStep("Escrow Locking", "Failed", `Escrow mismatch. Expected +${reward}, got +${escrowBalance - preFundEscrow}`);
+        }
+
+        // Step 3: Release Escrow (Funds should leave Contract)
+        await releaseEscrow(bounty.id);
+        if (escrowBalance === preFundEscrow) { // Should return to pre-fund state (assuming no other txs)
+             logStep("Escrow Release", "Passed", "Funds correctly released from Escrow Contract.");
+        } else {
+             logStep("Escrow Release", "Failed", "Funds remain trapped or leaked from Escrow.");
+        }
+
+    } catch (e: any) {
+        logStep("Execution Error", "Failed", e.message);
+    }
+
+    return {
+        timestamp: new Date().toISOString(),
+        success,
+        steps,
+        finalTreasuryBalance: treasuryBalance,
+        finalEscrowBalance: escrowBalance
     };
 };

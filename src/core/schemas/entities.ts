@@ -1,3 +1,4 @@
+
 import type { FC, SVGProps } from 'react';
 
 export type ProjectStatus = 'Scanning' | 'Designing' | 'Sourcing' | 'Complete';
@@ -130,6 +131,20 @@ export interface FuzzTestResult {
     status: 'Passed' | 'Failed';
     logs: string[];
     coverage: number;
+}
+
+export interface IntegrationTestStep {
+    name: string;
+    status: 'Pending' | 'Running' | 'Passed' | 'Failed';
+    details: string;
+}
+
+export interface IntegrationTestResult {
+    timestamp: string;
+    success: boolean;
+    steps: IntegrationTestStep[];
+    finalTreasuryBalance: number;
+    finalEscrowBalance: number;
 }
 
 export interface SignedAgreement {
