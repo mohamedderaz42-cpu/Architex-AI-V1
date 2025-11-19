@@ -4,9 +4,14 @@ import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity,
 import * as api from '../core/api/contract';
 import { getProactiveTip, guidedScanInstructions } from '../core/ux-engine/engine';
 
-declare const Pi: any;
+// Define Window interface extension for Pi
+declare global {
+  interface Window {
+    Pi: any;
+  }
+}
 
-// Use a relative path for the backend URL to work with Vercel's proxying.
+// Use a relative path for the backend URL to work with Vercel's proxying and Netlify redirects.
 const BACKEND_URL = '/api';
 
 export type Phase = 'intro' | 'dashboard';
@@ -107,6 +112,15 @@ export const useArchitex = () => {
   const initialize = async () => {
     setIsLoading(true);
     try {
+        // SAFELY ACCESS PI via window object
+        if (!window.Pi) {
+            console.warn("Pi SDK not detected on window object. Running in mock mode.");
+            await refreshUserData();
+            setPhase('dashboard');
+            setIsLoading(false);
+            return;
+        }
+
         const scopes = ['username', 'payments'];
         
         // IMPORTANT: Handle incomplete payments (Sandbox/Testnet Requirement)
@@ -135,7 +149,7 @@ export const useArchitex = () => {
             }
         };
 
-        const piUser = await Pi.authenticate(scopes, onIncompletePaymentFound);
+        const piUser = await window.Pi.authenticate(scopes, onIncompletePaymentFound);
         console.log("Pi Auth Successful. User:", piUser.username);
         await refreshUserData(piUser);
         setPhase('dashboard');
@@ -163,6 +177,14 @@ export const useArchitex = () => {
    */
   const processPiPayment = async (amount: number, memo: string, metadata: object): Promise<string | null> => {
       setPaymentError(null);
+
+      // Fallback for Mock Mode if Pi is not available
+      if (!window.Pi) {
+          console.warn("Pi SDK missing. Simulating payment success.");
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          return `sim_tx_${Date.now()}`;
+      }
+
       return new Promise(async (resolve) => {
           try {
               const paymentData = { amount, memo, metadata };
@@ -215,19 +237,12 @@ export const useArchitex = () => {
                   },
               };
               
-              await Pi.createPayment(paymentData, callbacks);
+              await window.Pi.createPayment(paymentData, callbacks);
 
           } catch (error: any) {
-              // Only fallback to simulation if strictly necessary or dev mode
-              if (process.env.NODE_ENV === 'development' && !window.navigator.userAgent.includes('PiBrowser')) {
-                  console.warn("Simulating successful payment (Dev Mode).");
-                  await new Promise(resolveWait => setTimeout(resolveWait, 1500));
-                  resolve(`sim_tx_${Date.now()}`);
-              } else {
-                  console.error("Payment failed.", error);
-                  setPaymentError(error.message || "Payment failed to initialize.");
-                  resolve(null);
-              }
+              console.error("Payment failed.", error);
+              setPaymentError(error.message || "Payment failed to initialize.");
+              resolve(null);
           }
       });
   };
