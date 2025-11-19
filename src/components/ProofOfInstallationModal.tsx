@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { GlassPanel } from './GlassPanel';
 import { OrderEntity } from '../core/schemas/entities';
@@ -38,7 +39,7 @@ export const ProofOfInstallationModal: React.FC<ProofOfInstallationModalProps> =
     };
 
     const message = isComplete 
-        ? `Verification complete! We've sent ${cashbackAmount} ARCHI to your wallet. Thanks for helping build a trusted marketplace!`
+        ? `Verification successful! You've earned a utility reward for helping maintain the integrity of our decentralized network.`
         : `Your order #${order.id.slice(-4)} contains items that require installation. Upload a photo of the completed work to receive a ${cashbackAmount} ARCHI cashback reward!`;
 
     return (
@@ -47,31 +48,40 @@ export const ProofOfInstallationModal: React.FC<ProofOfInstallationModalProps> =
                 <ArchieBot message={message} />
                 
                 {isComplete ? (
-                    <div className="text-center my-6">
-                        <CheckCircleIcon className="w-20 h-20 mx-auto text-eco-green mb-4" />
-                        <h3 className="text-2xl font-bold text-white">Reward Claimed!</h3>
-                        <div className="mt-4 inline-flex items-center space-x-2 bg-eco-green/20 text-eco-green px-4 py-2 rounded-full">
-                            <ArchitexLogo className="w-6 h-6" />
-                            <span className="text-xl font-bold">+{cashbackAmount}</span>
+                    <div className="text-center my-8 bg-slate-900/50 p-6 rounded-2xl border border-eco-green/30">
+                        <div className="relative inline-block">
+                            <div className="absolute inset-0 bg-eco-green blur-xl opacity-20 rounded-full"></div>
+                            <CheckCircleIcon className="relative w-16 h-16 mx-auto text-eco-green mb-4" />
                         </div>
+                        <h3 className="text-xl font-bold text-white">Utility Reward Claimed!</h3>
+                        <div className="mt-4 inline-flex items-center space-x-3 bg-gradient-to-r from-slate-800 to-slate-700 border border-white/10 px-6 py-3 rounded-xl shadow-lg">
+                            <ArchitexLogo className="w-8 h-8 text-ai-violet" />
+                            <div className="text-left">
+                                <span className="block text-2xl font-bold text-white leading-none">+{cashbackAmount}</span>
+                                <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">ARCHI Token</span>
+                            </div>
+                        </div>
+                        <p className="text-xs text-slate-400 mt-4">
+                            Your Trust Score has increased.
+                        </p>
                     </div>
                 ) : (
                     <div className="my-6">
-                        <label htmlFor="file-upload" className="relative cursor-pointer bg-slate-900/50 border-2 border-dashed border-slate-600 rounded-xl flex flex-col items-center justify-center p-6 hover:border-ai-violet transition-colors">
-                            <UploadCloudIcon className="w-10 h-10 text-slate-500 mb-2" />
-                            <span className="text-sm font-semibold text-slate-300">Click to upload photo</span>
+                        <label htmlFor="file-upload" className="relative cursor-pointer bg-slate-900/50 border-2 border-dashed border-slate-600 rounded-xl flex flex-col items-center justify-center p-6 hover:border-ai-violet transition-colors group">
+                            <UploadCloudIcon className="w-10 h-10 text-slate-500 mb-2 group-hover:text-ai-violet transition-colors" />
+                            <span className="text-sm font-semibold text-slate-300 group-hover:text-white">Click to upload photo</span>
                             <span className="text-xs text-slate-500">PNG, JPG, GIF up to 10MB</span>
                             <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={handleFileChange} />
                         </label>
-                        {fileName && <p className="text-xs text-slate-400 mt-2 text-center">Selected: {fileName}</p>}
+                        {fileName && <p className="text-xs text-slate-400 mt-2 text-center bg-slate-800/50 py-1 px-2 rounded">Selected: {fileName}</p>}
                     </div>
                 )}
 
 
                 <div className="flex flex-col space-y-3">
                     {isComplete ? (
-                        <button onClick={onCancel} className="w-full px-6 py-3 bg-ai-violet/80 border border-ai-violet/90 rounded-full text-lg font-semibold text-white">
-                            Close
+                        <button onClick={onCancel} className="w-full px-6 py-3 bg-white text-brand-dark rounded-full text-lg font-bold hover:bg-slate-200 transition-colors">
+                            Return to Dashboard
                         </button>
                     ) : (
                         <>

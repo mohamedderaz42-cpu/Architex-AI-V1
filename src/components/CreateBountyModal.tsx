@@ -1,23 +1,27 @@
+
 import React, { useState } from 'react';
 import { GlassPanel } from './GlassPanel';
 import { ArchitexLogo } from './icons/ArchitexLogo';
 import { AwardIcon } from './icons/AwardIcon';
-import { BountyEntity } from '../core/schemas/entities';
+import { BountyEntity, UserEntity } from '../core/schemas/entities';
+import { calculateFeeDetails } from '../core/api/contract';
+import { TrendingUpIcon } from './icons/TrendingUpIcon';
 
 interface CreateBountyModalProps {
+    user: UserEntity | null;
     onConfirm: (bountyDetails: Omit<BountyEntity, 'id' | 'createdAt' | 'status' | 'escrowState'>) => Promise<void>;
     onCancel: () => void;
 }
 
-export const CreateBountyModal: React.FC<CreateBountyModalProps> = ({ onConfirm, onCancel }) => {
+export const CreateBountyModal: React.FC<CreateBountyModalProps> = ({ user, onConfirm, onCancel }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [reward, setReward] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const rewardAmount = parseFloat(reward) || 0;
-    const platformFee = rewardAmount * 0.10;
-    const totalCost = rewardAmount + platformFee;
+    const { fee, effectiveRate, discountPercent, originalFee } = calculateFeeDetails(rewardAmount, user?.stakedArchi || 0);
+    const totalCost = rewardAmount + fee;
 
     const handleSubmit = async () => {
         if (!title || !description || rewardAmount <= 0) return;
@@ -45,7 +49,7 @@ export const CreateBountyModal: React.FC<CreateBountyModalProps> = ({ onConfirm,
                 <AwardIcon className="w-16 h-16 mx-auto text-eco-green mb-4" />
                 <h2 className="text-2xl font-bold text-white">Create a Bounty</h2>
                 <p className="text-slate-300 mt-2 text-sm">
-                    Commission a designer by posting a bounty. A 10% platform fee applies.
+                    Commission a designer by posting a bounty.
                 </p>
 
                 <div className="mt-6 text-left space-y-3">
@@ -57,15 +61,35 @@ export const CreateBountyModal: React.FC<CreateBountyModalProps> = ({ onConfirm,
                     </div>
                 </div>
                 
-                <div className="my-6 p-3 bg-slate-900/50 rounded-xl border border-white/10 text-sm">
-                    <div className="flex justify-between items-center">
-                        <span className="text-slate-400">Platform Fee (10%):</span>
-                        <span className="font-semibold text-white">{platformFee.toLocaleString()} ARCHI</span>
+                <div className="my-6 p-4 bg-slate-900/50 rounded-xl border border-white/10 text-sm">
+                    <h4 className="text-xs font-bold text-slate-500 uppercase mb-2 text-left">Cost Breakdown</h4>
+                    
+                    <div className="flex justify-between items-center mb-1">
+                         <span className="text-slate-400">Bounty Reward:</span>
+                         <span className="font-mono text-white">{rewardAmount.toLocaleString()}</span>
                     </div>
-                     <div className="flex justify-between items-center mt-1">
-                        <span className="text-slate-400 font-medium">Total Cost:</span>
+
+                    <div className="flex justify-between items-center mb-2 pb-2 border-b border-white/5">
+                        <div className="flex items-center">
+                            <span className="text-slate-400 mr-2">Platform Fee:</span>
+                            {discountPercent > 0 && (
+                                <span className="text-[10px] bg-pi-gold/20 text-pi-gold px-1.5 py-0.5 rounded flex items-center font-bold">
+                                    <TrendingUpIcon className="w-3 h-3 mr-1" /> -{discountPercent}% STAKER BONUS
+                                </span>
+                            )}
+                        </div>
+                        <div className="flex flex-col items-end">
+                            <span className="font-mono text-white">{fee.toFixed(2)}</span>
+                            {discountPercent > 0 && (
+                                <span className="text-[10px] text-slate-500 line-through">{originalFee.toFixed(2)}</span>
+                            )}
+                        </div>
+                    </div>
+
+                     <div className="flex justify-between items-center pt-1">
+                        <span className="text-slate-200 font-bold">Total Cost:</span>
                         <div className="flex items-center space-x-2">
-                            <ArchitexLogo className="w-4 h-4" />
+                            <ArchitexLogo className="w-4 h-4 text-ai-violet" />
                             <span className="text-lg font-bold text-white">{totalCost.toLocaleString()}</span>
                         </div>
                     </div>
