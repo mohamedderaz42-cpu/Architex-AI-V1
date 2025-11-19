@@ -1,6 +1,7 @@
 
-import React, { useState } from 'react';
-import { ProjectEntity } from '../core/schemas/entities';
+
+import React, { useState, useEffect } from 'react';
+import { ProjectEntity, SustainabilityReport } from '../core/schemas/entities';
 import { GlassPanel } from './GlassPanel';
 import { SunMoonIcon } from './icons/SunMoonIcon';
 import { ShareIcon } from './icons/ShareIcon';
@@ -9,8 +10,9 @@ import { ChatIcon } from './icons/ChatIcon';
 import { RefreshIcon } from './icons/RefreshIcon';
 import { WrenchIcon } from './icons/WrenchIcon';
 import { PiCoinIcon } from './icons/PiCoinIcon';
+import { LeafIcon } from './icons/LeafIcon';
 import { useToast } from './Toast';
-import { requestServiceQuote } from '../core/api/contract';
+import { requestServiceQuote, generateSustainabilityReport, optimizeProjectForSustainability } from '../core/api/contract';
 
 interface ProjectDetailsModalProps {
     project: ProjectEntity;
@@ -22,18 +24,28 @@ interface ProjectDetailsModalProps {
     onModify?: (project: ProjectEntity) => void;
 }
 
-type ProjectTab = 'visuals' | 'bom';
+type ProjectTab = 'visuals' | 'bom' | 'sustainability';
 
-export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ project, onGetQuotes, onClose, onShare, onSubmitToChallenge, onOpenChat, onModify }) => {
+export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ project: initialProject, onGetQuotes, onClose, onShare, onSubmitToChallenge, onOpenChat, onModify }) => {
+    const [project, setProject] = useState(initialProject);
     const [activeTab, setActiveTab] = useState<ProjectTab>('visuals');
-    const [timeOfDay, setTimeOfDay] = useState(12); // 0-24
+    const [timeOfDay, setTimeOfDay] = useState(12); 
     const [isRegenerating, setIsRegenerating] = useState(false);
+    const [sustainabilityReport, setSustainabilityReport] = useState<SustainabilityReport | null>(null);
+    const [isOptimizing, setIsOptimizing] = useState(false);
     const { addToast } = useToast();
+
+    // Fetch Sustainability Report on open if tab clicked
+    useEffect(() => {
+        if (activeTab === 'sustainability' && !sustainabilityReport) {
+            generateSustainabilityReport(project.id).then(setSustainabilityReport);
+        }
+    }, [activeTab, project.id]);
 
     const handleRegenerate = async () => {
         if (onModify) {
             setIsRegenerating(true);
-            await new Promise(resolve => setTimeout(resolve, 1500)); // Mock AI delay
+            await new Promise(resolve => setTimeout(resolve, 1500)); 
             onModify(project);
             setIsRegenerating(false);
         }
@@ -44,26 +56,34 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ projec
         addToast('Quote Request Sent to Service Providers', 'success');
     };
 
-    // Calculate lighting simulation styles
+    const handleOptimizeGreen = async () => {
+        setIsOptimizing(true);
+        try {
+            const optimized = await optimizeProjectForSustainability(project.id);
+            setProject(optimized); // Update local state
+            const newReport = await generateSustainabilityReport(project.id);
+            setSustainabilityReport(newReport);
+            addToast("Project optimized for sustainability!", "success");
+        } catch (e) {
+            addToast("Optimization failed.", "error");
+        } finally {
+            setIsOptimizing(false);
+        }
+    };
+
     const getLightingStyle = () => {
-        // Brightness curve: Peak at 12 (1.1), low at 0/24 (0.4)
         const brightness = 0.4 + 0.7 * Math.sin((timeOfDay / 24) * Math.PI);
-        
-        // Overlay color for tinting
         let overlayColor = 'transparent';
         let overlayOpacity = 0;
 
         if (timeOfDay < 5 || timeOfDay > 20) {
-            // Night: Blue tint
-            overlayColor = '#0f172a'; // Slate-900
+            overlayColor = '#0f172a'; 
             overlayOpacity = 0.4;
         } else if (timeOfDay >= 5 && timeOfDay < 9) {
-            // Sunrise: Orange/Pink
-            overlayColor = '#f97316'; // Orange-500
+            overlayColor = '#f97316'; 
             overlayOpacity = 0.2;
         } else if (timeOfDay >= 17 && timeOfDay <= 20) {
-            // Sunset: Red/Orange
-            overlayColor = '#ef4444'; // Red-500
+            overlayColor = '#ef4444'; 
             overlayOpacity = 0.25;
         }
 
@@ -75,30 +95,25 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ projec
 
     const lighting = getLightingStyle();
 
+    // --- Renderers ---
+
     const renderVisuals = () => (
         <>
-            {/* 3D Viewer Placeholder */}
             <div className="relative w-full aspect-video bg-slate-900/50 rounded-lg border border-white/10 flex items-center justify-center overflow-hidden group">
-                {/* Base Image with Brightness Filter */}
                 <img 
                     src={project.thumbnailUrl} 
                     alt={project.name} 
                     className="w-full h-full object-cover transition-all duration-500"
                     style={{ filter: lighting.filter }} 
                 />
-                
-                {/* Atmospheric Overlay */}
                 <div 
                     className="absolute inset-0 transition-all duration-500 pointer-events-none"
                     style={lighting.overlay}
                 ></div>
-
                 <div className="absolute inset-0 bg-grid-ai-violet opacity-10 pointer-events-none" style={{
                     backgroundImage: 'linear-gradient(to right, #8B5CF6 1px, transparent 1px), linear-gradient(to bottom, #8B5CF6 1px, transparent 1px)',
                     backgroundSize: '30px 30px',
                 }}></div>
-                
-                {/* Controls Overlay */}
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
                     <button 
                         onClick={handleRegenerate}
@@ -111,8 +126,6 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ projec
                         <span className="text-xs font-bold mt-2 bg-black/50 px-2 py-1 rounded backdrop-blur-sm">Regenerate AI</span>
                     </button>
                 </div>
-                
-                {/* Chat Overlay Button */}
                 {onOpenChat && (
                     <button 
                         onClick={onOpenChat}
@@ -123,8 +136,6 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ projec
                     </button>
                 )}
             </div>
-            
-            {/* Environmental Simulation Controls */}
             <div className="mt-4 bg-slate-800/50 p-3 rounded-xl border border-white/5">
                 <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-2">
@@ -150,7 +161,6 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ projec
                     <span>Night</span>
                 </div>
             </div>
-            
             <div className="mt-4 grid grid-cols-2 gap-3">
                  <button
                     onClick={() => onShare(project)}
@@ -164,13 +174,14 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ projec
                     Submit
                 </button>
             </div>
-             <button onClick={() => setActiveTab('bom')} className="w-full mt-3 py-3 text-white font-semibold bg-ai-violet/80 rounded-full transition-colors duration-300 hover:bg-ai-violet">
-                View Bill of Materials
-            </button>
-            
-            <p className="text-[10px] text-slate-500 text-center mt-4 px-4 leading-tight">
-                Disclaimer: AI-generated visualizations are for conceptual purposes only. Please verify all structural measurements and material requirements with a certified professional before construction.
-            </p>
+            <div className="flex mt-3 gap-2">
+                 <button onClick={() => setActiveTab('bom')} className="flex-1 py-3 text-white font-semibold bg-ai-violet/80 rounded-full transition-colors duration-300 hover:bg-ai-violet text-sm">
+                    Bill of Materials
+                </button>
+                 <button onClick={() => setActiveTab('sustainability')} className="flex-1 py-3 text-white font-semibold bg-eco-green/80 rounded-full transition-colors duration-300 hover:bg-eco-green flex items-center justify-center text-sm">
+                    <LeafIcon className="w-4 h-4 mr-2" /> Eco-Impact
+                </button>
+            </div>
         </>
     );
 
@@ -181,7 +192,7 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ projec
                     <p className="text-center text-slate-500 py-8">No materials generated for this project yet.</p>
                 )}
                 {project.billOfMaterials.map((item, idx) => (
-                    <div key={idx} className="bg-slate-900/50 p-3 rounded-xl border border-white/10 flex items-center justify-between">
+                    <div key={idx} className={`bg-slate-900/50 p-3 rounded-xl border flex items-center justify-between ${item.isSustainable ? 'border-eco-green/30' : 'border-white/10'}`}>
                         <div className="flex items-center space-x-3">
                             {item.imageUrl ? (
                                 <img src={item.imageUrl} alt={item.name} className="w-12 h-12 rounded bg-black/30 object-cover" />
@@ -191,11 +202,14 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ projec
                                 </div>
                             )}
                             <div>
-                                <h5 className="font-bold text-white text-sm">{item.name || `Material ${idx + 1}`}</h5>
+                                <h5 className="font-bold text-white text-sm flex items-center">
+                                    {item.name || `Material ${idx + 1}`}
+                                    {item.isSustainable && <LeafIcon className="w-3 h-3 text-eco-green ml-1" />}
+                                </h5>
                                 <div className="text-xs text-slate-400 flex items-center space-x-2">
                                     <span>Qty: {item.quantity}</span>
                                     {item.estimatedCost && (
-                                        <span className="flex items-center text-pi-gold"><PiCoinIcon className="w-3 h-3 mr-1"/>{item.estimatedCost}</span>
+                                        <span className="flex items-center text-pi-gold"><PiCoinIcon className="w-3 h-3 mr-1"/>{item.estimatedCost.toFixed(2)}</span>
                                     )}
                                 </div>
                             </div>
@@ -224,6 +238,63 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ projec
         </div>
     );
 
+    const renderSustainability = () => {
+        if (!sustainabilityReport) {
+            return <div className="text-center text-slate-400 py-10">Generating Impact Report...</div>;
+        }
+        const scoreColor = sustainabilityReport.energyEfficiencyScore >= 80 ? 'text-eco-green' : sustainabilityReport.energyEfficiencyScore >= 50 ? 'text-pi-gold' : 'text-red-400';
+
+        return (
+            <div className="flex flex-col h-full animate-fade-in">
+                <div className="text-center mb-4">
+                    <div className={`text-4xl font-bold ${scoreColor} mb-1`}>{sustainabilityReport.energyEfficiencyScore}/100</div>
+                    <p className="text-xs text-slate-400 uppercase tracking-widest">Energy Efficiency Score</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="bg-slate-900/50 p-3 rounded-xl border border-white/10 text-center">
+                        <div className="text-lg font-bold text-white">{sustainabilityReport.carbonFootprint}</div>
+                        <div className="text-[10px] text-slate-400">kg CO2e Footprint</div>
+                    </div>
+                    <div className="bg-slate-900/50 p-3 rounded-xl border border-white/10 text-center">
+                        <div className="text-lg font-bold text-eco-green flex justify-center items-center">
+                            <PiCoinIcon className="w-4 h-4 mr-1" />{sustainabilityReport.estimatedAnnualSavings}
+                        </div>
+                        <div className="text-[10px] text-slate-400">Est. Yearly Savings</div>
+                    </div>
+                </div>
+
+                <div className="bg-slate-800/30 p-3 rounded-xl border border-white/5 flex-grow mb-4">
+                    <h5 className="text-xs font-bold text-white mb-2 flex items-center"><LeafIcon className="w-3 h-3 mr-1 text-eco-green"/> AI Recommendations</h5>
+                    <ul className="space-y-2">
+                        {sustainabilityReport.recommendations.map((rec, i) => (
+                            <li key={i} className="text-xs text-slate-300 flex items-start">
+                                <span className="mr-2">•</span> {rec}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+
+                <button 
+                    onClick={handleOptimizeGreen}
+                    disabled={isOptimizing}
+                    className="w-full py-3 bg-gradient-to-r from-eco-green to-green-600 text-white font-bold rounded-full shadow-glow-green hover:shadow-lg transition-all flex items-center justify-center"
+                >
+                    {isOptimizing ? (
+                        <RefreshIcon className="w-5 h-5 animate-spin" />
+                    ) : (
+                        <>
+                            <LeafIcon className="w-5 h-5 mr-2" /> Optimize for Green
+                        </>
+                    )}
+                </button>
+                <button onClick={() => setActiveTab('visuals')} className="w-full mt-2 py-2 text-slate-400 text-sm hover:text-white">
+                    Back to Visuals
+                </button>
+            </div>
+        );
+    };
+
     return (
         <div className="fixed inset-0 bg-brand-dark/80 backdrop-blur-md flex items-center justify-center z-[70] p-4">
             <GlassPanel className="w-full max-w-md p-6 animate-fade-in flex flex-col max-h-[90vh]">
@@ -237,7 +308,9 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ projec
                 </div>
 
                 <div className="flex-grow overflow-hidden">
-                     {activeTab === 'visuals' ? renderVisuals() : renderBOM()}
+                     {activeTab === 'visuals' && renderVisuals()}
+                     {activeTab === 'bom' && renderBOM()}
+                     {activeTab === 'sustainability' && renderSustainability()}
                 </div>
             </GlassPanel>
         </div>

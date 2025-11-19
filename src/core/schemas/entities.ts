@@ -66,6 +66,7 @@ export interface BillOfMaterialsEntry {
   estimatedCost?: number;
   ecoImpactScore?: number; 
   imageUrl?: string;
+  isSustainable?: boolean;
 }
 
 export interface ProjectEntity {
@@ -84,6 +85,7 @@ export interface ProjectEntity {
   modificationCount?: number;
   isNft?: boolean;
   likes?: number;
+  sustainabilityReport?: SustainabilityReport;
 }
 
 export interface MaterialEntity {
@@ -257,6 +259,8 @@ export interface ProductEntity {
     inStock: number;
     imageUrl: string;
     tags?: string[];
+    sustainabilityCertifications?: string[]; // e.g., 'FSC', 'Energy Star'
+    isEcoFriendly?: boolean;
 }
 
 export interface CartItem {
@@ -384,6 +388,13 @@ export interface ScanAnalysis {
     style: string;
     lighting: string;
     summary: string;
+}
+
+export interface SustainabilityReport {
+    carbonFootprint: number; // kg CO2e
+    energyEfficiencyScore: number; // 0-100
+    estimatedAnnualSavings: number; // PiUSD
+    recommendations: string[];
 }
 
 // --- UX Engine Entities ---

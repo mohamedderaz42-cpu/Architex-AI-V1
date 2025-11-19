@@ -1,5 +1,6 @@
 
-import { ProjectEntity, UserEntity, MaterialEntity, TokenEntity, LiquidityPoolEntity, BountyEntity, ArbitratorEntity, ProductEntity, ShippingZone, PromotionEntity, OrderEntity, OrderStatus, ServiceProviderProfile, ServiceAgreementEntity, ReputationEvent, ProposalEntity, ProofOfInstallationStatus, DesignChallengeEntity, ChallengeSubmissionEntity, InventoryConflict, CartOptimization, VestingSchedule, IntegrationTestResult, StressTestResult, FuzzTestResult, ScanAnalysis, SignedAgreement, OrganizationEntity, TeamMemberEntity, DesignTemplateEntity, SpendingMetric } from '../schemas/entities';
+
+import { ProjectEntity, UserEntity, MaterialEntity, TokenEntity, LiquidityPoolEntity, BountyEntity, ArbitratorEntity, ProductEntity, ShippingZone, PromotionEntity, OrderEntity, OrderStatus, ServiceProviderProfile, ServiceAgreementEntity, ReputationEvent, ProposalEntity, ProofOfInstallationStatus, DesignChallengeEntity, ChallengeSubmissionEntity, InventoryConflict, CartOptimization, VestingSchedule, IntegrationTestResult, StressTestResult, FuzzTestResult, ScanAnalysis, SignedAgreement, OrganizationEntity, TeamMemberEntity, DesignTemplateEntity, SpendingMetric, SustainabilityReport } from '../schemas/entities';
 import { PiCoinIcon } from '../../components/icons/PiCoinIcon';
 import { ArchitexLogo } from '../../components/icons/ArchitexLogo';
 
@@ -18,7 +19,7 @@ export const mockProjects: ProjectEntity[] = [
     ownerName: 'ArchieBot',
     name: 'Living Room Remodel',
     status: 'Designing',
-    billOfMaterials: [{ materialId: 'mat_01', quantity: 20, status: 'Pending', name: 'Teak Wood', estimatedCost: 15.50, imageUrl: 'https://placehold.co/100x100/8B5CF6/FFFFFF/png?text=Teak' }],
+    billOfMaterials: [{ materialId: 'mat_01', quantity: 20, status: 'Pending', name: 'Teak Wood', estimatedCost: 15.50, imageUrl: 'https://placehold.co/100x100/8B5CF6/FFFFFF/png?text=Teak', isSustainable: false }],
     createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
     updatedAt: new Date().toISOString(),
     isPublic: true,
@@ -131,10 +132,13 @@ const mockArbitrators: ArbitratorEntity[] = [
     }
 ];
 
+// --- UPDATE: Mocks now include sustainability fields ---
 const mockProducts: ProductEntity[] = [
-    { id: 'prod_01', vendorId: 'user_01', name: 'Eco-Friendly Timber', price: 15.50, inStock: 500, imageUrl: 'https://placehold.co/100x100/10B981/FFFFFF/png?text=Timber', tags: ['requires-installation', 'Structural'] },
-    { id: 'prod_02', vendorId: 'user_01', name: 'Recycled Steel Beams', price: 125.00, inStock: 80, imageUrl: 'https://placehold.co/100x100/8B5CF6/FFFFFF/png?text=Steel', tags: ['requires-installation', 'Structural'] },
-    { id: 'prod_03', vendorId: 'user_01', name: 'Low-VOC Paint', price: 45.00, inStock: 250, imageUrl: 'https://placehold.co/100x100/FDB300/FFFFFF/png?text=Paint', tags: ['Decor'] },
+    { id: 'prod_01', vendorId: 'user_01', name: 'Eco-Friendly Timber', price: 15.50, inStock: 500, imageUrl: 'https://placehold.co/100x100/10B981/FFFFFF/png?text=Timber', tags: ['requires-installation', 'Structural'], sustainabilityCertifications: ['FSC Certified'], isEcoFriendly: true },
+    { id: 'prod_02', vendorId: 'user_01', name: 'Recycled Steel Beams', price: 125.00, inStock: 80, imageUrl: 'https://placehold.co/100x100/8B5CF6/FFFFFF/png?text=Steel', tags: ['requires-installation', 'Structural'], sustainabilityCertifications: ['Recycled Content'], isEcoFriendly: true },
+    { id: 'prod_03', vendorId: 'user_01', name: 'Low-VOC Paint', price: 45.00, inStock: 250, imageUrl: 'https://placehold.co/100x100/FDB300/FFFFFF/png?text=Paint', tags: ['Decor'], sustainabilityCertifications: ['GreenGuard Gold'], isEcoFriendly: true },
+    { id: 'prod_04', vendorId: 'user_01', name: 'Standard Drywall', price: 12.00, inStock: 1000, imageUrl: 'https://placehold.co/100x100/CCCCCC/000000/png?text=Drywall', tags: ['Structural'], isEcoFriendly: false },
+    { id: 'prod_05', vendorId: 'user_01', name: 'Hemp Insulation', price: 22.00, inStock: 300, imageUrl: 'https://placehold.co/100x100/10B981/FFFFFF/png?text=Hemp', tags: ['Insulation'], sustainabilityCertifications: ['Carbon Negative'], isEcoFriendly: true },
 ];
 
 let mockOrders: OrderEntity[] = [
@@ -213,7 +217,6 @@ let mockChallengeSubmissions: ChallengeSubmissionEntity[] = [
     { id: 'sub_02', challengeId: 'dc_01', projectId: 'proj_xx', submitterId: 'user_02', submitterName: 'CreativeCat', votes: 1840, thumbnailUrl: 'https://placehold.co/400x300/10B981/020617/png?text=Green+Kitchen', projectName: 'Verdant Kitchen' }
 ];
 
-// FIX: Changed to `let` to allow mutation for DAO sponsorship
 export let treasuryBalance = 1250000;
 export const escrowBalance = 450000;
 
@@ -558,4 +561,68 @@ export const negotiateRate = async (orgId: string, volume: number): Promise<numb
     if (volume > 50000) return 0.04; // 4% for high volume
     if (volume > 10000) return 0.05; // 5%
     return 0.07; // 7% default negotiated
+};
+
+// --- Sustainability Logic ---
+export const generateSustainabilityReport = async (projectId: string): Promise<SustainabilityReport> => {
+    // Mock AI Analysis based on BOM
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    const project = mockProjects.find(p => p.id === projectId);
+    
+    let ecoScore = 70;
+    let carbon = 1500;
+    
+    // Adjust based on materials
+    if (project?.billOfMaterials) {
+        const greenItems = project.billOfMaterials.filter(i => i.isSustainable).length;
+        const totalItems = project.billOfMaterials.length;
+        if (totalItems > 0) {
+            ecoScore += (greenItems / totalItems) * 25;
+            carbon -= (greenItems * 50);
+        }
+    }
+
+    return {
+        carbonFootprint: carbon,
+        energyEfficiencyScore: Math.min(100, Math.round(ecoScore)),
+        estimatedAnnualSavings: 125.50, // PiUSD
+        recommendations: [
+            "Replace standard bulbs with LED smart lighting",
+            "Upgrade windows to double-glazing",
+            "Use recycled timber for flooring"
+        ]
+    };
+};
+
+export const optimizeProjectForSustainability = async (projectId: string): Promise<ProjectEntity> => {
+    await new Promise(resolve => setTimeout(resolve, 2500)); // Simulate AI processing
+    const idx = mockProjects.findIndex(p => p.id === projectId);
+    if (idx === -1) throw new Error("Project not found");
+    
+    const project = mockProjects[idx];
+    // Swap items in BOM for eco versions
+    const newBOM = project.billOfMaterials.map(item => {
+        // Mock logic: if item is not sustainable, swap it
+        if (!item.isSustainable) {
+            return {
+                ...item,
+                name: `Eco-Friendly ${item.name}`, // Rename
+                isSustainable: true,
+                estimatedCost: (item.estimatedCost || 10) * 1.15 // Eco items are slightly pricier but better
+            };
+        }
+        return item;
+    });
+
+    mockProjects[idx] = { ...project, billOfMaterials: newBOM, updatedAt: new Date().toISOString() };
+    return mockProjects[idx];
+};
+
+export const updateProductSustainability = async (productId: string, isEco: boolean, certs: string[]) => {
+    const prod = mockProducts.find(p => p.id === productId);
+    if (prod) {
+        prod.isEcoFriendly = isEco;
+        prod.sustainabilityCertifications = certs;
+    }
+    return prod;
 };

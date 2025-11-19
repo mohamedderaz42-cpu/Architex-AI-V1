@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity, ProductEntity, ScanAnalysis, MessageEntity, ServiceProviderProfile, ArbitratorProfile } from '../core/schemas/entities';
 import * as api from '../core/api/contract';
@@ -151,10 +152,15 @@ export const useArchitex = () => {
 
   const toggleProfile = () => setIsProfileVisible(prev => !prev);
   const handleProjectInteraction = async (project: ProjectEntity) => { setSelectedProject(project); setShowProjectDetailsModal(true); };
+  
+  // Handles manual refresh OR AI optimization update
   const handleModifyProject = async (project: ProjectEntity) => {
       const updated = await api.incrementProjectModification(project.id);
-      setProjects(prev => prev.map(p => p.id === updated.id ? updated : p));
-      setSelectedProject(updated);
+      // Re-merge with local changes if optimization happened
+      const merged = { ...updated, ...project }; 
+      
+      setProjects(prev => prev.map(p => p.id === merged.id ? merged : p));
+      setSelectedProject(merged);
   };
   const closeUpsellModal = () => setShowUpsellModal(false);
 
