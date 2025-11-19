@@ -10,49 +10,51 @@ Architex is a decentralized application (dApp) built on the Pi Network that revo
 *   **Service Hub**: Hire certified professionals for installation.
 *   **DAO Governance**: Vote on platform proposals using staked tokens.
 *   **Enterprise Portal**: Bulk procurement and team management for B2B clients.
+*   **🛡️ Private AI (Beta)**: A local Python microservice utilizing OpenMined concepts for privacy-preserving design.
 
 ## 🛠 Tech Stack
 
 *   **Frontend**: React 18, Vite, Tailwind CSS, Lucide React (Icons)
-*   **Backend**: Node.js, Express (Serverless ready)
+*   **Backend (Orchestrator)**: Node.js, Express
+*   **Privacy Layer**: Python, FastAPI (Ready for PySyft)
 *   **Blockchain**: Pi Network SDK (Sandbox Mode)
-*   **Architecture**: Adapter Pattern for API abstraction.
 
 ## 📦 Setup & Installation
 
+### 1. Frontend & Node Backend
 1.  Clone the repository.
 2.  Install dependencies:
     ```bash
     npm install
     ```
-3.  Create a `.env` file with your Pi Network API Key (Required for Real Payments):
-    ```
-    PI_API_KEY=your_api_key_here
-    ```
-4.  Run the development server:
+3.  Run the development server:
     ```bash
     npm run dev
     ```
+
+### 2. (Optional) Privacy Layer Setup
+To enable the local AI privacy simulation:
+
+1.  Navigate to the python directory:
+    ```bash
+    cd backend/python
+    ```
+2.  Install Python dependencies:
+    ```bash
+    pip install -r requirements.txt
+    ```
+3.  Run the Privacy Service:
+    ```bash
+    python main.py
+    ```
+    *The service will run on http://localhost:8000*
 
 ## 🏗 Architecture & Data Flow
 
 The application uses a centralized **Contract Adapter** (`src/core/api/contract.ts`) to manage all data interactions. 
 
-### Current State (Prototype Mode)
-*   **Data Source**: In-memory mock data located in `src/core/api/contract.ts`.
-*   **Persistence**: Temporary (refreshes on reload).
-*   **Blockchain**: Pi Sandbox (Testnet).
-
-### Roadmap to Production (Mainnet)
-To switch this application to production, the following steps are required:
-
-1.  **Database Integration**: 
-    *   Replace functions in `src/core/api/contract.ts` to fetch data from a real backend (e.g., Supabase, Firebase, or MongoDB) instead of returning mock arrays.
-2.  **Pi Network Mainnet**:
-    *   Update `index.html` to set `sandbox: false`.
-    *   Ensure `PI_API_KEY` is set in the hosting environment variables.
-3.  **Asset Storage**:
-    *   Connect image uploads (Proof of Installation) to cloud storage (AWS S3 or IPFS).
+### Future Integration: OpenMined (PySyft)
+We have prepared a dedicated Python microservice (`backend/python/main.py`) designed to act as a **Domain Node**. When Pi Network officially integrates OpenMined, this service will handle **Federated Learning**, allowing the AI to learn from room designs without the raw images ever leaving the user's device.
 
 ## 🚀 Deployment
 
