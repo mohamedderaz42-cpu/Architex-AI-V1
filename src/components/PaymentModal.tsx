@@ -1,15 +1,18 @@
+
 import React from 'react';
 import { GlassPanel } from './GlassPanel';
 import { Model3dIcon } from './icons/Model3dIcon';
 import { PiCoinIcon } from './icons/PiCoinIcon';
+import { XCircleIcon } from './icons/XCircleIcon';
 
 interface PaymentModalProps {
     onConfirm: () => void;
     onCancel: () => void;
     isProcessing: boolean;
+    error?: string | null;
 }
 
-export const PaymentModal: React.FC<PaymentModalProps> = ({ onConfirm, onCancel, isProcessing }) => {
+export const PaymentModal: React.FC<PaymentModalProps> = ({ onConfirm, onCancel, isProcessing, error }) => {
     return (
         <div className="fixed inset-0 bg-brand-dark/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
             <GlassPanel className="w-full max-w-sm p-8 text-center animate-fade-in">
@@ -28,6 +31,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ onConfirm, onCancel,
                         </div>
                     </div>
                 </div>
+                
+                {error && (
+                    <div className="mb-6 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-sm text-red-300 flex items-center">
+                        <XCircleIcon className="w-5 h-5 mr-2 flex-shrink-0" />
+                        <span className="text-left">{error}</span>
+                    </div>
+                )}
 
                 <div className="flex flex-col space-y-3">
                     <button
@@ -43,7 +53,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ onConfirm, onCancel,
                         ) : (
                              <PiCoinIcon className="w-6 h-6 mr-2" />
                         )}
-                        {isProcessing ? 'Processing...' : 'Confirm & Pay'}
+                        {isProcessing ? 'Processing...' : error ? 'Retry Payment' : 'Confirm & Pay'}
                     </button>
                     <button
                         onClick={onCancel}

@@ -11,15 +11,13 @@ const PI_API_URL = 'https://api.minepi.com';
 app.use(cors());
 app.use(express.json());
 
-// In-memory store (Note: In serverless functions like Vercel, this resets frequently. 
-// For production, verify against the transaction ID or use a database like MongoDB/Postgres)
-const payments = {};
+// Initialize Router
+const router = express.Router();
 
 /**
  * Endpoint: /api/approve_payment
- * Called by the frontend when Pi SDK returns onReadyForServerApproval
  */
-app.post('/approve_payment', async (req, res) => {
+router.post('/approve_payment', async (req, res) => {
   const { paymentId } = req.body;
   if (!paymentId) {
     return res.status(400).json({ error: 'paymentId is required' });
@@ -29,7 +27,7 @@ app.post('/approve_payment', async (req, res) => {
 
   if (!PI_API_KEY) {
     console.warn('[VERCEL API] PI_API_KEY is missing. Requests to Pi Network will fail.');
-    return res.status(500).json({ error: 'Server configuration error: Missing API Key' });
+    return res.status(500).json({ error: 'Server configuration error: Missing PI_API_KEY' });
   }
 
   try {
@@ -59,9 +57,8 @@ app.post('/approve_payment', async (req, res) => {
 
 /**
  * Endpoint: /api/complete_payment
- * Called by the frontend when Pi SDK returns onReadyForServerCompletion
  */
-app.post('/complete_payment', async (req, res) => {
+router.post('/complete_payment', async (req, res) => {
   const { paymentId, txid } = req.body;
   if (!paymentId || !txid) {
     return res.status(400).json({ error: 'paymentId and txid are required' });
@@ -70,7 +67,7 @@ app.post('/complete_payment', async (req, res) => {
   console.log(`[VERCEL API] Completing paymentId: ${paymentId} with txid: ${txid}`);
 
   if (!PI_API_KEY) {
-     return res.status(500).json({ error: 'Server configuration error: Missing API Key' });
+     return res.status(500).json({ error: 'Server configuration error: Missing PI_API_KEY' });
   }
 
   try {
@@ -88,9 +85,6 @@ app.post('/complete_payment', async (req, res) => {
 
     console.log(`[VERCEL API] Payment ${paymentId} completed and verified on blockchain.`);
     
-    // Here is where you would typically deliver the digital asset to the user in your database
-    // e.g., database.updateUser({ ... unlockFeature: true ... })
-
     res.json({ success: true, message: 'Payment completed and product delivered.' });
 
   } catch (error) {
@@ -101,5 +95,11 @@ app.post('/complete_payment', async (req, res) => {
     });
   }
 });
+
+// Mount the router at /api to match the frontend requests and vercel.json rewrite
+app.use('/api', router);
+
+// Fallback for direct matches if Vercel strips prefix (defensive coding)
+app.use('/', router);
 
 module.exports = app;

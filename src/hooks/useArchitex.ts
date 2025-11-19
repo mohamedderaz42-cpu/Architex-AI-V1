@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity } from '../core/schemas/entities';
 import * as api from '../core/api/contract';
@@ -29,6 +30,7 @@ export const useArchitex = () => {
   const [currentScanStep, setCurrentScanStep] = useState(0);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   const scanIntervalRef = useRef<number | null>(null);
   
   // Upsell & Bounty Flow
@@ -160,6 +162,7 @@ export const useArchitex = () => {
    * Handles the Create -> Approve -> Complete lifecycle for any payment.
    */
   const processPiPayment = async (amount: number, memo: string, metadata: object): Promise<string | null> => {
+      setPaymentError(null);
       return new Promise(async (resolve) => {
           try {
               const paymentData = { amount, memo, metadata };
@@ -172,10 +175,13 @@ export const useArchitex = () => {
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ paymentId }),
                         });
-                        if(!res.ok) throw new Error("Server approval failed");
-                      } catch(e) { 
+                        if(!res.ok) {
+                            const errData = await res.json();
+                            throw new Error(errData.error || "Server approval failed");
+                        }
+                      } catch(e: any) { 
                           console.error("Approval Error", e); 
-                          // Throwing here stops the Pi SDK flow
+                          setPaymentError(`Approval Failed: ${e.message}`);
                           throw e;
                       }
                   },
@@ -187,10 +193,14 @@ export const useArchitex = () => {
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ paymentId, txid }),
                         });
-                        if(!res.ok) throw new Error("Server completion failed");
+                        if(!res.ok) {
+                             const errData = await res.json();
+                             throw new Error(errData.error || "Server completion failed");
+                        }
                         resolve(txid);
-                      } catch(e) { 
+                      } catch(e: any) { 
                           console.error("Completion Error", e); 
+                          setPaymentError(`Completion Failed: ${e.message}`);
                           resolve(null); 
                       }
                   },
@@ -200,13 +210,14 @@ export const useArchitex = () => {
                   },
                   onError: (error: Error, payment: any) => {
                       console.error('Pi Payment Error:', error, payment);
+                      setPaymentError(`Payment Error: ${error.message}`);
                       resolve(null);
                   },
               };
               
               await Pi.createPayment(paymentData, callbacks);
 
-          } catch (error) {
+          } catch (error: any) {
               // Only fallback to simulation if strictly necessary or dev mode
               if (process.env.NODE_ENV === 'development' && !window.navigator.userAgent.includes('PiBrowser')) {
                   console.warn("Simulating successful payment (Dev Mode).");
@@ -214,6 +225,7 @@ export const useArchitex = () => {
                   resolve(`sim_tx_${Date.now()}`);
               } else {
                   console.error("Payment failed.", error);
+                  setPaymentError(error.message || "Payment failed to initialize.");
                   resolve(null);
               }
           }
@@ -228,13 +240,17 @@ export const useArchitex = () => {
           const newProject = await api.generateModelFromScan();
           setProjects(prev => [newProject, ...prev]);
           setActiveTab('design');
+          setShowPaymentModal(false);
       }
       
       setIsProcessingPayment(false);
-      setShowPaymentModal(false);
+      // Do not close modal on error, let user see error
   };
   
-  const cancelPayment = () => setShowPaymentModal(false);
+  const cancelPayment = () => {
+      setShowPaymentModal(false);
+      setPaymentError(null);
+  };
 
   // --- Bounty, Agreement, and Escrow Flow ---
   const openCreateBountyModal = () => setShowCreateBountyModal(true);
@@ -373,7 +389,8 @@ export const useArchitex = () => {
   return {
     phase, isMounted, activeTab, projects, bounties, arbitrators, availableArbitrators, user, isLoading, uxTip, orders, serviceProviders, serviceAgreements, proposals, designChallenges,
     initialize, setActiveTab, toggleProfile, isProfileVisible,
-    isScanning, scanProgress, currentScanInstruction, startScan, cancelScan, showPaymentModal, confirmPayment, cancelPayment, isProcessingPayment,
+    isScanning, scanProgress, currentScanInstruction, startScan, cancelScan, 
+    showPaymentModal, confirmPayment, cancelPayment, isProcessingPayment, paymentError,
     handleProjectInteraction, showUpsellModal, closeUpsellModal, showProjectDetailsModal, selectedProject, setShowProjectDetailsModal, handleGetQuotes,
     showCreateBountyModal, openCreateBountyModal, closeCreateBountyModal, handleCreateBounty, selectedBounty, handleSelectBounty, closeBountyDetailsModal,
     showAgreementModal, agreementText, handleInitiateFunding, handleConfirmFunding, closeAgreementModal, handleRaiseDispute, handleReleaseFunds, handleSelectArbitrator,

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { GlassPanel } from './components/GlassPanel';
 import { IconButton } from './components/IconButton';
@@ -38,7 +39,7 @@ const App: React.FC = () => {
   const {
     phase, isMounted, activeTab, projects, bounties, arbitrators, availableArbitrators, uxTip, user, orders, serviceProviders, serviceAgreements, proposals, designChallenges,
     initialize, setActiveTab, isScanning, scanProgress, currentScanInstruction, startScan, cancelScan,
-    showPaymentModal, confirmPayment, cancelPayment, isProcessingPayment, isProfileVisible, toggleProfile,
+    showPaymentModal, confirmPayment, cancelPayment, isProcessingPayment, paymentError, isProfileVisible, toggleProfile,
     handleProjectInteraction, showUpsellModal, closeUpsellModal, showCreateBountyModal, openCreateBountyModal,
     closeCreateBountyModal, handleCreateBounty, showMintNftModal, projectToMint, openMintNftModal,
     closeMintNftModal, handleMintNft, selectedBounty, handleSelectBounty, closeBountyDetailsModal,
@@ -131,7 +132,7 @@ const App: React.FC = () => {
         </footer>
       </div>
 
-      {showPaymentModal && <PaymentModal onConfirm={confirmPayment} onCancel={cancelPayment} isProcessing={isProcessingPayment} />}
+      {showPaymentModal && <PaymentModal onConfirm={confirmPayment} onCancel={cancelPayment} isProcessing={isProcessingPayment} error={paymentError} />}
       {isProfileVisible && user && <ProfileScreen user={user} projects={projects} orders={orders} serviceAgreements={serviceAgreements} onConfirmDelivery={handleConfirmDelivery} onRequestReturn={handleRequestReturn} onConfirmServiceCompletion={handleConfirmServiceCompletion} onClose={toggleProfile} />}
       {showUpsellModal && <UpsellModal onConfirm={() => { setActiveTab('market'); closeUpsellModal(); }} onCancel={closeUpsellModal}/>}
       {showCreateBountyModal && <CreateBountyModal onConfirm={handleCreateBounty} onCancel={closeCreateBountyModal}/>}
