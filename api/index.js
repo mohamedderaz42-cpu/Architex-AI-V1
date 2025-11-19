@@ -26,9 +26,12 @@ router.post('/approve_payment', async (req, res) => {
 
   console.log(`[API] Processing approval for paymentId: ${paymentId}`);
 
+  // CRITICAL CHANGE: Fail if no API key is present. Do not fake success.
   if (!PI_API_KEY) {
-    console.warn('[API] PI_API_KEY is missing. Requests to Pi Network will fail.');
-    return res.status(500).json({ error: 'Server configuration error: Missing PI_API_KEY' });
+    console.error('[API] Error: PI_API_KEY is missing in Netlify Environment Variables.');
+    return res.status(500).json({ 
+      error: 'Server Configuration Error: PI_API_KEY is missing. Please add it in Netlify Site Settings.' 
+    });
   }
 
   try {
@@ -49,9 +52,10 @@ router.post('/approve_payment', async (req, res) => {
 
   } catch (error) {
     console.error('[API] Failed to approve payment:', error.response?.data || error.message);
+    // Return the specific error from Pi Network to the frontend
     res.status(500).json({ 
-      error: 'Failed to approve payment on Pi Network',
-      details: error.response?.data 
+      error: 'Pi Network Approval Failed',
+      details: error.response?.data || error.message
     });
   }
 });
@@ -68,7 +72,10 @@ router.post('/complete_payment', async (req, res) => {
   console.log(`[API] Completing paymentId: ${paymentId} with txid: ${txid}`);
 
   if (!PI_API_KEY) {
-     return res.status(500).json({ error: 'Server configuration error: Missing PI_API_KEY' });
+    console.error('[API] Error: PI_API_KEY is missing.');
+     return res.status(500).json({ 
+       error: 'Server Configuration Error: PI_API_KEY is missing. Please add it in Netlify Site Settings.' 
+     });
   }
 
   try {
@@ -91,8 +98,8 @@ router.post('/complete_payment', async (req, res) => {
   } catch (error) {
     console.error('[API] Failed to complete payment:', error.response?.data || error.message);
     res.status(500).json({ 
-      error: 'Failed to complete payment on Pi Network',
-      details: error.response?.data 
+      error: 'Pi Network Completion Failed',
+      details: error.response?.data || error.message
     });
   }
 });
