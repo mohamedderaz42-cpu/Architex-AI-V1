@@ -11,6 +11,7 @@ export type ProofOfInstallationStatus = 'none' | 'pending' | 'submitted' | 'veri
 export type ProposalStatus = 'Voting' | 'Passed' | 'Failed' | 'Executing' | 'Executed';
 export type ReputationEventType = 'BountyCompleted' | 'DisputeWon' | 'RatingReceived' | 'ProofOfInstallation';
 export type DesignChallengeStatus = 'Open' | 'Voting' | 'Complete';
+export type VerificationStatus = 'none' | 'pending' | 'verified' | 'rejected';
 
 
 export interface VendorProfile {
@@ -23,6 +24,18 @@ export interface ServiceProviderProfile {
     portfolioUrl: string;
     serviceZones: string[]; // e.g., ['USA-CA', 'USA-NV']
     hasLiabilityInsurance: boolean;
+    insuranceDocUrl?: string;
+    verificationStatus: VerificationStatus;
+}
+
+export interface ArbitratorProfile {
+    specialty: string;
+    yearsExperience: number;
+    fee: number;
+    cvUrl: string;
+    verificationStatus: VerificationStatus;
+    casesResolved: number;
+    resolutionRate: number;
 }
 
 export interface UserEntity {
@@ -35,6 +48,7 @@ export interface UserEntity {
   subscriptionExpiry?: string; // ISO Date
   vendorProfile?: VendorProfile;
   serviceProviderProfile?: ServiceProviderProfile;
+  arbitratorProfile?: ArbitratorProfile;
   role: 'user' | 'vendor' | 'service-provider' | 'arbitrator' | 'admin';
   stakedArchi?: number;
   stakingPosition?: StakingPosition;
@@ -44,11 +58,13 @@ export interface UserEntity {
 
 export interface BillOfMaterialsEntry {
   materialId: string;
+  name?: string; // Denormalized for display
   quantity: number;
   status: MaterialStatus;
   // Calculated fields for UI/Reports
   estimatedCost?: number;
   ecoImpactScore?: number; 
+  imageUrl?: string;
 }
 
 export interface ProjectEntity {
@@ -194,6 +210,7 @@ export interface ArbitratorEntity {
     casesResolved: number;
     avatarUrl: string;
     conflictsWithProjectIds?: string[];
+    verificationStatus?: VerificationStatus;
 }
 
 // --- E-Commerce Engine Entities ---

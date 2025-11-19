@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, ProductEntity, CartItem, MessageEntity, OracleData, SignedAgreement, InventoryConflict, CartOptimization } from '../core/schemas/entities';
+import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, ProductEntity, CartItem, MessageEntity, OracleData, SignedAgreement, InventoryConflict, CartOptimization, ServiceProviderProfile, ArbitratorProfile } from '../core/schemas/entities';
 import * as api from '../core/api/contract';
 import * as ads from '../core/api/ads';
 import { getProactiveTip, guidedScanInstructions, UXContext, shouldTriggerDesignerUpsell } from '../core/ux-engine/engine';
@@ -93,6 +93,8 @@ export const useArchitex = () => {
   const [showServiceAgreementModal, setShowServiceAgreementModal] = useState(false);
   const [activeServiceAgreement, setActiveServiceAgreement] = useState<ServiceAgreementEntity | null>(null);
   const [showUserLegalShieldModal, setShowUserLegalShieldModal] = useState(false);
+  const [showProviderOnboarding, setShowProviderOnboarding] = useState(false);
+  const [showArbitratorOnboarding, setShowArbitratorOnboarding] = useState(false);
 
   // Reputation & DAO Flow
   const [showRatingModal, setShowRatingModal] = useState(false);
@@ -701,6 +703,19 @@ export const useArchitex = () => {
           addToast('Subscription Payment Failed', 'error');
       }
   };
+  
+  // --- Professional Onboarding ---
+  const handleProviderRegistration = async (profile: ServiceProviderProfile) => {
+      const updatedUser = await api.registerServiceProvider(profile);
+      setUser(updatedUser);
+      addToast('Application Submitted & Verified!', 'success');
+  };
+
+  const handleArbitratorRegistration = async (profile: ArbitratorProfile) => {
+      const updatedUser = await api.registerArbitrator(profile);
+      setUser(updatedUser);
+      addToast('Arbitrator Application Pending Review', 'info');
+  };
 
   // --- Design Challenges ---
   const handleSelectChallenge = async (challenge: DesignChallengeEntity) => {
@@ -793,6 +808,9 @@ export const useArchitex = () => {
     // Founder Logic
     handleJoinFounderProgram,
     // Subscription Logic
-    handleSubscribe
+    handleSubscribe,
+    // Professional Onboarding
+    showProviderOnboarding, setShowProviderOnboarding, handleProviderRegistration,
+    showArbitratorOnboarding, setShowArbitratorOnboarding, handleArbitratorRegistration
   };
 };

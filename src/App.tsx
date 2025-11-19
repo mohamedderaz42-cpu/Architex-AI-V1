@@ -46,6 +46,8 @@ import { ChatInterface } from './components/ChatInterface';
 import { PublicGallery } from './components/PublicGallery';
 import { SearchIcon } from './components/icons/SearchIcon';
 import { ArchieBotWidget } from './components/ArchieBotWidget';
+import { ServiceProviderOnboarding } from './components/ServiceProviderOnboarding';
+import { ArbitratorOnboarding } from './components/ArbitratorOnboarding';
 
 const AppContent: React.FC = () => {
   const {
@@ -82,7 +84,10 @@ const AppContent: React.FC = () => {
     // Wallet & Founder
     userTokens, handleClaimVestedTokens, handleJoinFounderProgram,
     // Subscription
-    handleSubscribe
+    handleSubscribe,
+    // Professional Onboarding
+    showProviderOnboarding, setShowProviderOnboarding, handleProviderRegistration,
+    showArbitratorOnboarding, setShowArbitratorOnboarding, handleArbitratorRegistration
   } = useArchitex();
 
   const renderDashboardContent = () => {
@@ -193,7 +198,9 @@ const AppContent: React.FC = () => {
             onConfirmServiceCompletion={handleConfirmServiceCompletion} 
             onClaimVestedTokens={handleClaimVestedTokens}
             onSubscribe={handleSubscribe}
-            onClose={toggleProfile} 
+            onClose={toggleProfile}
+            onBecomeProvider={() => setShowProviderOnboarding(true)}
+            onBecomeArbitrator={() => setShowArbitratorOnboarding(true)}
           />
       )}
       {isProfileVisible && (
@@ -253,6 +260,10 @@ const AppContent: React.FC = () => {
       {showVendorProfileModal && selectedVendor && <VendorProfileModal vendor={selectedVendor} onClose={() => setShowVendorProfileModal(false)} />}
       {showProposalDetailsModal && selectedProposal && <ProposalDetailsModal proposal={selectedProposal} onClose={closeProposalDetails} onComment={handleSubmitComment} />}
       
+      {/* Onboarding Modals */}
+      {showProviderOnboarding && <ServiceProviderOnboarding onRegister={handleProviderRegistration} onClose={() => setShowProviderOnboarding(false)} />}
+      {showArbitratorOnboarding && <ArbitratorOnboarding onRegister={handleArbitratorRegistration} onClose={() => setShowArbitratorOnboarding(false)} />}
+
       {isAdminModalOpen && <AdminPortal onClose={closeAdminModal} />}
       {isChatOpen && chatContextId && user && (
           <ChatInterface 

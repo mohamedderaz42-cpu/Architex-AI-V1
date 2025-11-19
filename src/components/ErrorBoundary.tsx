@@ -55,6 +55,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
       );
     }
 
-    return this.props.children;
+    // Cast props to handle potential environment type discrepancies
+    return (this.props as any).children;
   }
 }

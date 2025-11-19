@@ -10,6 +10,8 @@ import { ServiceAgreementCard } from './ServiceAgreementCard';
 import { WalletPanel } from './WalletPanel'; 
 import { FileTextIcon } from './icons/FileTextIcon';
 import { ShieldCheckIcon } from './icons/ShieldCheckIcon';
+import { WrenchIcon } from './icons/WrenchIcon';
+import { GavelIcon } from './icons/GavelIcon';
 import * as api from '../core/api/contract';
 
 interface ProfileScreenProps {
@@ -24,11 +26,13 @@ interface ProfileScreenProps {
     onClaimVestedTokens: () => Promise<void>;
     onSubscribe: () => void;
     onClose: () => void;
+    onBecomeProvider: () => void;
+    onBecomeArbitrator: () => void;
 }
 
 type ProfileTab = 'gallery' | 'orders' | 'services' | 'wallet' | 'contracts';
 
-export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, projects, orders, serviceAgreements, userTokens, onConfirmDelivery, onRequestReturn, onConfirmServiceCompletion, onClaimVestedTokens, onSubscribe, onClose }) => {
+export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, projects, orders, serviceAgreements, userTokens, onConfirmDelivery, onRequestReturn, onConfirmServiceCompletion, onClaimVestedTokens, onSubscribe, onClose, onBecomeProvider, onBecomeArbitrator }) => {
     const publicProjects = projects.filter(p => p.isPublic);
     const [activeTab, setActiveTab] = useState<ProfileTab>('gallery');
     const [agreements, setAgreements] = useState<SignedAgreement[]>([]);
@@ -92,6 +96,43 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, projects, or
                                 No active service agreements.
                             </div>
                         )}
+                        
+                        {/* Onboarding CTAs */}
+                        <div className="pt-4 mt-4 border-t border-white/10 space-y-3">
+                             <button 
+                                onClick={onBecomeProvider}
+                                disabled={!!user.serviceProviderProfile}
+                                className="w-full flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-white/5 hover:border-eco-green/30 transition-colors disabled:opacity-50"
+                             >
+                                 <div className="flex items-center">
+                                     <div className="p-2 bg-eco-green/20 rounded-lg mr-3">
+                                         <WrenchIcon className="w-5 h-5 text-eco-green" />
+                                     </div>
+                                     <div className="text-left">
+                                         <div className="font-bold text-white text-sm">Become a Pro</div>
+                                         <div className="text-xs text-slate-400">{user.serviceProviderProfile ? 'Profile Active' : 'Offer installation services'}</div>
+                                     </div>
+                                 </div>
+                                 {!user.serviceProviderProfile && <span className="text-eco-green text-xs font-bold">Apply</span>}
+                             </button>
+
+                             <button 
+                                onClick={onBecomeArbitrator}
+                                disabled={!!user.arbitratorProfile}
+                                className="w-full flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-white/5 hover:border-pi-gold/30 transition-colors disabled:opacity-50"
+                             >
+                                 <div className="flex items-center">
+                                     <div className="p-2 bg-pi-gold/20 rounded-lg mr-3">
+                                         <GavelIcon className="w-5 h-5 text-pi-gold" />
+                                     </div>
+                                     <div className="text-left">
+                                         <div className="font-bold text-white text-sm">Become Arbitrator</div>
+                                         <div className="text-xs text-slate-400">{user.arbitratorProfile ? 'Application Pending' : 'Resolve disputes & earn'}</div>
+                                     </div>
+                                 </div>
+                                 {!user.arbitratorProfile && <span className="text-pi-gold text-xs font-bold">Apply</span>}
+                             </button>
+                        </div>
                     </div>
                 );
             case 'wallet':
