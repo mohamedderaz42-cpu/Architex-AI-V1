@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type, Modality } from "@google/genai";
-import { ProjectEntity, UserEntity, MaterialEntity, TokenEntity, LiquidityPoolEntity, BountyEntity, ArbitratorEntity, ProductEntity, ShippingZone, PromotionEntity, OrderEntity, OrderStatus, ServiceProviderProfile, ServiceAgreementEntity, ReputationEvent, ProposalEntity, ProofOfInstallationStatus, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, BillOfMaterialsEntry, ProposalComment, CartItem, MessageEntity, VestingSchedule, OracleData, FuzzTestResult } from '../schemas/entities';
+import { ProjectEntity, UserEntity, MaterialEntity, TokenEntity, LiquidityPoolEntity, BountyEntity, ArbitratorEntity, ProductEntity, ShippingZone, PromotionEntity, OrderEntity, OrderStatus, ServiceProviderProfile, ServiceAgreementEntity, ReputationEvent, ProposalEntity, ProofOfInstallationStatus, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, BillOfMaterialsEntry, ProposalComment, CartItem, MessageEntity, VestingSchedule, OracleData, FuzzTestResult, SignedAgreement } from '../schemas/entities';
 import { PiCoinIcon } from '../../components/icons/PiCoinIcon';
 import { ArchitexLogo } from '../../components/icons/ArchitexLogo';
 
@@ -245,11 +245,13 @@ let mockMessages = load<MessageEntity[]>('messages', [
     { id: 'msg_01', contextId: 'proj_01', senderId: 'sys', senderName: 'System', text: 'Project initialized.', timestamp: new Date(Date.now() - 86400000 * 3).toISOString(), isSystem: true },
     { id: 'msg_02', contextId: 'proj_01', senderId: 'user_01', senderName: 'ArchieBot', text: 'I need to change the floor texture.', timestamp: new Date(Date.now() - 86400000 * 2).toISOString() }
 ]);
+let mockSignedAgreements = load<SignedAgreement[]>('signedAgreements', []);
 
 // --- TOKENOMICS CONSTANTS ---
 export const TOKEN_TOTAL_SUPPLY = 1_000_000_000;
 export const TOKEN_SYMBOL = 'ARCHI';
 export let treasuryBalance = load('treasuryBalance', 250000); // Seeded treasury
+export let escrowBalance = load('escrowBalance', 0); // Total value in escrow
 
 // --- ORACLE STATE ---
 export let oracleState: OracleData = load('oracleState', {
@@ -329,6 +331,96 @@ const updateOraclePrice = (newPrice: number) => {
     oracleState.lastUpdate = new Date().toISOString();
     save('oracleState', oracleState);
 };
+
+// --- DYNAMIC AGREEMENT ENGINE ---
+
+const generateAgreementHash = (content: string): string => {
+    // Simple mock hash for simulation
+    let hash = 0;
+    if (content.length === 0) return '0x0';
+    for (let i = 0; i < content.length; i++) {
+        const char = content.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash |= 0; // Convert to 32bit integer
+    }
+    return '0x' + Math.abs(hash).toString(16) + Date.now().toString(16);
+};
+
+export const generateLegalAgreement = (type: 'Bounty' | 'Service', parties: string[], terms: any): string => {
+    const date = new Date().toLocaleDateString();
+    const connectorClause = `
+    ARCHITEX TECHNOLOGY CONNECTOR PLATFORM TERMS
+    --------------------------------------------
+    1. STATUS. Architex is a technology connector platform, not a construction firm, design agency, or employer.
+    2. INDEMNIFICATION. Users hold Architex harmless from all liability regarding the quality, safety, or legality of services rendered.
+    `;
+    
+    const arbitrationClause = `
+    SECTION 5: BINDING ARBITRATION
+    ------------------------------
+    All disputes arising from this Agreement shall be resolved exclusively through the Architex Decentralized Arbitration Protocol. 
+    By electronically signing this agreement, all parties waive their right to a trial by jury or class action lawsuit.
+    Decisions made by the selected Arbitrator(s) are final and enforced by Smart Contract.
+    `;
+
+    if (type === 'Bounty') {
+        return `
+    PROJECT BOUNTY AGREEMENT
+    Date: ${date}
+    Parties: ${parties.join(', ')}
+    
+    ${connectorClause}
+    
+    Scope of Work: ${terms.title}
+    Description: ${terms.description}
+    Reward: ${terms.reward} ARCHI
+    
+    ESCROW RELEASE CONDITIONS:
+    Funds held in Smart Contract Escrow until Client confirms satisfactory delivery or Arbitrator ruling.
+    
+    ${arbitrationClause}
+        `.trim();
+    } else {
+        return `
+    SERVICE LEVEL AGREEMENT (SLA)
+    Date: ${date}
+    Parties: ${parties.join(', ')}
+    
+    ${connectorClause}
+    
+    Project: ${terms.projectId}
+    Scope: ${terms.scope}
+    Agreed Price: ${terms.price} PiUSD
+    
+    QUALITY ASSURANCE:
+    ${terms.validatorId ? `Validator ${terms.validatorId} must approve work before fund release.` : 'Client self-verification required.'}
+    
+    ${arbitrationClause}
+        `.trim();
+    }
+};
+
+export const signAgreement = async (type: 'Bounty' | 'Service', referenceId: string, text: string): Promise<SignedAgreement> => {
+    const hash = generateAgreementHash(text);
+    const agreement: SignedAgreement = {
+        id: `legal_${Date.now()}`,
+        type,
+        referenceId,
+        parties: [mockUser.id], // In real app, would be multiple
+        timestamp: new Date().toISOString(),
+        contentHash: hash,
+        fullText: text,
+        status: 'Active'
+    };
+    mockSignedAgreements.push(agreement);
+    save('signedAgreements', mockSignedAgreements);
+    return agreement;
+};
+
+export const listSignedAgreements = async (): Promise<SignedAgreement[]> => {
+    return mockSignedAgreements;
+};
+
 
 // --- API CONTRACT ---
 
@@ -782,14 +874,32 @@ export const mintProjectAsNft = async (projectId: string): Promise<ProjectEntity
     return { ...mockProjects[pIdx] }; 
 };
 
-export const getDynamicAgreementText = async (bounty: BountyEntity): Promise<string> => { return `This Agreement is made on ${new Date().toLocaleDateString()} regarding the project ${bounty.title}...`; };
+export const getDynamicAgreementText = async (bounty: BountyEntity): Promise<string> => { 
+    return generateLegalAgreement('Bounty', [mockUser.piUsername], bounty);
+};
 
 export const fundEscrow = async (bountyId: string): Promise<BountyEntity> => { 
     const idx = mockBounties.findIndex(b => b.id === bountyId); 
     if (idx === -1) throw new Error("Bounty not found"); 
     
+    const bounty = mockBounties[idx];
+    
+    // Sign Agreement first (auto-sign for flow simplicity if not exists, but UI handles it)
+    await signAgreement('Bounty', bountyId, await getDynamicAgreementText(bounty));
+
+    // Move funds from User (already deducted in createBounty? No, createBounty deduces reward + fee, but bounty logic usually reserves it. 
+    // In this improved flow: createBounty takes FEE. fundEscrow takes REWARD.
+    // Re-reading createBounty: it takes totalCost (reward + fee). So funds are already in "Contract" (User Balance deducted).
+    // We need to move them to "Escrow Balance".
+    
+    // In createBounty, we deducted funds. They effectively went to "Platform Pending". 
+    // Now we explicitly mark them as "Escrowed".
+    
     mockBounties[idx].escrowState = 'Funded'; 
     mockBounties[idx].status = 'In Progress'; 
+    
+    escrowBalance += bounty.reward;
+    save('escrowBalance', escrowBalance);
     save('bounties', mockBounties);
     return {...mockBounties[idx]}; 
 };
@@ -799,9 +909,15 @@ export const releaseEscrow = async (bountyId: string): Promise<BountyEntity> => 
     if (idx === -1) throw new Error("Bounty not found"); 
     
     await new Promise(resolve => setTimeout(resolve, 1000)); 
+    
+    const bounty = mockBounties[idx];
     mockBounties[idx].escrowState = 'Released'; 
     mockBounties[idx].status = 'Complete'; 
     
+    // Move funds from Escrow to Winner (Simulated)
+    escrowBalance -= bounty.reward;
+    save('escrowBalance', escrowBalance);
+
     // Add Reputation
     reputationEvents.push({ id: `rev_${Date.now()}`, userId: mockBounties[idx].winnerId || 'unknown', type: 'BountyCompleted', value: 10, description: `Completed bounty: ${mockBounties[idx].title}`, timestamp: new Date().toISOString()}); 
     save('reputationEvents', reputationEvents);
@@ -827,6 +943,8 @@ export const selectArbitrator = async (bountyId: string, arbitratorId: string): 
     const a = mockArbitrators.find(a => a.id === arbitratorId); 
     if (!a) throw new Error("Arbitrator not found"); 
     
+    // Arbitrator fee is paid by the user selecting (in UI layer via processPayment)
+    
     mockBounties[bIdx].status = 'Arbitration'; 
     save('bounties', mockBounties);
     return {...mockBounties[bIdx]}; 
@@ -836,14 +954,20 @@ export const resolveArbitration = async (bountyId: string, decision: 'Release' |
     const idx = mockBounties.findIndex(b => b.id === bountyId); 
     if (idx === -1) throw new Error("Bounty not found"); 
     
+    const bounty = mockBounties[idx];
     mockBounties[idx].status = 'Complete'; 
     mockBounties[idx].escrowState = decision === 'Release' ? 'Released' : 'Refunded'; 
     
+    escrowBalance -= bounty.reward;
+    save('escrowBalance', escrowBalance);
+
     if (decision === 'Refund') { 
+        // Return funds to User
         const tIdx = mockUserTokens.findIndex(t => t.symbol === 'ARCHI'); 
-        mockUserTokens[tIdx].balance += mockBounties[idx].reward; 
+        mockUserTokens[tIdx].balance += bounty.reward; 
         updateTokens([...mockUserTokens]);
     } 
+    // If Release: Funds go to winner (implied external wallet)
     
     save('bounties', mockBounties);
     return {...mockBounties[idx]}; 
@@ -906,14 +1030,23 @@ export const createServiceAgreement = async (clientId: string, providerId: strin
 };
 
 export const listServiceAgreements = async (): Promise<ServiceAgreementEntity[]> => { return [...mockServiceAgreements]; };
-export const getServiceLevelAgreementText = async (agreement: ServiceAgreementEntity): Promise<string> => { return `This Service Level Agreement...`; };
+
+export const getServiceLevelAgreementText = async (agreement: ServiceAgreementEntity): Promise<string> => { 
+    return generateLegalAgreement('Service', [mockUser.piUsername, agreement.providerId], agreement);
+};
 
 export const fundServiceEscrow = async (agreementId: string, validatorId?: string): Promise<ServiceAgreementEntity> => { 
     const idx = mockServiceAgreements.findIndex(sa => sa.id === agreementId); 
     if (idx === -1) throw new Error('Agreement not found'); 
     
+    const agreement = mockServiceAgreements[idx];
+    await signAgreement('Service', agreementId, await getServiceLevelAgreementText(agreement));
+
     mockServiceAgreements[idx].status = 'funded'; 
     if (validatorId) mockServiceAgreements[idx].qualityAssuranceValidatorId = validatorId; 
+    
+    escrowBalance += agreement.price; // Should be PiUSD logic, effectively same simulated pool
+    save('escrowBalance', escrowBalance);
     save('serviceAgreements', mockServiceAgreements);
     return { ...mockServiceAgreements[idx] }; 
 };
@@ -929,6 +1062,8 @@ export const confirmServiceCompletion = async (agreementId: string, userType: 'c
     const isComplete = agreement.status === 'client-confirmed' && !agreement.qualityAssuranceValidatorId || agreement.status === 'validator-confirmed'; 
     if (isComplete) { 
         agreement.status = 'complete'; 
+        escrowBalance -= agreement.price;
+        save('escrowBalance', escrowBalance);
     } 
     save('serviceAgreements', mockServiceAgreements);
     return { ...agreement }; 

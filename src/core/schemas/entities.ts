@@ -132,6 +132,17 @@ export interface FuzzTestResult {
     coverage: number;
 }
 
+export interface SignedAgreement {
+    id: string;
+    type: 'Bounty' | 'Service';
+    referenceId: string; // BountyID or ServiceAgreementID
+    parties: string[]; // User IDs
+    timestamp: string;
+    contentHash: string; // Simulation of IPFS/Blockchain hash
+    fullText: string;
+    status: 'Active' | 'Fulfilled' | 'Disputed';
+}
+
 export interface BountyEntity {
     id: string;
     projectId: string;

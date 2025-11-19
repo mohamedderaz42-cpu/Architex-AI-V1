@@ -1,5 +1,6 @@
+
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, ProductEntity, CartItem, MessageEntity, OracleData } from '../core/schemas/entities';
+import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, ProductEntity, CartItem, MessageEntity, OracleData, SignedAgreement } from '../core/schemas/entities';
 import * as api from '../core/api/contract';
 import { getProactiveTip, guidedScanInstructions, UXContext, shouldTriggerDesignerUpsell } from '../core/ux-engine/engine';
 import { useToast } from '../components/Toast';
@@ -72,6 +73,7 @@ export const useArchitex = () => {
   const [showAgreementModal, setShowAgreementModal] = useState(false);
   const [agreementText, setAgreementText] = useState<string | null>(null);
   const bountyToFundRef = useRef<BountyEntity | null>(null);
+  const [signedAgreements, setSignedAgreements] = useState<SignedAgreement[]>([]);
 
   // NFT Minting Flow
   const [showMintNftModal, setShowMintNftModal] = useState(false);
@@ -466,7 +468,7 @@ export const useArchitex = () => {
   const handleSelectBounty = async (bounty: BountyEntity) => { const available = await api.listAvailableArbitrators(bounty.projectId); setAvailableArbitrators(available); setSelectedBounty(bounty); };
   const closeBountyDetailsModal = () => setSelectedBounty(null);
   const handleInitiateFunding = async (bounty: BountyEntity) => { bountyToFundRef.current = bounty; const text = await api.getDynamicAgreementText(bounty); setAgreementText(text); setShowAgreementModal(true); };
-  const handleConfirmFunding = async () => { if (!bountyToFundRef.current) return; const updatedBounty = await api.fundEscrow(bountyToFundRef.current.id); setBounties(prev => prev.map(b => b.id === updatedBounty.id ? updatedBounty : b)); setSelectedBounty(updatedBounty); setShowAgreementModal(false); setAgreementText(null); bountyToFundRef.current = null; addToast('Escrow Funded', 'success'); };
+  const handleConfirmFunding = async () => { if (!bountyToFundRef.current) return; const updatedBounty = await api.fundEscrow(bountyToFundRef.current.id); setBounties(prev => prev.map(b => b.id === updatedBounty.id ? updatedBounty : b)); setSelectedBounty(updatedBounty); setShowAgreementModal(false); setAgreementText(null); bountyToFundRef.current = null; addToast('Escrow Funded & Contract Signed', 'success'); };
   const closeAgreementModal = () => { setShowAgreementModal(false); setAgreementText(null); bountyToFundRef.current = null; };
   const handleReleaseFunds = async (bounty: BountyEntity) => { const updatedBounty = await api.releaseEscrow(bounty.id); setBounties(prev => prev.map(b => b.id === updatedBounty.id ? updatedBounty : b)); setSelectedBounty(updatedBounty); if (updatedBounty.winnerId) { setUserToRate(updatedBounty.winnerId); setShowRatingModal(true); } addToast('Funds Released', 'success'); };
   const handleRaiseDispute = (bounty: BountyEntity) => { setSelectedBounty(bounty); setShowDisputeResolutionModal(true); };
@@ -688,6 +690,8 @@ export const useArchitex = () => {
     // Chat
     isChatOpen, openChat, closeChat, messages, handleSendMessage, chatContextId,
     // Wallet & Incentives
-    userTokens, handleClaimVestedTokens, handleClaimStakingRewards, oracleData
+    userTokens, handleClaimVestedTokens, handleClaimStakingRewards, oracleData,
+    // Legal
+    signedAgreements
   };
 };

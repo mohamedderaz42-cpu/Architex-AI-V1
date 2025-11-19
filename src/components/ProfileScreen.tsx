@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { UserEntity, ProjectEntity, OrderEntity, ServiceAgreementEntity, TokenEntity } from '../core/schemas/entities';
+import React, { useState, useEffect } from 'react';
+import { UserEntity, ProjectEntity, OrderEntity, ServiceAgreementEntity, TokenEntity, SignedAgreement } from '../core/schemas/entities';
 import { GlassPanel } from './GlassPanel';
 import { SystemStatus } from './SystemStatus';
 import { AcceleratorSubscription } from './AcceleratorSubscription';
@@ -8,6 +8,9 @@ import { AdBanner } from './AdBanner';
 import { OrderCard } from './OrderCard';
 import { ServiceAgreementCard } from './ServiceAgreementCard';
 import { WalletPanel } from './WalletPanel'; 
+import { FileTextIcon } from './icons/FileTextIcon';
+import { ShieldCheckIcon } from './icons/ShieldCheckIcon';
+import * as api from '../core/api/contract';
 
 interface ProfileScreenProps {
     user: UserEntity;
@@ -22,11 +25,18 @@ interface ProfileScreenProps {
     onClose: () => void;
 }
 
-type ProfileTab = 'gallery' | 'orders' | 'services' | 'wallet';
+type ProfileTab = 'gallery' | 'orders' | 'services' | 'wallet' | 'contracts';
 
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, projects, orders, serviceAgreements, userTokens, onConfirmDelivery, onRequestReturn, onConfirmServiceCompletion, onClaimVestedTokens, onClose }) => {
     const publicProjects = projects.filter(p => p.isPublic);
     const [activeTab, setActiveTab] = useState<ProfileTab>('gallery');
+    const [agreements, setAgreements] = useState<SignedAgreement[]>([]);
+
+    useEffect(() => {
+        if (activeTab === 'contracts') {
+            api.listSignedAgreements().then(setAgreements);
+        }
+    }, [activeTab]);
 
     const renderTabContent = () => {
         switch (activeTab) {
@@ -85,6 +95,37 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, projects, or
                 );
             case 'wallet':
                 return <WalletPanel userTokens={userTokens} onClaim={onClaimVestedTokens} />;
+            case 'contracts':
+                return (
+                    <div className="space-y-3">
+                        {agreements.map(agg => (
+                            <div key={agg.id} className="bg-slate-900/50 p-4 rounded-xl border border-white/10">
+                                <div className="flex justify-between items-start mb-2">
+                                    <div className="flex items-center">
+                                        <FileTextIcon className="w-5 h-5 text-ai-violet mr-2" />
+                                        <h5 className="font-bold text-white text-sm">{agg.type} Agreement</h5>
+                                    </div>
+                                    <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-1 rounded font-mono">{agg.status}</span>
+                                </div>
+                                <div className="text-xs text-slate-400 mb-2">
+                                    Ref: {agg.referenceId}
+                                </div>
+                                <div className="bg-black/30 p-2 rounded border border-white/5 font-mono text-[10px] text-slate-500 break-all mb-2">
+                                    Hash: {agg.contentHash}
+                                </div>
+                                <div className="flex justify-between items-center text-[10px] text-slate-500">
+                                    <span>Signed: {new Date(agg.timestamp).toLocaleDateString()}</span>
+                                    <span className="flex items-center text-eco-green"><ShieldCheckIcon className="w-3 h-3 mr-1"/> On-Chain</span>
+                                </div>
+                            </div>
+                        ))}
+                        {!agreements.length && (
+                             <div className="col-span-2 text-center text-slate-500 py-8">
+                                No signed agreements found.
+                            </div>
+                        )}
+                    </div>
+                );
         }
     }
 
@@ -109,6 +150,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, projects, or
                         <button onClick={() => setActiveTab('orders')} className={`px-3 py-1.5 rounded-full font-semibold text-xs transition-colors duration-300 ${activeTab === 'orders' ? 'bg-slate-700 text-white' : 'text-slate-300'}`}>Orders</button>
                         <button onClick={() => setActiveTab('services')} className={`px-3 py-1.5 rounded-full font-semibold text-xs transition-colors duration-300 ${activeTab === 'services' ? 'bg-slate-700 text-white' : 'text-slate-300'}`}>Services</button>
                         <button onClick={() => setActiveTab('wallet')} className={`px-3 py-1.5 rounded-full font-semibold text-xs transition-colors duration-300 ${activeTab === 'wallet' ? 'bg-slate-700 text-white' : 'text-slate-300'}`}>Wallet</button>
+                        <button onClick={() => setActiveTab('contracts')} className={`px-3 py-1.5 rounded-full font-semibold text-xs transition-colors duration-300 ${activeTab === 'contracts' ? 'bg-slate-700 text-white' : 'text-slate-300'}`}>Contracts</button>
                     </div>
 
                     <div className="flex-grow overflow-y-auto pr-2">
