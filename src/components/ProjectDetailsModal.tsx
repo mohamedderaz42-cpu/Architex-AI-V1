@@ -6,6 +6,7 @@ import { SunMoonIcon } from './icons/SunMoonIcon';
 import { ShareIcon } from './icons/ShareIcon';
 import { CheckCircleIcon } from './icons/CheckCircleIcon';
 import { AwardIcon } from './icons/AwardIcon';
+import { ChatIcon } from './icons/ChatIcon';
 
 interface ProjectDetailsModalProps {
     project: ProjectEntity;
@@ -13,9 +14,10 @@ interface ProjectDetailsModalProps {
     onClose: () => void;
     onShare: (projectId: string) => Promise<{ success: boolean; message: string }>;
     onSubmitToChallenge: () => void;
+    onOpenChat?: () => void;
 }
 
-export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ project, onGetQuotes, onClose, onShare, onSubmitToChallenge }) => {
+export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ project, onGetQuotes, onClose, onShare, onSubmitToChallenge, onOpenChat }) => {
     const [isNightMode, setIsNightMode] = useState(false);
     const [isSharing, setIsSharing] = useState(false);
     const [shareStatus, setShareStatus] = useState<'idle' | 'success'>('idle');
@@ -47,6 +49,17 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ projec
                         backgroundSize: '30px 30px',
                     }}></div>
                     <span className="text-slate-500 font-semibold">3D Model Viewer</span>
+                    
+                    {/* Chat Overlay Button */}
+                    {onOpenChat && (
+                        <button 
+                            onClick={onOpenChat}
+                            className="absolute bottom-3 right-3 p-2 bg-ai-violet text-white rounded-full shadow-glow-violet hover:scale-110 transition-transform"
+                            title="Project Chat"
+                        >
+                            <ChatIcon className="w-5 h-5" />
+                        </button>
+                    )}
                 </div>
                 
                 {/* Controls */}

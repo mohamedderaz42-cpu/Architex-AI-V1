@@ -1,5 +1,6 @@
+
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, ProductEntity, CartItem } from '../core/schemas/entities';
+import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, ProductEntity, CartItem, MessageEntity } from '../core/schemas/entities';
 import * as api from '../core/api/contract';
 import { getProactiveTip, guidedScanInstructions, UXContext } from '../core/ux-engine/engine';
 import { useToast } from '../components/Toast';
@@ -15,7 +16,7 @@ declare global {
 const BACKEND_URL = '/api';
 
 export type Phase = 'intro' | 'onboarding' | 'dashboard';
-export type ActiveTab = 'scan' | 'design' | 'market' | 'challenges';
+export type ActiveTab = 'scan' | 'design' | 'market' | 'challenges' | 'explore';
 
 export const useArchitex = () => {
   const { addToast } = useToast(); // Hook for notifications
@@ -24,12 +25,21 @@ export const useArchitex = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('design');
   const [isMounted, setIsMounted] = useState(false);
   const [projects, setProjects] = useState<ProjectEntity[]>([]);
+  const [publicProjects, setPublicProjects] = useState<ProjectEntity[]>([]);
   const [bounties, setBounties] = useState<BountyEntity[]>([]);
   const [arbitrators, setArbitrators] = useState<ArbitratorEntity[]>([]);
   const [availableArbitrators, setAvailableArbitrators] = useState<ArbitratorEntity[]>([]);
   const [user, setUser] = useState<UserEntity | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProfileVisible, setIsProfileVisible] = useState(false);
+
+  // Admin Logic
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  
+  // Chat Logic
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatContextId, setChatContextId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<MessageEntity[]>([]);
 
   // Marketplace & Cart Data
   const [products, setProducts] = useState<ProductEntity[]>([]);
@@ -101,9 +111,10 @@ export const useArchitex = () => {
   useEffect(() => { setIsMounted(true); }, []);
   
   const refreshUserData = async (piUser?: any) => {
-      const [userData, userProjects, userBounties, arbitratorsData, ordersData, serviceProvidersData, proposalsData, agreementsData, challengesData, productsData] = await Promise.all([
+      const [userData, userProjects, publicProjs, userBounties, arbitratorsData, ordersData, serviceProvidersData, proposalsData, agreementsData, challengesData, productsData] = await Promise.all([
         api.authenticateWithPi(), 
         api.listProjects(), 
+        api.listPublicProjects(),
         api.listBounties(), 
         api.listArbitrators(), 
         api.listOrders(), 
@@ -121,6 +132,7 @@ export const useArchitex = () => {
 
       setUser(userData);
       setProjects(userProjects);
+      setPublicProjects(publicProjs);
       setBounties(userBounties);
       setArbitrators(arbitratorsData);
       setOrders(ordersData);
@@ -194,6 +206,33 @@ export const useArchitex = () => {
   const toggleProfile = () => setIsProfileVisible(prev => !prev);
   const handleProjectInteraction = async (project: ProjectEntity) => { setSelectedProject(project); setShowProjectDetailsModal(true); };
   const closeUpsellModal = () => setShowUpsellModal(false);
+  
+  // --- Chat Logic ---
+  const openChat = async (contextId: string) => {
+      setChatContextId(contextId);
+      const msgs = await api.getMessages(contextId);
+      setMessages(msgs);
+      setIsChatOpen(true);
+  };
+  
+  const closeChat = () => {
+      setIsChatOpen(false);
+      setChatContextId(null);
+  };
+  
+  const handleSendMessage = async (text: string) => {
+      if (!chatContextId) return;
+      const newMsg = await api.sendMessage(chatContextId, text);
+      setMessages(prev => [...prev, newMsg]);
+  };
+
+  // --- Admin Logic ---
+  const openAdminModal = () => {
+      setIsProfileVisible(false); // Close profile first
+      setIsAdminModalOpen(true);
+  };
+  const closeAdminModal = () => setIsAdminModalOpen(false);
+
 
   // --- Cart & Vendor Logic ---
   const addToCart = (product: ProductEntity) => {
@@ -558,7 +597,7 @@ export const useArchitex = () => {
   const currentScanInstruction = guidedScanInstructions[currentScanStep];
 
   return {
-    phase, isMounted, activeTab, projects, bounties, arbitrators, availableArbitrators, user, isLoading, uxTip, orders, serviceProviders, serviceAgreements, proposals, designChallenges, products,
+    phase, isMounted, activeTab, projects, publicProjects, bounties, arbitrators, availableArbitrators, user, isLoading, uxTip, orders, serviceProviders, serviceAgreements, proposals, designChallenges, products,
     initialize, setActiveTab, toggleProfile, isProfileVisible, completeOnboarding,
     isScanning, scanProgress, currentScanInstruction, startScan, cancelScan, 
     showPaymentModal, confirmPayment, cancelPayment, isProcessingPayment, paymentError, scanAnalysis,
@@ -586,6 +625,10 @@ export const useArchitex = () => {
     showCreateProjectModal, openCreateProjectModal, closeCreateProjectModal, handleCreateProject,
     // Cart & Vendor
     cart, addToCart, removeFromCart, openShoppingCart, closeShoppingCart, showShoppingCartModal, handleCheckout,
-    openVendorProfile, showVendorProfileModal, selectedVendor, setShowVendorProfileModal
+    openVendorProfile, showVendorProfileModal, selectedVendor, setShowVendorProfileModal,
+    // Admin
+    isAdminModalOpen, openAdminModal, closeAdminModal,
+    // Chat
+    isChatOpen, openChat, closeChat, messages, handleSendMessage, chatContextId
   };
 };

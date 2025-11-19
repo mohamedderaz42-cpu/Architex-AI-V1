@@ -41,10 +41,14 @@ import { ShoppingCartModal } from './components/ShoppingCartModal';
 import { MarketplaceShop } from './components/MarketplaceShop';
 import { VendorProfileModal } from './components/VendorProfileModal';
 import { ProposalDetailsModal } from './components/ProposalDetailsModal';
+import { AdminPortal } from './components/AdminPortal';
+import { ChatInterface } from './components/ChatInterface';
+import { PublicGallery } from './components/PublicGallery';
+import { SearchIcon } from './components/icons/SearchIcon';
 
 const AppContent: React.FC = () => {
   const {
-    phase, isMounted, activeTab, projects, bounties, arbitrators, availableArbitrators, uxTip, user, orders, serviceProviders, serviceAgreements, proposals, designChallenges, products,
+    phase, isMounted, activeTab, projects, publicProjects, bounties, arbitrators, availableArbitrators, uxTip, user, orders, serviceProviders, serviceAgreements, proposals, designChallenges, products,
     initialize, setActiveTab, isScanning, scanProgress, currentScanInstruction, startScan, cancelScan, completeOnboarding,
     showPaymentModal, confirmPayment, cancelPayment, isProcessingPayment, paymentError, scanAnalysis, isProfileVisible, toggleProfile,
     handleProjectInteraction, showUpsellModal, closeUpsellModal, showCreateBountyModal, openCreateBountyModal,
@@ -70,7 +74,10 @@ const AppContent: React.FC = () => {
     cart, addToCart, removeFromCart, openShoppingCart, closeShoppingCart, showShoppingCartModal, handleCheckout,
     openVendorProfile, showVendorProfileModal, selectedVendor, setShowVendorProfileModal,
     // DAO Discussion
-    selectedProposal, showProposalDetailsModal, openProposalDetails, closeProposalDetails, handleSubmitComment
+    selectedProposal, showProposalDetailsModal, openProposalDetails, closeProposalDetails, handleSubmitComment,
+    // Admin & Chat
+    isAdminModalOpen, openAdminModal, closeAdminModal,
+    isChatOpen, openChat, closeChat, messages, handleSendMessage, chatContextId
   } = useArchitex();
 
   const renderDashboardContent = () => {
@@ -88,7 +95,12 @@ const AppContent: React.FC = () => {
           <div className="w-full h-full flex flex-col">
             <div className="flex justify-between items-center mb-4 px-2">
                 <h2 className="text-2xl font-bold text-white">Design Studio</h2>
-                <button onClick={openCreateProjectModal} className="flex items-center text-ai-violet hover:text-white transition-colors duration-300"><PlusCircleIcon className="w-6 h-6 mr-2" /><span className="font-semibold">New Project</span></button>
+                <div className="flex space-x-2">
+                    <button onClick={() => setActiveTab('explore')} className="p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white hover:bg-slate-700" title="Explore Community">
+                        <SearchIcon className="w-5 h-5" />
+                    </button>
+                    <button onClick={openCreateProjectModal} className="flex items-center text-ai-violet hover:text-white transition-colors duration-300"><PlusCircleIcon className="w-6 h-6 mr-2" /><span className="font-semibold">New</span></button>
+                </div>
             </div>
             <div className="flex-grow overflow-y-auto space-y-4 pr-2">
                 {projects.map((project) => (<ProjectCard key={project.id} project={project} onCardClick={() => handleProjectInteraction(project)} onMintClick={() => openMintNftModal(project)} />))}
@@ -96,6 +108,8 @@ const AppContent: React.FC = () => {
             <div className="mt-4 px-2"><ArchieBot message={uxTip} /></div>
           </div>
         );
+      case 'explore':
+        return <PublicGallery projects={publicProjects} onViewProject={handleProjectInteraction} />;
       case 'market':
         return <DeFiGateway 
           bounties={bounties} 
@@ -149,7 +163,7 @@ const AppContent: React.FC = () => {
         <footer className="fixed bottom-4 left-4 right-4 z-50 max-w-md mx-auto">
           <GlassPanel className="p-2 rounded-full"><nav className="flex items-center justify-around">
               <IconButton icon={<ScanIcon />} label="Scan" isActive={activeTab === 'scan'} onClick={() => setActiveTab('scan')} activeColor="pi-gold"/>
-              <IconButton icon={<DesignIcon />} label="Design" isActive={activeTab === 'design'} onClick={() => setActiveTab('design')} activeColor="ai-violet"/>
+              <IconButton icon={<DesignIcon />} label="Design" isActive={activeTab === 'design' || activeTab === 'explore'} onClick={() => setActiveTab('design')} activeColor="ai-violet"/>
               <IconButton icon={<MarketIcon />} label="Market" isActive={activeTab === 'market'} onClick={() => setActiveTab('market')} activeColor="eco-green"/>
               <IconButton icon={<AwardIcon />} label="Challenges" isActive={activeTab === 'challenges'} onClick={() => setActiveTab('challenges')} activeColor="pi-gold"/>
           </nav></GlassPanel>
@@ -159,14 +173,44 @@ const AppContent: React.FC = () => {
       {showPaymentModal && <PaymentModal onConfirm={confirmPayment} onCancel={cancelPayment} isProcessing={isProcessingPayment} error={paymentError} analysis={scanAnalysis} />}
       {showCreateProjectModal && <CreateProjectModal onConfirm={handleCreateProject} onCancel={closeCreateProjectModal} />}
 
-      {isProfileVisible && user && <ProfileScreen user={user} projects={projects} orders={orders} serviceAgreements={serviceAgreements} onConfirmDelivery={handleConfirmDelivery} onRequestReturn={handleRequestReturn} onConfirmServiceCompletion={handleConfirmServiceCompletion} onClose={toggleProfile} />}
+      {/* Profile with Admin Link Injection */}
+      {isProfileVisible && user && (
+          <ProfileScreen 
+            user={user} 
+            projects={projects} 
+            orders={orders} 
+            serviceAgreements={serviceAgreements} 
+            onConfirmDelivery={handleConfirmDelivery} 
+            onRequestReturn={handleRequestReturn} 
+            onConfirmServiceCompletion={handleConfirmServiceCompletion} 
+            onClose={toggleProfile} 
+          />
+      )}
+      {isProfileVisible && (
+        <div className="fixed bottom-6 right-6 z-[70]">
+            <button onClick={openAdminModal} className="text-[10px] text-slate-600 hover:text-slate-400 font-mono bg-black/20 px-2 py-1 rounded">Admin Access</button>
+        </div>
+      )}
+
       {showUpsellModal && <UpsellModal onConfirm={() => { setActiveTab('market'); closeUpsellModal(); }} onCancel={closeUpsellModal}/>}
       {showCreateBountyModal && <CreateBountyModal onConfirm={handleCreateBounty} onCancel={closeCreateBountyModal}/>}
       {showMintNftModal && projectToMint && <MintNftModal project={projectToMint} onConfirm={() => handleMintNft(projectToMint.id)} onCancel={closeMintNftModal}/>}
       {selectedBounty && <BountyDetailsModal bounty={selectedBounty} arbitrators={availableArbitrators} onClose={closeBountyDetailsModal} onFund={handleInitiateFunding} onRelease={handleReleaseFunds} onDispute={() => handleRaiseDispute(selectedBounty)} onSelectArbitrator={(arbitrator: ArbitratorEntity) => handleSelectArbitrator(selectedBounty, arbitrator)} onOpenLegalShield={() => setShowUserLegalShieldModal(true)} onResolve={handleResolveArbitration}/>}
       {showAgreementModal && agreementText && <AgreementModal agreementText={agreementText} onConfirm={handleConfirmFunding} onCancel={closeAgreementModal}/>}
       {showInstallationUpsellModal && orderForUpsell && <InstallationUpsellModal order={orderForUpsell} onConfirm={() => setShowInstallationUpsellModal(false)} onCancel={() => setShowInstallationUpsellModal(false)}/>}
-      {showProjectDetailsModal && selectedProject && <ProjectDetailsModal project={selectedProject} onGetQuotes={handleGetQuotes} onClose={() => setShowProjectDetailsModal(false)} onShare={handleShareProject} onSubmitToChallenge={() => openSubmitToChallengeModal(selectedProject)} />}
+      
+      {/* Enhanced Project Details with Chat */}
+      {showProjectDetailsModal && selectedProject && (
+        <ProjectDetailsModal 
+            project={selectedProject} 
+            onGetQuotes={handleGetQuotes} 
+            onClose={() => setShowProjectDetailsModal(false)} 
+            onShare={handleShareProject} 
+            onSubmitToChallenge={() => openSubmitToChallengeModal(selectedProject)} 
+            onOpenChat={() => openChat(selectedProject.id)}
+        />
+      )}
+
       {showServiceAgreementModal && activeServiceAgreement && user && <ServiceAgreementModal agreement={activeServiceAgreement} user={user} arbitrators={arbitrators} onConfirm={handleConfirmServiceHiring} onCancel={() => setShowServiceAgreementModal(false)}/>}
       {showUserLegalShieldModal && <UserLegalShieldModal onClose={() => setShowUserLegalShieldModal(false)}/>}
       {showDisputeResolutionModal && selectedBounty && <DisputeResolutionModal bounty={selectedBounty} arbitrators={availableArbitrators} onConfirmDispute={handleConfirmDispute} onSelectArbitrator={handleSelectArbitrator} onClose={() => setShowDisputeResolutionModal(false)}/>}
@@ -180,6 +224,18 @@ const AppContent: React.FC = () => {
       {showShoppingCartModal && <ShoppingCartModal cart={cart} onRemove={removeFromCart} onCheckout={handleCheckout} onClose={closeShoppingCart} />}
       {showVendorProfileModal && selectedVendor && <VendorProfileModal vendor={selectedVendor} onClose={() => setShowVendorProfileModal(false)} />}
       {showProposalDetailsModal && selectedProposal && <ProposalDetailsModal proposal={selectedProposal} onClose={closeProposalDetails} onComment={handleSubmitComment} />}
+      
+      {isAdminModalOpen && <AdminPortal onClose={closeAdminModal} />}
+      {isChatOpen && chatContextId && user && (
+          <ChatInterface 
+            contextId={chatContextId} 
+            title="Project Discussion" 
+            messages={messages} 
+            currentUserId={user.id} 
+            onSendMessage={handleSendMessage} 
+            onClose={closeChat} 
+          />
+      )}
     </div>
   );
 };

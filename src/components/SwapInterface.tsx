@@ -1,7 +1,9 @@
+
 import React, { useState } from 'react';
 import { mockUserTokens, swapTokens } from '../core/api/contract';
 import { ChevronRightIcon } from './icons/ChevronRightIcon';
 import { SwapIcon } from './icons/SwapIcon';
+import { InfoIcon } from './icons/InfoIcon';
 
 export const SwapInterface: React.FC = () => {
     const [fromToken, setFromToken] = useState(mockUserTokens[0]);
@@ -54,7 +56,7 @@ export const SwapInterface: React.FC = () => {
             </div>
 
             <div className="flex justify-center my-4">
-                <button className="p-2 bg-slate-700/50 rounded-full border border-white/10 text-ai-violet">
+                <button className="p-2 bg-slate-700/50 rounded-full border border-white/10 text-ai-violet hover:rotate-180 transition-transform duration-300">
                     <SwapIcon className="w-6 h-6" />
                 </button>
             </div>
@@ -76,6 +78,25 @@ export const SwapInterface: React.FC = () => {
                         <toToken.icon className="w-6 h-6 text-ai-violet" />
                         <span className="font-bold text-white">{toToken.symbol}</span>
                     </div>
+                </div>
+            </div>
+
+            <div className="mt-4 bg-slate-800/30 p-3 rounded-lg border border-white/5 text-xs text-slate-400 space-y-2">
+                <div className="flex justify-between">
+                    <span>Rate</span>
+                    <span className="text-white">1 PiUSD = 21.5 ARCHI</span>
+                </div>
+                <div className="flex justify-between">
+                    <span className="flex items-center">Slippage Tolerance <InfoIcon className="w-3 h-3 ml-1" /></span>
+                    <span className="text-white">0.5%</span>
+                </div>
+                <div className="flex justify-between">
+                    <span>Minimum Received</span>
+                    <span className="text-white">{toAmount ? (parseFloat(toAmount) * 0.995).toFixed(2) : '0.00'} {toToken.symbol}</span>
+                </div>
+                <div className="flex justify-between">
+                    <span>Liquidity Provider Fee</span>
+                    <span className="text-white">0.3%</span>
                 </div>
             </div>
 

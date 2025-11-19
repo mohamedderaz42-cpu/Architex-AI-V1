@@ -1,5 +1,6 @@
+
 import { GoogleGenAI, Type, Modality } from "@google/genai";
-import { ProjectEntity, UserEntity, MaterialEntity, TokenEntity, LiquidityPoolEntity, BountyEntity, ArbitratorEntity, ProductEntity, ShippingZone, PromotionEntity, OrderEntity, OrderStatus, ServiceProviderProfile, ServiceAgreementEntity, ReputationEvent, ProposalEntity, ProofOfInstallationStatus, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, BillOfMaterialsEntry, ProposalComment, CartItem } from '../schemas/entities';
+import { ProjectEntity, UserEntity, MaterialEntity, TokenEntity, LiquidityPoolEntity, BountyEntity, ArbitratorEntity, ProductEntity, ShippingZone, PromotionEntity, OrderEntity, OrderStatus, ServiceProviderProfile, ServiceAgreementEntity, ReputationEvent, ProposalEntity, ProofOfInstallationStatus, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, BillOfMaterialsEntry, ProposalComment, CartItem, MessageEntity } from '../schemas/entities';
 import { PiCoinIcon } from '../../components/icons/PiCoinIcon';
 import { ArchitexLogo } from '../../components/icons/ArchitexLogo';
 
@@ -96,6 +97,7 @@ const defaultProjects: ProjectEntity[] = [
   {
     id: 'proj_01',
     ownerId: 'user_01',
+    ownerName: 'ArchieBot',
     name: 'Living Room Remodel',
     status: 'Designing',
     billOfMaterials: [{ materialId: 'mat_01', quantity: 20, status: 'Pending', estimatedCost: 1200, ecoImpactScore: 8 }],
@@ -106,10 +108,12 @@ const defaultProjects: ProjectEntity[] = [
     unreadMessages: 2,
     modificationCount: 1,
     isNft: false,
+    likes: 12
   },
   {
     id: 'proj_02',
     ownerId: 'user_01',
+    ownerName: 'ArchieBot',
     name: 'Kitchen Modernization',
     status: 'Sourcing',
     billOfMaterials: [],
@@ -120,10 +124,12 @@ const defaultProjects: ProjectEntity[] = [
     unreadMessages: 0,
     modificationCount: 0,
     isNft: false,
+    likes: 45
   },
   {
     id: 'proj_03',
     ownerId: 'user_01',
+    ownerName: 'ArchieBot',
     name: 'Bedroom Oasis (NFT)',
     status: 'Complete',
     billOfMaterials: [],
@@ -133,7 +139,20 @@ const defaultProjects: ProjectEntity[] = [
     thumbnailUrl: 'https://placehold.co/400x300/FDB300/FFFFFF/png?text=Bedroom',
     modificationCount: 5,
     isNft: true,
+    likes: 8
   },
+];
+
+const defaultPublicProjects: ProjectEntity[] = [
+    {
+        id: 'pub_01', ownerId: 'user_99', ownerName: 'DesignPro_X', name: 'Cyberpunk Loft', status: 'Complete', billOfMaterials: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), isPublic: true, thumbnailUrl: 'https://placehold.co/400x300/FDB300/000000/png?text=Cyberpunk', modificationCount: 10, isNft: true, likes: 1250
+    },
+    {
+        id: 'pub_02', ownerId: 'user_88', ownerName: 'EcoWarrior', name: 'Bamboo Zen Garden', status: 'Complete', billOfMaterials: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), isPublic: true, thumbnailUrl: 'https://placehold.co/400x300/10B981/FFFFFF/png?text=Zen', modificationCount: 3, isNft: false, likes: 890
+    },
+    {
+        id: 'pub_03', ownerId: 'user_77', ownerName: 'MinimalistMike', name: 'Void Space', status: 'Designing', billOfMaterials: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), isPublic: true, thumbnailUrl: 'https://placehold.co/400x300/FFFFFF/000000/png?text=Void', modificationCount: 1, isNft: false, likes: 340
+    }
 ];
 
 const defaultUserTokens: TokenEntity[] = [
@@ -190,12 +209,17 @@ const defaultMaterials: MaterialEntity[] = [
 
 // --- LIVE STATE (Loaded from LocalStorage) ---
 let mockProjects = load('projects', defaultProjects);
+let mockPublicProjects = load('publicProjects', defaultPublicProjects);
 export let mockUserTokens = load('tokens', defaultUserTokens); // Export for SwapInterface
 let mockBounties = load('bounties', defaultBounties);
 let mockOrders = load('orders', defaultOrders);
 let mockUser = load('user', defaultUser);
 let mockProducts = load('products', defaultProducts); // Now loading rich products
 let mockMaterials = load('materials', defaultMaterials);
+let mockMessages = load<MessageEntity[]>('messages', [
+    { id: 'msg_01', contextId: 'proj_01', senderId: 'sys', senderName: 'System', text: 'Project initialized.', timestamp: new Date(Date.now() - 86400000 * 3).toISOString(), isSystem: true },
+    { id: 'msg_02', contextId: 'proj_01', senderId: 'user_01', senderName: 'ArchieBot', text: 'I need to change the floor texture.', timestamp: new Date(Date.now() - 86400000 * 2).toISOString() }
+]);
 
 const mockArbitrators: ArbitratorEntity[] = [
     { id: 'arb_01', name: 'Judge Pi', specialty: 'Residential Design', fee: 50, resolutionRate: 98, casesResolved: 152, avatarUrl: 'https://placehold.co/100x100/020617/FDB300/png?text=JP', conflictsWithProjectIds: ['proj_03'] },
@@ -261,6 +285,10 @@ export const listProjects = async (): Promise<ProjectEntity[]> => {
     return [...mockProjects]; 
 };
 
+export const listPublicProjects = async (): Promise<ProjectEntity[]> => {
+    return [...mockPublicProjects];
+};
+
 export const incrementProjectModification = async (projectId: string): Promise<ProjectEntity> => { 
     const idx = mockProjects.findIndex(p => p.id === projectId); 
     if(idx > -1) { 
@@ -271,6 +299,39 @@ export const incrementProjectModification = async (projectId: string): Promise<P
     } 
     throw new Error('P not found'); 
 };
+
+// --- COMMUNICATION SYSTEM ---
+export const getMessages = async (contextId: string): Promise<MessageEntity[]> => {
+    return mockMessages.filter(m => m.contextId === contextId).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+};
+
+export const sendMessage = async (contextId: string, text: string): Promise<MessageEntity> => {
+    const newMessage: MessageEntity = {
+        id: `msg_${Date.now()}`,
+        contextId,
+        senderId: mockUser.id,
+        senderName: mockUser.piUsername,
+        text,
+        timestamp: new Date().toISOString()
+    };
+    mockMessages.push(newMessage);
+    save('messages', mockMessages);
+    return newMessage;
+};
+
+// --- ADMIN PANEL ---
+export const requestAdminMfa = async (password: string): Promise<boolean> => {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    if (password === 'admin') return true; // Mock password
+    return false;
+};
+
+export const verifyAdminMfa = async (code: string): Promise<boolean> => {
+    await new Promise(resolve => setTimeout(resolve, 800));
+    if (code === '123456') return true; // Mock code
+    return false;
+};
+
 
 // --- AI POWERED FUNCTIONS ---
 
@@ -364,6 +425,7 @@ export const generateAIProject = async (params: { roomType: string, style: strin
     const newProject: ProjectEntity = {
         id: `proj_${Date.now()}`,
         ownerId: mockUser.id,
+        ownerName: mockUser.piUsername,
         name: `${params.style} ${params.roomType}`,
         status: 'Designing',
         billOfMaterials: billOfMaterials,
@@ -373,6 +435,7 @@ export const generateAIProject = async (params: { roomType: string, style: strin
         thumbnailUrl: imageUrl,
         modificationCount: 0,
         isNft: false,
+        likes: 0
     };
 
     mockProjects.unshift(newProject);
@@ -384,6 +447,7 @@ export const generateModelFromScan = async (): Promise<ProjectEntity> => {
     const newProject: ProjectEntity = { 
         id: `proj_${Date.now()}`, 
         ownerId: 'user_01', 
+        ownerName: mockUser.piUsername,
         name: `Scanned Room ${new Date().toLocaleTimeString()}`, 
         status: 'Scanning', 
         billOfMaterials: [], 
@@ -394,6 +458,7 @@ export const generateModelFromScan = async (): Promise<ProjectEntity> => {
         thumbnailUrl: `https://placehold.co/400x300/020617/FFFFFF/png?text=New+Scan`, 
         modificationCount: 0, 
         isNft: false, 
+        likes: 0
     }; 
     mockProjects.unshift(newProject); 
     save('projects', mockProjects);

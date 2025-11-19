@@ -35,7 +35,7 @@ export interface UserEntity {
   subscriptionTier: 'Free' | 'Accelerator';
   vendorProfile?: VendorProfile;
   serviceProviderProfile?: ServiceProviderProfile;
-  role: 'user' | 'vendor' | 'service-provider' | 'arbitrator';
+  role: 'user' | 'vendor' | 'service-provider' | 'arbitrator' | 'admin';
   stakedArchi?: number;
 }
 
@@ -51,6 +51,7 @@ export interface BillOfMaterialsEntry {
 export interface ProjectEntity {
   id: string;
   ownerId: string;
+  ownerName?: string; // Denormalized for Public Gallery
   name: string;
   roomScanUrl?: string; 
   status: ProjectStatus;
@@ -62,6 +63,7 @@ export interface ProjectEntity {
   unreadMessages?: number;
   modificationCount?: number;
   isNft?: boolean;
+  likes?: number;
 }
 
 export interface MaterialEntity {
@@ -242,4 +244,15 @@ export interface SystemNotification {
     message: string;
     actionLabel?: string;
     actionTarget?: string;
+}
+
+// --- Communication Entities ---
+export interface MessageEntity {
+    id: string;
+    contextId: string; // ProjectID or OrderID
+    senderId: string;
+    senderName: string;
+    text: string;
+    timestamp: string;
+    isSystem?: boolean;
 }
