@@ -572,10 +572,40 @@ export const useArchitex = () => {
     }
   }, [orders, orderForUpsell]);
 
-  const handleConfirmDelivery = async (orderId: string) => { const updatedOrder = await api.updateOrderStatus(orderId, 'Delivered'); const newOrders = orders.map(o => o.id === orderId ? updatedOrder : o); setOrders(newOrders); if (updatedOrder.proofOfInstallationStatus === 'pending') { setOrderForProof(updatedOrder); setShowProofOfInstallationModal(true); } addToast('Delivery Confirmed', 'success'); };
-  const handleRequestReturn = async (orderId: string) => { await api.updateOrderStatus(orderId, 'Returned'); const newOrders = await api.listOrders(); setOrders(newOrders); addToast('Return Requested', 'info'); };
-  const handleMarkAsShipped = async (orderId: string) => { await api.updateOrderStatus(orderId, 'Shipped'); const newOrders = await api.listOrders(); setOrders(newOrders); };
-  const handleDisputeReturn = async (orderId: string) => { console.log(`[CONTRACT] Freezing escrow for order ${orderId} and initiating arbitration.`); };
+  // Updated Delivery Confirmation to include Payout Trigger
+  const handleConfirmDelivery = async (orderId: string) => { 
+      try {
+          const updatedOrder = await api.confirmOrderDelivery(orderId); // New function calling payout
+          const newOrders = orders.map(o => o.id === orderId ? updatedOrder : o); 
+          setOrders(newOrders); 
+          if (updatedOrder.proofOfInstallationStatus === 'pending') { 
+              setOrderForProof(updatedOrder); 
+              setShowProofOfInstallationModal(true); 
+          } 
+          addToast('Delivery Confirmed. Funds Released from Escrow.', 'success'); 
+      } catch (e: any) {
+          addToast(e.message, 'error');
+      }
+  };
+  
+  const handleRequestReturn = async (orderId: string) => { 
+      const updatedOrder = await api.requestOrderReturn(orderId); 
+      const newOrders = orders.map(o => o.id === orderId ? updatedOrder : o); 
+      setOrders(newOrders); 
+      addToast('Return Requested. Waiting for Vendor Approval.', 'info'); 
+  };
+  
+  const handleMarkAsShipped = async (orderId: string) => { 
+      const updatedOrder = await api.updateOrderStatus(orderId, 'Shipped'); 
+      const newOrders = orders.map(o => o.id === orderId ? updatedOrder : o); 
+      setOrders(newOrders); 
+      addToast('Order Marked as Shipped', 'success');
+  };
+  
+  const handleDisputeReturn = async (orderId: string) => { 
+      console.log(`[CONTRACT] Freezing escrow for order ${orderId} and initiating arbitration.`); 
+      addToast('Return Disputed. Arbitration Started.', 'error');
+  };
 
   // --- Service Provider ---
   const handleGetQuotes = () => { setShowProjectDetailsModal(false); setActiveTab('market'); };

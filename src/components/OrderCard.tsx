@@ -1,8 +1,10 @@
+
 import React from 'react';
 import { OrderEntity } from '../core/schemas/entities';
 import { PiCoinIcon } from './icons/PiCoinIcon';
 import { CheckCircleIcon } from './icons/CheckCircleIcon';
 import { ArchiveIcon } from './icons/ArchiveIcon';
+import { AlertTriangleIcon } from './icons/AlertTriangleIcon';
 
 interface OrderCardProps {
     order: OrderEntity;
@@ -14,7 +16,10 @@ const statusColors: { [key in OrderEntity['status']]: string } = {
     Processing: 'bg-pi-gold/20 text-pi-gold',
     Shipped: 'bg-ai-violet/20 text-ai-violet',
     Delivered: 'bg-eco-green/20 text-eco-green',
+    'Return Requested': 'bg-orange-500/20 text-orange-400',
     Returned: 'bg-slate-500/20 text-slate-300',
+    Refunded: 'bg-red-500/20 text-red-400',
+    'In Dispute': 'bg-red-500 text-white',
 };
 
 const timeAgo = (date: string): string => {
@@ -49,16 +54,21 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onConfirmDelivery, 
                 </div>
                 <div className="flex items-center space-x-2">
                     {order.status === 'Shipped' && (
-                        <button onClick={() => onConfirmDelivery(order.id)} className="flex items-center px-2.5 py-1 bg-eco-green/80 rounded-full text-xs font-semibold text-white hover:bg-eco-green">
+                        <button onClick={() => onConfirmDelivery(order.id)} className="flex items-center px-2.5 py-1 bg-eco-green/80 rounded-full text-xs font-semibold text-white hover:bg-eco-green transition-all">
                             <CheckCircleIcon className="w-4 h-4 mr-1" />
                             <span>Confirm Delivery</span>
                         </button>
                     )}
                     {order.status === 'Delivered' && (
-                         <button onClick={() => onRequestReturn(order.id)} className="flex items-center px-2.5 py-1 bg-slate-700/50 rounded-full text-xs font-semibold text-slate-300 hover:bg-slate-600">
+                         <button onClick={() => onRequestReturn(order.id)} className="flex items-center px-2.5 py-1 bg-slate-700/50 rounded-full text-xs font-semibold text-slate-300 hover:bg-slate-600 transition-all">
                             <ArchiveIcon className="w-4 h-4 mr-1" />
                              <span>Request Return</span>
                         </button>
+                    )}
+                    {order.status === 'In Dispute' && (
+                         <div className="flex items-center text-xs text-red-400 font-bold">
+                            <AlertTriangleIcon className="w-4 h-4 mr-1" /> Escrow Frozen
+                        </div>
                     )}
                 </div>
             </div>

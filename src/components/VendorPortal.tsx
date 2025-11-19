@@ -7,19 +7,21 @@ import { ProductManagement } from './ProductManagement';
 import { ShippingZones } from './ShippingZones';
 import { PromotionsEngine } from './PromotionsEngine';
 import { VendorApiAccess } from './VendorApiAccess';
+import { VendorFulfillment } from './VendorFulfillment';
 import { PackageIcon } from './icons/PackageIcon';
 import { TruckIcon } from './icons/TruckIcon';
 import { PercentIcon } from './icons/PercentIcon';
 import { DatabaseIcon } from './icons/DatabaseIcon';
+import { BoxIcon } from './icons/BoxIcon';
 
-type VendorTab = 'products' | 'shipping' | 'promotions' | 'api';
+type VendorTab = 'products' | 'orders' | 'shipping' | 'promotions' | 'api';
 
 export const VendorPortal: React.FC = () => {
     const [isVerified, setIsVerified] = useState(false);
     const [hasInsurance, setHasInsurance] = useState(false);
     const [agreedToIndemnity, setAgreedToIndemnity] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<VendorTab>('products');
+    const [activeTab, setActiveTab] = useState<VendorTab>('orders');
 
     const [products, setProducts] = useState<ProductEntity[]>([]);
     const [shippingZones, setShippingZones] = useState<ShippingZone[]>([]);
@@ -60,6 +62,8 @@ export const VendorPortal: React.FC = () => {
 
     const renderContent = () => {
         switch (activeTab) {
+            case 'orders':
+                return <VendorFulfillment />;
             case 'products':
                 return <ProductManagement products={products} />;
             case 'shipping':
@@ -106,17 +110,20 @@ export const VendorPortal: React.FC = () => {
 
     return (
         <div className="flex flex-col h-full">
-            <div className="flex-shrink-0 flex items-center justify-around p-1 bg-slate-900/50 rounded-full mb-2">
-                <button onClick={() => setActiveTab('products')} className={`flex items-center space-x-2 px-3 py-1.5 rounded-full font-semibold text-xs transition-colors duration-300 ${activeTab === 'products' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
+            <div className="flex-shrink-0 flex items-center justify-around p-1 bg-slate-900/50 rounded-full mb-2 overflow-x-auto no-scrollbar">
+                <button onClick={() => setActiveTab('orders')} className={`flex items-center space-x-2 px-3 py-1.5 rounded-full font-semibold text-xs transition-colors duration-300 whitespace-nowrap ${activeTab === 'orders' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
+                    <BoxIcon className="w-4 h-4" /> <span>Orders</span>
+                </button>
+                <button onClick={() => setActiveTab('products')} className={`flex items-center space-x-2 px-3 py-1.5 rounded-full font-semibold text-xs transition-colors duration-300 whitespace-nowrap ${activeTab === 'products' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
                     <PackageIcon className="w-4 h-4" /> <span>Products</span>
                 </button>
-                <button onClick={() => setActiveTab('shipping')} className={`flex items-center space-x-2 px-3 py-1.5 rounded-full font-semibold text-xs transition-colors duration-300 ${activeTab === 'shipping' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
+                <button onClick={() => setActiveTab('shipping')} className={`flex items-center space-x-2 px-3 py-1.5 rounded-full font-semibold text-xs transition-colors duration-300 whitespace-nowrap ${activeTab === 'shipping' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
                     <TruckIcon className="w-4 h-4" /> <span>Shipping</span>
                 </button>
-                <button onClick={() => setActiveTab('promotions')} className={`flex items-center space-x-2 px-3 py-1.5 rounded-full font-semibold text-xs transition-colors duration-300 ${activeTab === 'promotions' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
-                    <PercentIcon className="w-4 h-4" /> <span>Promotions</span>
+                <button onClick={() => setActiveTab('promotions')} className={`flex items-center space-x-2 px-3 py-1.5 rounded-full font-semibold text-xs transition-colors duration-300 whitespace-nowrap ${activeTab === 'promotions' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
+                    <PercentIcon className="w-4 h-4" /> <span>Promos</span>
                 </button>
-                 <button onClick={() => setActiveTab('api')} className={`flex items-center space-x-2 px-3 py-1.5 rounded-full font-semibold text-xs transition-colors duration-300 ${activeTab === 'api' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
+                 <button onClick={() => setActiveTab('api')} className={`flex items-center space-x-2 px-3 py-1.5 rounded-full font-semibold text-xs transition-colors duration-300 whitespace-nowrap ${activeTab === 'api' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
                     <DatabaseIcon className="w-4 h-4" /> <span>API</span>
                 </button>
             </div>

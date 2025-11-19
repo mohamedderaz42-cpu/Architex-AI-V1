@@ -1167,9 +1167,10 @@ export const createPromotion = async (promo: Omit<PromotionEntity, 'id'>): Promi
 export const listOrders = async (): Promise<OrderEntity[]> => { return [...mockOrders]; };
 
 export const createOrder = async (items: CartItem[], totalAmount: number): Promise<OrderEntity> => {
-    // REVENUE ROUTING: 100% of Payment is handled by PaymentModal/Pi SDK, which should route to a central wallet.
-    // Then, in a real system, it would be split to Vendor and Platform.
-    // Here we assume payment success and just create the record.
+    // REVENUE ROUTING: Payment is handled via Pi SDK then confirmed here.
+    // In simulation, funds are deducted from user wallet for consistency in demo.
+    // But in real app, Pi SDK payment is separate.
+    // Here we just assume the funds are now held by the Escrow Contract (system wallet).
     
     const newOrder: OrderEntity = {
         id: `ord_${Date.now()}`,
@@ -1180,6 +1181,10 @@ export const createOrder = async (items: CartItem[], totalAmount: number): Promi
         createdAt: new Date().toISOString(),
         proofOfInstallationStatus: 'none'
     };
+
+    // Simulate escrow hold
+    escrowBalance += totalAmount;
+    save('escrowBalance', escrowBalance);
     
     // We should also sign a Purchase Agreement
     await signAgreement('Purchase', newOrder.id, await generateLegalAgreement('Purchase', [mockUser.piUsername], { items, total: totalAmount }));
@@ -1209,6 +1214,53 @@ export const updateOrderStatus = async (orderId: string, status: OrderStatus): P
     save('orders', mockOrders);
     return { ...mockOrders[idx] }; 
 };
+
+// --- FULFILLMENT, RETURNS & PAYOUT AUTOMATION ---
+
+export const confirmOrderDelivery = async (orderId: string): Promise<OrderEntity> => {
+    const idx = mockOrders.findIndex(o => o.id === orderId);
+    if (idx === -1) throw new Error('Order not found');
+    
+    const order = mockOrders[idx];
+
+    // Automated Payout Trigger
+    if (escrowBalance >= order.total) {
+        escrowBalance -= order.total;
+        save('escrowBalance', escrowBalance);
+        // Funds would move to Vendor Wallet here
+        console.log(`[Escrow] Released ${order.total} PiUSD to Vendor.`);
+    }
+
+    return updateOrderStatus(orderId, 'Delivered');
+};
+
+export const requestOrderReturn = async (orderId: string): Promise<OrderEntity> => {
+    return updateOrderStatus(orderId, 'Return Requested');
+};
+
+export const processVendorOrderAction = async (orderId: string, action: 'ship' | 'approve_return' | 'dispute_return'): Promise<OrderEntity> => {
+    const idx = mockOrders.findIndex(o => o.id === orderId);
+    if (idx === -1) throw new Error('Order not found');
+    
+    if (action === 'ship') {
+        return updateOrderStatus(orderId, 'Shipped');
+    } else if (action === 'approve_return') {
+        // Refund Logic
+        if (escrowBalance >= mockOrders[idx].total) {
+             escrowBalance -= mockOrders[idx].total;
+             save('escrowBalance', escrowBalance);
+             // In real app, refund to user via Pi SDK / App Wallet
+             console.log(`[Escrow] Refunded ${mockOrders[idx].total} PiUSD to User.`);
+        }
+        return updateOrderStatus(orderId, 'Refunded');
+    } else if (action === 'dispute_return') {
+        // Freeze Escrow is implicit as funds are not released
+        return updateOrderStatus(orderId, 'In Dispute');
+    }
+    
+    return mockOrders[idx];
+};
+
 
 export const getInstallationQuote = async (orderId: string): Promise<{ quote: number, providerId: string }> => { await new Promise(res => setTimeout(res, 800)); return { quote: 250, providerId: 'sp_01' }; };
 export const listServiceProviders = async (): Promise<UserEntity[]> => { return mockServiceProviders.map(sp => ({ ...sp, role: 'service-provider' })); };
