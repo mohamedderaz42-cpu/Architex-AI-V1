@@ -1,5 +1,7 @@
 {
   "name": "Architex",
   "description": "Transform spaces with AI-powered 3D design on Pi Network. Scan rooms, visualize styles, and trade eco-friendly materials in a secure, decentralized marketplace. The Future of Design.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "camera"
+  ]
 }
