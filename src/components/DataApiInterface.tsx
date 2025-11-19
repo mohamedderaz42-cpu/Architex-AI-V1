@@ -1,14 +1,23 @@
+
 import React, { useState } from 'react';
 import { DatabaseIcon } from './icons/DatabaseIcon';
 import { TrendingUpIcon } from './icons/TrendingUpIcon';
+import { useToast } from './Toast';
 
 const mockApiKey = "arch_pk_live_xxxxxxxxxxxxxx";
 
 export const DataApiInterface: React.FC = () => {
     const [apiKey, setApiKey] = useState(mockApiKey);
+    const { addToast } = useToast();
 
     const generateNewKey = () => {
         setApiKey("arch_pk_live_" + Array(14).fill(0).map(() => "x").join(''));
+        addToast('New API Key Generated', 'success');
+    }
+
+    const copyToClipboard = () => {
+        navigator.clipboard.writeText(apiKey);
+        addToast('API Key Copied', 'info');
     }
 
     return (
@@ -39,7 +48,11 @@ export const DataApiInterface: React.FC = () => {
 
             <div className="text-left">
                  <h4 className="text-xs font-bold text-slate-500 uppercase mb-2">API Access</h4>
-                 <div className="p-3 bg-slate-900/50 rounded-lg border border-white/10">
+                 <div 
+                    className="p-3 bg-slate-900/50 rounded-lg border border-white/10 cursor-pointer hover:border-pi-gold/50 transition-colors"
+                    onClick={copyToClipboard}
+                    title="Click to copy"
+                 >
                     <p className="text-xs text-slate-400">Your API Key:</p>
                     <code className="text-pi-gold text-sm font-mono break-all">{apiKey}</code>
                  </div>

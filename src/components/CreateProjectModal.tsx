@@ -88,6 +88,9 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onConfir
                     >
                         Cancel
                     </button>
+                    <p className="text-[10px] text-slate-500 text-center">
+                        Results may vary. AI can occasionally generate inaccuracies.
+                    </p>
                 </div>
             </GlassPanel>
         </div>

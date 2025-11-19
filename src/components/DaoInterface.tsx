@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { UserEntity, ProposalEntity } from '../core/schemas/entities';
 import { ArchitexLogo } from './icons/ArchitexLogo';
@@ -6,7 +7,6 @@ import { ProposalCard } from './ProposalCard';
 import { PlusIcon } from './icons/PlusIcon';
 import { InfoIcon } from './icons/InfoIcon';
 import { AwardIcon } from './icons/AwardIcon';
-import { PiCoinIcon } from './icons/PiCoinIcon';
 import { TrendingUpIcon } from './icons/TrendingUpIcon';
 
 interface DaoInterfaceProps {
@@ -17,9 +17,10 @@ interface DaoInterfaceProps {
     onVote: (proposalId: string, vote: 'for' | 'against') => void;
     onExecute: (proposalId: string) => void;
     onViewTos: () => void;
+    onOpenDetails: (proposal: ProposalEntity) => void;
 }
 
-export const DaoInterface: React.FC<DaoInterfaceProps> = ({ user, proposals, onStake, onUnstake, onVote, onExecute, onViewTos }) => {
+export const DaoInterface: React.FC<DaoInterfaceProps> = ({ user, proposals, onStake, onUnstake, onVote, onExecute, onViewTos, onOpenDetails }) => {
     const [stakeAmount, setStakeAmount] = useState('');
     const votingPower = (user.stakedArchi || 0) + user.trustScore;
 
@@ -117,7 +118,15 @@ export const DaoInterface: React.FC<DaoInterfaceProps> = ({ user, proposals, onS
 
 
             <div className="flex-grow space-y-3 pr-2 overflow-y-auto min-h-0">
-                {proposals.map(p => <ProposalCard key={p.id} proposal={p} onVote={onVote} onExecute={onExecute} />)}
+                {proposals.map(p => (
+                    <ProposalCard 
+                        key={p.id} 
+                        proposal={p} 
+                        onVote={onVote} 
+                        onExecute={onExecute} 
+                        onOpenDetails={onOpenDetails}
+                    />
+                ))}
             </div>
              <div className="grid grid-cols-2 gap-2 mt-3 flex-shrink-0 pt-2 border-t border-white/5">
                  <button className="group flex items-center justify-center w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-full text-sm font-semibold text-slate-300 hover:bg-slate-700 transition-all duration-300">

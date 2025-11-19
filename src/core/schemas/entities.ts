@@ -177,6 +177,15 @@ export interface ReputationEvent {
     timestamp: string;
 }
 
+export interface ProposalComment {
+    id: string;
+    proposalId: string;
+    authorId: string;
+    authorName: string;
+    text: string;
+    timestamp: string;
+}
+
 export interface ProposalEntity {
     id: string;
     title: string;
@@ -189,6 +198,7 @@ export interface ProposalEntity {
     endsAt: string;
     quorum: number; // e.g., 0.20 for 20%
     turnout: number; // Percentage of total voting power that voted
+    comments?: ProposalComment[];
 }
 
 

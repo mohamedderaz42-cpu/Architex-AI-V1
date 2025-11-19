@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { ProjectEntity, UserEntity, MaterialEntity, TokenEntity, LiquidityPoolEntity, BountyEntity, ArbitratorEntity, ProductEntity, ShippingZone, PromotionEntity, OrderEntity, OrderStatus, ServiceProviderProfile, ServiceAgreementEntity, ReputationEvent, ProposalEntity, ProofOfInstallationStatus, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, BillOfMaterialsEntry } from '../schemas/entities';
+import { ProjectEntity, UserEntity, MaterialEntity, TokenEntity, LiquidityPoolEntity, BountyEntity, ArbitratorEntity, ProductEntity, ShippingZone, PromotionEntity, OrderEntity, OrderStatus, ServiceProviderProfile, ServiceAgreementEntity, ReputationEvent, ProposalEntity, ProofOfInstallationStatus, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, BillOfMaterialsEntry, ProposalComment } from '../schemas/entities';
 import { PiCoinIcon } from '../../components/icons/PiCoinIcon';
 import { ArchitexLogo } from '../../components/icons/ArchitexLogo';
 
@@ -110,12 +110,12 @@ const defaultUser: UserEntity = { id: 'user_01', piUsername: 'ArchieBot', wallet
 
 // --- RICH DATA SEEDING ---
 const defaultProducts: ProductEntity[] = [
-    { id: 'prod_01', vendorId: 'user_01', name: 'Bamboo Flooring (Dark Walnut)', price: 45.50, inStock: 500, imageUrl: 'https://placehold.co/100x100/5D4037/FFFFFF/png?text=Bamboo', tags: ['requires-installation', 'eco-friendly'] },
-    { id: 'prod_02', vendorId: 'user_01', name: 'Recycled Steel I-Beams', price: 125.00, inStock: 80, imageUrl: 'https://placehold.co/100x100/607D8B/FFFFFF/png?text=Steel', tags: ['requires-installation', 'industrial'] },
-    { id: 'prod_03', vendorId: 'user_01', name: 'Low-VOC Paint (Eggshell)', price: 45.00, inStock: 250, imageUrl: 'https://placehold.co/100x100/FFF9C4/000000/png?text=Paint' },
-    { id: 'prod_04', vendorId: 'user_02', name: 'Solar Glass Roof Tiles', price: 85.00, inStock: 1200, imageUrl: 'https://placehold.co/100x100/0288D1/FFFFFF/png?text=Solar', tags: ['requires-installation', 'energy-saving'] },
-    { id: 'prod_05', vendorId: 'user_02', name: 'Hempcrete Blocks', price: 12.00, inStock: 3000, imageUrl: 'https://placehold.co/100x100/8D6E63/FFFFFF/png?text=Hemp', tags: ['insulation', 'carbon-negative'] },
-    { id: 'prod_06', vendorId: 'user_03', name: 'Smart Thermostat V2', price: 199.00, inStock: 150, imageUrl: 'https://placehold.co/100x100/212121/FFFFFF/png?text=Smart', tags: ['automation'] },
+    { id: 'prod_01', vendorId: 'user_01', name: 'Bamboo Flooring (Dark Walnut)', price: 45.50, inStock: 500, imageUrl: 'https://placehold.co/100x100/5D4037/FFFFFF/png?text=Bamboo', tags: ['Eco-Friendly', 'Structural'] },
+    { id: 'prod_02', vendorId: 'user_01', name: 'Recycled Steel I-Beams', price: 125.00, inStock: 80, imageUrl: 'https://placehold.co/100x100/607D8B/FFFFFF/png?text=Steel', tags: ['Structural', 'Industrial'] },
+    { id: 'prod_03', vendorId: 'user_01', name: 'Low-VOC Paint (Eggshell)', price: 45.00, inStock: 250, imageUrl: 'https://placehold.co/100x100/FFF9C4/000000/png?text=Paint', tags: ['Decor', 'Eco-Friendly'] },
+    { id: 'prod_04', vendorId: 'user_02', name: 'Solar Glass Roof Tiles', price: 85.00, inStock: 1200, imageUrl: 'https://placehold.co/100x100/0288D1/FFFFFF/png?text=Solar', tags: ['Eco-Friendly', 'Energy'] },
+    { id: 'prod_05', vendorId: 'user_02', name: 'Hempcrete Blocks', price: 12.00, inStock: 3000, imageUrl: 'https://placehold.co/100x100/8D6E63/FFFFFF/png?text=Hemp', tags: ['Insulation', 'Eco-Friendly'] },
+    { id: 'prod_06', vendorId: 'user_03', name: 'Smart Thermostat V2', price: 199.00, inStock: 150, imageUrl: 'https://placehold.co/100x100/212121/FFFFFF/png?text=Smart', tags: ['Smart Home', 'Automation'] },
 ];
 
 const defaultMaterials: MaterialEntity[] = [
@@ -152,8 +152,10 @@ let reputationEvents = load<ReputationEvent[]>('reputationEvents', [
     {id: 'rev_01', userId: 'user_01', type: 'BountyCompleted', value: 10, description: "Completed bounty 'Source Eco-Friendly Countertops'", timestamp: new Date().toISOString()}
 ]);
 let mockProposals = load<ProposalEntity[]>('proposals', [
-    { id: 'prop_01', title: 'Reduce Bounty Commission to 8%', description: 'Lowering the platform fee will attract more high-quality designers.', proposerId: 'user_01', status: 'Voting', forVotes: 125000, againstVotes: 30000, createdAt: new Date(Date.now() - 86400000 * 5).toISOString(), endsAt: new Date(Date.now() + 86400000 * 2).toISOString(), quorum: 0.20, turnout: 0.155 },
-    { id: 'prop_02', title: 'Fund a new Eco-Grant Program', description: 'Allocate 1M ARCHI from the treasury to fund projects using sustainable materials.', proposerId: 'designer_01', status: 'Passed', forVotes: 550000, againstVotes: 100000, createdAt: new Date(Date.now() - 86400000 * 10).toISOString(), endsAt: new Date(Date.now() - 86400000 * 3).toISOString(), quorum: 0.20, turnout: 0.65 },
+    { id: 'prop_01', title: 'Reduce Bounty Commission to 8%', description: 'Lowering the platform fee will attract more high-quality designers.', proposerId: 'user_01', status: 'Voting', forVotes: 125000, againstVotes: 30000, createdAt: new Date(Date.now() - 86400000 * 5).toISOString(), endsAt: new Date(Date.now() + 86400000 * 2).toISOString(), quorum: 0.20, turnout: 0.155, comments: [] },
+    { id: 'prop_02', title: 'Fund a new Eco-Grant Program', description: 'Allocate 1M ARCHI from the treasury to fund projects using sustainable materials.', proposerId: 'designer_01', status: 'Passed', forVotes: 550000, againstVotes: 100000, createdAt: new Date(Date.now() - 86400000 * 10).toISOString(), endsAt: new Date(Date.now() - 86400000 * 3).toISOString(), quorum: 0.20, turnout: 0.65, comments: [
+        {id: 'c_01', proposalId: 'prop_02', authorId: 'user_99', authorName: 'GreenBuild', text: 'This is essential for growth.', timestamp: new Date(Date.now() - 86400000 * 8).toISOString()}
+    ] },
 ]);
 
 export const mockLiquidityPool: LiquidityPoolEntity = {
@@ -262,10 +264,6 @@ export const generateAIProject = async (params: { roomType: string, style: strin
             imageUrl = `data:image/jpeg;base64,${base64Image}`;
 
             // 2. Generate BOM with Gemini using the generated image
-            // We can't easily pass the base64 back in a stateless REST way here efficiently without caching, 
-            // so we will ask Gemini to generate a BOM based on the text description for now, 
-            // or if we had the image uploaded to a URL we would use that.
-            // Better: Pass the text description to Gemini to infer materials.
             const bomResponse = await ai.models.generateContent({
                 model: 'gemini-2.5-flash',
                 contents: `Generate a Bill of Materials for a ${params.style} ${params.roomType} that includes: ${params.prompt}. Return JSON array of objects with 'name' and 'quantity'.`,
@@ -477,7 +475,10 @@ export const resolveArbitration = async (bountyId: string, decision: 'Release' |
     return {...mockBounties[idx]}; 
 };
 
-export const listVendorProducts = async (): Promise<ProductEntity[]> => { return [...mockProducts]; };
+export const listVendorProducts = async (): Promise<ProductEntity[]> => { 
+    // Return from local state to allow updates
+    return [...mockProducts]; 
+};
 export const listShippingZones = async (): Promise<ShippingZone[]> => { return [...mockShippingZones]; };
 export const updateShippingZone = async (zoneId: string, active: boolean): Promise<ShippingZone> => { const z = mockShippingZones.find(z => z.id === zoneId); if(!z) throw new Error('Zone not found'); z.active = active; return {...z}; };
 export const listPromotions = async (): Promise<PromotionEntity[]> => { return [...mockPromotions]; };
@@ -619,6 +620,27 @@ export const executeProposal = async(proposalId: string): Promise<ProposalEntity
     return {...proposal};
 };
 
+export const submitProposalComment = async (proposalId: string, text: string): Promise<ProposalEntity> => {
+    const idx = mockProposals.findIndex(p => p.id === proposalId);
+    if (idx === -1) throw new Error("Proposal not found.");
+
+    const newComment: ProposalComment = {
+        id: `comm_${Date.now()}`,
+        proposalId,
+        authorId: mockUser.id,
+        authorName: mockUser.piUsername,
+        text,
+        timestamp: new Date().toISOString()
+    };
+
+    if (!mockProposals[idx].comments) {
+        mockProposals[idx].comments = [];
+    }
+    mockProposals[idx].comments!.push(newComment);
+    save('proposals', mockProposals);
+    return { ...mockProposals[idx] };
+};
+
 export const submitProofOfInstallation = async(orderId: string, photoData: string): Promise<OrderEntity> => {
     console.log(`API: Received proof of installation for order ${orderId}`);
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -663,10 +685,25 @@ export const verifyProofOfInstallation = async(orderId: string): Promise<OrderEn
 };
 
 export const shareToPiFeed = async (projectId: string): Promise<{ success: boolean; message: string }> => {
-    console.log(`[PiSocialAPI] User ${mockUser.id} is sharing project ${projectId}.`);
+    const project = mockProjects.find(p => p.id === projectId);
+    
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: project?.name || 'Architex Project',
+                text: `Check out this amazing design on Architex!`,
+                url: window.location.href // In a real app, this would be a deep link
+            });
+            return { success: true, message: 'Shared successfully!' };
+        } catch (err) {
+            console.log('Share cancelled or failed', err);
+            return { success: false, message: 'Share cancelled' };
+        }
+    }
+
+    console.log(`[PiSocialAPI] Fallback sharing project ${projectId}.`);
     await new Promise(resolve => setTimeout(resolve, 1200));
-    console.log(`[PiSocialAPI] Share successful.`);
-    return { success: true, message: 'Project shared to Pi Feed!' };
+    return { success: true, message: 'Shared to Pi Feed (Mock)!' };
 };
 
 // --- Design Challenge API ---

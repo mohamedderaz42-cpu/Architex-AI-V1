@@ -1,15 +1,16 @@
+
 import React from 'react';
 import { ProposalEntity } from '../core/schemas/entities';
 import { ThumbsUpIcon } from './icons/ThumbsUpIcon';
 import { ThumbsDownIcon } from './icons/ThumbsDownIcon';
-import { CheckCircleIcon } from './icons/CheckCircleIcon';
-import { XCircleIcon } from './icons/XCircleIcon';
 import { ZapIcon } from './icons/ZapIcon';
+import { ChatIcon } from './icons/ChatIcon';
 
 interface ProposalCardProps {
     proposal: ProposalEntity;
     onVote: (proposalId: string, vote: 'for' | 'against') => void;
     onExecute: (proposalId: string) => void;
+    onOpenDetails: (proposal: ProposalEntity) => void;
 }
 
 const statusInfo: { [key in ProposalEntity['status']]: { color: string; label: string } } = {
@@ -20,7 +21,7 @@ const statusInfo: { [key in ProposalEntity['status']]: { color: string; label: s
     Executed: { color: 'text-slate-300', label: 'Executed' },
 };
 
-export const ProposalCard: React.FC<ProposalCardProps> = ({ proposal, onVote, onExecute }) => {
+export const ProposalCard: React.FC<ProposalCardProps> = ({ proposal, onVote, onExecute, onOpenDetails }) => {
     const totalVotes = proposal.forVotes + proposal.againstVotes;
     const forPercentage = totalVotes > 0 ? (proposal.forVotes / totalVotes) * 100 : 0;
     const againstPercentage = totalVotes > 0 ? (proposal.againstVotes / totalVotes) * 100 : 0;
@@ -33,12 +34,12 @@ export const ProposalCard: React.FC<ProposalCardProps> = ({ proposal, onVote, on
     return (
         <div className="bg-slate-900/50 p-3 rounded-xl border border-white/10">
             <div className="flex justify-between items-start">
-                <h5 className="font-bold text-white text-sm">{proposal.title}</h5>
+                <h5 className="font-bold text-white text-sm cursor-pointer hover:text-ai-violet transition-colors" onClick={() => onOpenDetails(proposal)}>{proposal.title}</h5>
                 <span className={`text-xs font-semibold ${statusInfo[proposal.status].color}`}>
                     {statusInfo[proposal.status].label}
                 </span>
             </div>
-            <p className="text-xs text-slate-400 mt-1">{proposal.description}</p>
+            <p className="text-xs text-slate-400 mt-1 line-clamp-2">{proposal.description}</p>
             
             <div className="mt-3">
                 <div className="flex h-2 rounded-full overflow-hidden bg-slate-700">
@@ -63,21 +64,29 @@ export const ProposalCard: React.FC<ProposalCardProps> = ({ proposal, onVote, on
             </div>
 
             <div className="mt-3 pt-2 border-t border-white/10 flex space-x-2">
+                <button 
+                    onClick={() => onOpenDetails(proposal)}
+                    className="flex items-center justify-center px-3 py-1.5 bg-slate-700/50 text-slate-300 rounded-lg hover:bg-white/10 transition-colors"
+                >
+                    <ChatIcon className="w-4 h-4 mr-1.5" />
+                    <span className="text-xs">{proposal.comments?.length || 0}</span>
+                </button>
+                
                 {isVotingActive ? (
                     <>
-                        <button onClick={() => onVote(proposal.id, 'for')} className="w-full flex items-center justify-center py-1.5 bg-eco-green/20 text-eco-green rounded-lg hover:bg-eco-green/40">
+                        <button onClick={() => onVote(proposal.id, 'for')} className="flex-grow flex items-center justify-center py-1.5 bg-eco-green/20 text-eco-green rounded-lg hover:bg-eco-green/40">
                             <ThumbsUpIcon className="w-4 h-4 mr-1.5" /> For
                         </button>
-                        <button onClick={() => onVote(proposal.id, 'against')} className="w-full flex items-center justify-center py-1.5 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/40">
+                        <button onClick={() => onVote(proposal.id, 'against')} className="flex-grow flex items-center justify-center py-1.5 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/40">
                             <ThumbsDownIcon className="w-4 h-4 mr-1.5" /> Against
                         </button>
                     </>
                 ) : canExecute ? (
-                     <button onClick={() => onExecute(proposal.id)} className="w-full flex items-center justify-center py-1.5 bg-ai-violet/80 text-white rounded-lg hover:bg-ai-violet">
+                     <button onClick={() => onExecute(proposal.id)} className="flex-grow flex items-center justify-center py-1.5 bg-ai-violet/80 text-white rounded-lg hover:bg-ai-violet">
                         <ZapIcon className="w-4 h-4 mr-1.5" /> Execute Proposal
                     </button>
                 ) : (
-                    <div className="w-full text-center text-xs text-slate-500 py-1.5">
+                    <div className="flex-grow text-center text-xs text-slate-500 py-1.5">
                         Voting has ended.
                     </div>
                 )}

@@ -35,11 +35,17 @@ import { ChallengesGallery } from './components/ChallengesGallery';
 import { ChallengeDetailsModal } from './components/ChallengeDetailsModal';
 import { SubmitToChallengeModal } from './components/SubmitToChallengeModal';
 import { CreateProjectModal } from './components/CreateProjectModal';
+import { ToastProvider } from './components/Toast';
+import { OnboardingTour } from './components/OnboardingTour';
+import { ShoppingCartModal } from './components/ShoppingCartModal';
+import { MarketplaceShop } from './components/MarketplaceShop';
+import { VendorProfileModal } from './components/VendorProfileModal';
+import { ProposalDetailsModal } from './components/ProposalDetailsModal';
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
   const {
-    phase, isMounted, activeTab, projects, bounties, arbitrators, availableArbitrators, uxTip, user, orders, serviceProviders, serviceAgreements, proposals, designChallenges,
-    initialize, setActiveTab, isScanning, scanProgress, currentScanInstruction, startScan, cancelScan,
+    phase, isMounted, activeTab, projects, bounties, arbitrators, availableArbitrators, uxTip, user, orders, serviceProviders, serviceAgreements, proposals, designChallenges, products,
+    initialize, setActiveTab, isScanning, scanProgress, currentScanInstruction, startScan, cancelScan, completeOnboarding,
     showPaymentModal, confirmPayment, cancelPayment, isProcessingPayment, paymentError, scanAnalysis, isProfileVisible, toggleProfile,
     handleProjectInteraction, showUpsellModal, closeUpsellModal, showCreateBountyModal, openCreateBountyModal,
     closeCreateBountyModal, handleCreateBounty, showMintNftModal, projectToMint, openMintNftModal,
@@ -60,6 +66,11 @@ const App: React.FC = () => {
     selectedChallenge, submissions, handleSelectChallenge, closeChallengeDetailsModal, handleVoteOnSubmission,
     showSubmitToChallengeModal, projectToSubmit, openSubmitToChallengeModal, closeSubmitToChallengeModal, handleSubmitProjectToChallenge,
     showCreateProjectModal, openCreateProjectModal, closeCreateProjectModal, handleCreateProject,
+    // Cart & Vendor
+    cart, addToCart, removeFromCart, openShoppingCart, closeShoppingCart, showShoppingCartModal, handleCheckout,
+    openVendorProfile, showVendorProfileModal, selectedVendor, setShowVendorProfileModal,
+    // DAO Discussion
+    selectedProposal, showProposalDetailsModal, openProposalDetails, closeProposalDetails, handleSubmitComment
   } = useArchitex();
 
   const renderDashboardContent = () => {
@@ -100,6 +111,13 @@ const App: React.FC = () => {
           onVote={handleVote}
           onExecuteProposal={handleExecuteProposal}
           onViewTos={openGovernanceTosModal}
+          // New Props for Shop
+          cartCount={cart.length}
+          onAddToCart={addToCart}
+          onOpenCart={openShoppingCart}
+          onVendorClick={openVendorProfile}
+          // DAO Discussion
+          onOpenDetails={openProposalDetails}
         />;
       case 'challenges':
         return <ChallengesGallery challenges={designChallenges} onSelectChallenge={handleSelectChallenge} />;
@@ -110,9 +128,11 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen w-full bg-brand-dark text-slate-100 flex flex-col items-center p-4 overflow-hidden antialiased">
       {/* Sandbox Indicator */}
-      <div className="fixed top-0 left-0 w-full bg-pi-gold/80 text-brand-dark text-xs font-bold text-center py-1 z-[100] backdrop-blur-sm">
+      <div className="fixed top-0 left-0 w-full bg-pi-gold/80 text-brand-dark text-xs font-bold text-center py-1 z-[90] backdrop-blur-sm">
           TESTNET SANDBOX MODE
       </div>
+
+      {phase === 'onboarding' && <OnboardingTour onComplete={completeOnboarding} />}
 
       <div className={`absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-1000 ${phase === 'intro' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         <div className={`transition-all duration-700 ease-out ${isMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
@@ -123,7 +143,9 @@ const App: React.FC = () => {
 
       <div className={`w-full max-w-md h-full flex flex-col transition-opacity duration-1000 ${phase === 'dashboard' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         <header className="relative flex-shrink-0 pt-8 pb-4 text-center"><ArchitexLogo className="w-16 h-16 mx-auto mb-2 text-ai-violet"/><h1 className="text-2xl font-bold text-slate-200">Design HUD</h1><button onClick={toggleProfile} className="absolute top-8 right-0 p-2 text-slate-400 hover:text-white transition-colors"><UserIcon className="w-7 h-7" /></button></header>
-        <main className="flex-grow flex items-center justify-center p-1 min-h-0 pb-32">{renderDashboardContent()}</main>
+        <main className="flex-grow flex items-center justify-center p-1 min-h-0 pb-32">
+            {renderDashboardContent()}
+        </main>
         <footer className="fixed bottom-4 left-4 right-4 z-50 max-w-md mx-auto">
           <GlassPanel className="p-2 rounded-full"><nav className="flex items-center justify-around">
               <IconButton icon={<ScanIcon />} label="Scan" isActive={activeTab === 'scan'} onClick={() => setActiveTab('scan')} activeColor="pi-gold"/>
@@ -153,8 +175,21 @@ const App: React.FC = () => {
       {showGovernanceTosModal && <GovernanceTosModal onClose={closeGovernanceTosModal} />}
       {selectedChallenge && <ChallengeDetailsModal challenge={selectedChallenge} submissions={submissions} onVote={handleVoteOnSubmission} onClose={closeChallengeDetailsModal} />}
       {showSubmitToChallengeModal && projectToSubmit && <SubmitToChallengeModal project={projectToSubmit} challenges={designChallenges} onSubmit={handleSubmitProjectToChallenge} onCancel={closeSubmitToChallengeModal} />}
+      
+      {/* New Modals */}
+      {showShoppingCartModal && <ShoppingCartModal cart={cart} onRemove={removeFromCart} onCheckout={handleCheckout} onClose={closeShoppingCart} />}
+      {showVendorProfileModal && selectedVendor && <VendorProfileModal vendor={selectedVendor} onClose={() => setShowVendorProfileModal(false)} />}
+      {showProposalDetailsModal && selectedProposal && <ProposalDetailsModal proposal={selectedProposal} onClose={closeProposalDetails} onComment={handleSubmitComment} />}
     </div>
   );
 };
+
+const App: React.FC = () => {
+  return (
+    <ToastProvider>
+      <AppContent />
+    </ToastProvider>
+  );
+}
 
 export default App;

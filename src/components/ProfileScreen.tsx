@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { UserEntity, ProjectEntity, OrderEntity, ServiceAgreementEntity } from '../core/schemas/entities';
 import { GlassPanel } from './GlassPanel';
@@ -106,6 +107,12 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, projects, or
 
                     <div className="flex-grow overflow-y-auto pr-2">
                       {renderTabContent()}
+                    </div>
+
+                    <div className="flex-shrink-0 pt-4 mt-2 border-t border-white/10 flex justify-center space-x-6 text-xs text-slate-500">
+                        <a href="#" className="hover:text-slate-300 transition-colors">Privacy Policy</a>
+                        <a href="#" className="hover:text-slate-300 transition-colors">Terms of Service</a>
+                        <a href="#" className="hover:text-slate-300 transition-colors">Support</a>
                     </div>
                 </div>
             </GlassPanel>

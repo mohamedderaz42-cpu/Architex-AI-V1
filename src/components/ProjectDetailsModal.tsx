@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { ProjectEntity } from '../core/schemas/entities';
 import { GlassPanel } from './GlassPanel';
@@ -84,6 +85,10 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ projec
                  <button onClick={onGetQuotes} className="w-full mt-3 py-3 text-slate-300 font-semibold bg-slate-700/50 rounded-full transition-colors duration-300 hover:bg-slate-600">
                     Get Installation Quotes
                 </button>
+                
+                <p className="text-[10px] text-slate-500 text-center mt-4 px-4 leading-tight">
+                    Disclaimer: AI-generated visualizations are for conceptual purposes only. Please verify all structural measurements and material requirements with a certified professional before construction.
+                </p>
             </GlassPanel>
         </div>
     );

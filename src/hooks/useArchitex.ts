@@ -1,8 +1,9 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis } from '../core/schemas/entities';
+import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, ProductEntity, CartItem } from '../core/schemas/entities';
 import * as api from '../core/api/contract';
 import { getProactiveTip, guidedScanInstructions } from '../core/ux-engine/engine';
+import { useToast } from '../components/Toast';
 
 // Define Window interface extension for Pi
 declare global {
@@ -14,10 +15,12 @@ declare global {
 // Use a relative path for the backend URL to work with Vercel's proxying and Netlify redirects.
 const BACKEND_URL = '/api';
 
-export type Phase = 'intro' | 'dashboard';
+export type Phase = 'intro' | 'onboarding' | 'dashboard';
 export type ActiveTab = 'scan' | 'design' | 'market' | 'challenges';
 
 export const useArchitex = () => {
+  const { addToast } = useToast(); // Hook for notifications
+
   const [phase, setPhase] = useState<Phase>('intro');
   const [activeTab, setActiveTab] = useState<ActiveTab>('design');
   const [isMounted, setIsMounted] = useState(false);
@@ -28,6 +31,13 @@ export const useArchitex = () => {
   const [user, setUser] = useState<UserEntity | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProfileVisible, setIsProfileVisible] = useState(false);
+
+  // Marketplace & Cart Data
+  const [products, setProducts] = useState<ProductEntity[]>([]);
+  const [cart, setCart] = useState<{product: ProductEntity, quantity: number}[]>([]);
+  const [showShoppingCartModal, setShowShoppingCartModal] = useState(false);
+  const [selectedVendor, setSelectedVendor] = useState<UserEntity | null>(null);
+  const [showVendorProfileModal, setShowVendorProfileModal] = useState(false);
 
   // Scanning & Analysis Flow
   const [isScanning, setIsScanning] = useState(false);
@@ -75,6 +85,8 @@ export const useArchitex = () => {
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [userToRate, setUserToRate] = useState<string | null>(null);
   const [proposals, setProposals] = useState<ProposalEntity[]>([]);
+  const [selectedProposal, setSelectedProposal] = useState<ProposalEntity | null>(null);
+  const [showProposalDetailsModal, setShowProposalDetailsModal] = useState(false);
   const [showProofOfInstallationModal, setShowProofOfInstallationModal] = useState(false);
   const [orderForProof, setOrderForProof] = useState<OrderEntity | null>(null);
   const [showGovernanceTosModal, setShowGovernanceTosModal] = useState(false);
@@ -90,8 +102,17 @@ export const useArchitex = () => {
   useEffect(() => { setIsMounted(true); }, []);
   
   const refreshUserData = async (piUser?: any) => {
-      const [userData, userProjects, userBounties, arbitratorsData, ordersData, serviceProvidersData, proposalsData, agreementsData, challengesData] = await Promise.all([
-        api.authenticateWithPi(), api.listProjects(), api.listBounties(), api.listArbitrators(), api.listOrders(), api.listServiceProviders(), api.listProposals(), api.listServiceAgreements(), api.listDesignChallenges()
+      const [userData, userProjects, userBounties, arbitratorsData, ordersData, serviceProvidersData, proposalsData, agreementsData, challengesData, productsData] = await Promise.all([
+        api.authenticateWithPi(), 
+        api.listProjects(), 
+        api.listBounties(), 
+        api.listArbitrators(), 
+        api.listOrders(), 
+        api.listServiceProviders(), 
+        api.listProposals(), 
+        api.listServiceAgreements(), 
+        api.listDesignChallenges(),
+        api.listVendorProducts()
       ]);
 
       if(piUser) {
@@ -108,16 +129,21 @@ export const useArchitex = () => {
       setProposals(proposalsData);
       setServiceAgreements(agreementsData);
       setDesignChallenges(challengesData);
+      setProducts(productsData);
       return { ordersData };
   };
 
   const initialize = async () => {
     setIsLoading(true);
     try {
+        // Check localStorage for onboarding
+        const hasSeenOnboarding = localStorage.getItem('architex_onboarding_complete');
+
         if (!window.Pi) {
             console.warn("Pi SDK not detected on window object. Running in mock mode.");
             await refreshUserData();
-            setPhase('dashboard');
+            setPhase(hasSeenOnboarding ? 'dashboard' : 'onboarding');
+            addToast('Running in Sandbox Mode', 'info');
             setIsLoading(false);
             return;
         }
@@ -137,6 +163,7 @@ export const useArchitex = () => {
                         }),
                     });
                     console.log("Recovered and completed payment:", payment.identifier);
+                    addToast('Recovered incomplete payment', 'success');
                 } else {
                     console.warn("Payment found but no transaction ID yet.");
                 }
@@ -148,19 +175,72 @@ export const useArchitex = () => {
         const piUser = await window.Pi.authenticate(scopes, onIncompletePaymentFound);
         console.log("Pi Auth Successful. User:", piUser.username);
         await refreshUserData(piUser);
-        setPhase('dashboard');
+        setPhase(hasSeenOnboarding ? 'dashboard' : 'onboarding');
     } catch (err) {
         console.error("Pi Authentication failed or not in Pi Browser. Falling back to mock mode.", err);
         await refreshUserData();
-        setPhase('dashboard');
+        const hasSeenOnboarding = localStorage.getItem('architex_onboarding_complete');
+        setPhase(hasSeenOnboarding ? 'dashboard' : 'onboarding');
+        addToast('Auth Failed: Using Mock Mode', 'error');
     } finally {
         setIsLoading(false);
     }
   };
   
+  const completeOnboarding = () => {
+      localStorage.setItem('architex_onboarding_complete', 'true');
+      setPhase('dashboard');
+  };
+
   const toggleProfile = () => setIsProfileVisible(prev => !prev);
   const handleProjectInteraction = async (project: ProjectEntity) => { setSelectedProject(project); setShowProjectDetailsModal(true); };
   const closeUpsellModal = () => setShowUpsellModal(false);
+
+  // --- Cart & Vendor Logic ---
+  const addToCart = (product: ProductEntity) => {
+      setCart(prev => {
+          const existing = prev.find(item => item.product.id === product.id);
+          if(existing) {
+              return prev.map(item => item.product.id === product.id ? {...item, quantity: item.quantity + 1} : item);
+          }
+          return [...prev, { product, quantity: 1 }];
+      });
+      addToast(`Added ${product.name} to cart`, 'success');
+  };
+
+  const removeFromCart = (productId: string) => {
+      setCart(prev => prev.filter(item => item.product.id !== productId));
+  };
+
+  const openShoppingCart = () => setShowShoppingCartModal(true);
+  const closeShoppingCart = () => setShowShoppingCartModal(false);
+
+  const handleCheckout = async () => {
+      const total = cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+      const txid = await processPiPayment(total, `Architex Store Order`, { type: 'order' });
+      if (txid) {
+          setCart([]);
+          setShowShoppingCartModal(false);
+          addToast('Order Placed Successfully!', 'success');
+          // In real app, would create Order entity here via API
+      }
+  };
+
+  const openVendorProfile = (vendorId: string) => {
+      // Mocking vendor fetch - normally would come from API
+      const vendor = serviceProviders.find(p => p.id === vendorId) || {
+          id: vendorId,
+          piUsername: 'EcoSupplier_Ltd',
+          trustScore: 88,
+          avatarUrl: `https://placehold.co/100x100/10B981/FFFFFF/png?text=${vendorId.slice(0,2)}`,
+          role: 'vendor',
+          walletAddress: 'G...Vendor',
+          subscriptionTier: 'Accelerator'
+      } as UserEntity;
+      
+      setSelectedVendor(vendor);
+      setShowVendorProfileModal(true);
+  };
 
   // --- Scanning, Analysis & Payment ---
   const startScan = () => { 
@@ -189,9 +269,8 @@ export const useArchitex = () => {
   };
 
   const handleScanCompletion = async () => {
-      // Show payment modal immediately but it might load data
       setShowPaymentModal(true);
-      // Perform AI Analysis
+      addToast('Scan Complete. Analyzing...', 'info');
       const analysis = await api.getRoomAnalysis();
       setScanAnalysis(analysis);
   };
@@ -265,6 +344,9 @@ export const useArchitex = () => {
           setActiveTab('design');
           setShowPaymentModal(false);
           setScanAnalysis(null);
+          addToast('3D Model Generated Successfully', 'success');
+      } else {
+          addToast('Payment Cancelled or Failed', 'error');
       }
       setIsProcessingPayment(false);
   };
@@ -282,20 +364,26 @@ export const useArchitex = () => {
   const handleCreateProject = async (data: { roomType: string, style: string, prompt: string }) => {
       const newProject = await api.generateAIProject(data);
       setProjects(prev => [newProject, ...prev]);
+      addToast('AI Design Created!', 'success');
   };
 
   // --- Bounty, Agreement, and Escrow Flow ---
   const openCreateBountyModal = () => setShowCreateBountyModal(true);
   const closeCreateBountyModal = () => setShowCreateBountyModal(false);
-  const handleCreateBounty = async (bountyDetails: Omit<BountyEntity, 'id' | 'createdAt' | 'status' | 'escrowState'>) => { await api.createBounty(bountyDetails); const updatedBounties = await api.listBounties(); setBounties(updatedBounties); };
+  const handleCreateBounty = async (bountyDetails: Omit<BountyEntity, 'id' | 'createdAt' | 'status' | 'escrowState'>) => { 
+      await api.createBounty(bountyDetails); 
+      const updatedBounties = await api.listBounties(); 
+      setBounties(updatedBounties); 
+      addToast('Bounty Published', 'success');
+  };
   const handleSelectBounty = async (bounty: BountyEntity) => { const available = await api.listAvailableArbitrators(bounty.projectId); setAvailableArbitrators(available); setSelectedBounty(bounty); };
   const closeBountyDetailsModal = () => setSelectedBounty(null);
   const handleInitiateFunding = async (bounty: BountyEntity) => { bountyToFundRef.current = bounty; const text = await api.getDynamicAgreementText(bounty); setAgreementText(text); setShowAgreementModal(true); };
-  const handleConfirmFunding = async () => { if (!bountyToFundRef.current) return; const updatedBounty = await api.fundEscrow(bountyToFundRef.current.id); setBounties(prev => prev.map(b => b.id === updatedBounty.id ? updatedBounty : b)); setSelectedBounty(updatedBounty); setShowAgreementModal(false); setAgreementText(null); bountyToFundRef.current = null; };
+  const handleConfirmFunding = async () => { if (!bountyToFundRef.current) return; const updatedBounty = await api.fundEscrow(bountyToFundRef.current.id); setBounties(prev => prev.map(b => b.id === updatedBounty.id ? updatedBounty : b)); setSelectedBounty(updatedBounty); setShowAgreementModal(false); setAgreementText(null); bountyToFundRef.current = null; addToast('Escrow Funded', 'success'); };
   const closeAgreementModal = () => { setShowAgreementModal(false); setAgreementText(null); bountyToFundRef.current = null; };
-  const handleReleaseFunds = async (bounty: BountyEntity) => { const updatedBounty = await api.releaseEscrow(bounty.id); setBounties(prev => prev.map(b => b.id === updatedBounty.id ? updatedBounty : b)); setSelectedBounty(updatedBounty); if (updatedBounty.winnerId) { setUserToRate(updatedBounty.winnerId); setShowRatingModal(true); } };
+  const handleReleaseFunds = async (bounty: BountyEntity) => { const updatedBounty = await api.releaseEscrow(bounty.id); setBounties(prev => prev.map(b => b.id === updatedBounty.id ? updatedBounty : b)); setSelectedBounty(updatedBounty); if (updatedBounty.winnerId) { setUserToRate(updatedBounty.winnerId); setShowRatingModal(true); } addToast('Funds Released', 'success'); };
   const handleRaiseDispute = (bounty: BountyEntity) => { setSelectedBounty(bounty); setShowDisputeResolutionModal(true); };
-  const handleConfirmDispute = async (bounty: BountyEntity) => { const updatedBounty = await api.raiseDispute(bounty.id); setBounties(prev => prev.map(b => b.id === updatedBounty.id ? updatedBounty : b)); setSelectedBounty(updatedBounty); };
+  const handleConfirmDispute = async (bounty: BountyEntity) => { const updatedBounty = await api.raiseDispute(bounty.id); setBounties(prev => prev.map(b => b.id === updatedBounty.id ? updatedBounty : b)); setSelectedBounty(updatedBounty); addToast('Dispute Raised', 'error'); };
   
   const handleSelectArbitrator = async (bounty: BountyEntity, arbitrator: ArbitratorEntity) => { 
       // Payment Integration: Arbitrator Fee
@@ -306,14 +394,15 @@ export const useArchitex = () => {
       const updatedBounty = await api.selectArbitrator(bounty.id, arbitrator.id); 
       setBounties(prev => prev.map(b => b.id === updatedBounty.id ? updatedBounty : b)); 
       setSelectedBounty(updatedBounty); 
+      addToast('Arbitrator Selected', 'success');
   };
   
-  const handleResolveArbitration = async (bounty: BountyEntity, decision: 'Release' | 'Refund') => { const updatedBounty = await api.resolveArbitration(bounty.id, decision); setBounties(prev => prev.map(b => b.id === updatedBounty.id ? updatedBounty : b)); setSelectedBounty(updatedBounty); };
+  const handleResolveArbitration = async (bounty: BountyEntity, decision: 'Release' | 'Refund') => { const updatedBounty = await api.resolveArbitration(bounty.id, decision); setBounties(prev => prev.map(b => b.id === updatedBounty.id ? updatedBounty : b)); setSelectedBounty(updatedBounty); addToast(`Dispute Resolved: ${decision}`, 'success'); };
   
   // --- NFT Minting ---
   const openMintNftModal = (project: ProjectEntity) => { setProjectToMint(project); setShowMintNftModal(true); };
   const closeMintNftModal = () => { setProjectToMint(null); setShowMintNftModal(false); };
-  const handleMintNft = async (projectId: string) => { const updatedProject = await api.mintProjectAsNft(projectId); setProjects(prevProjects => prevProjects.map(p => p.id === updatedProject.id ? updatedProject : p)); };
+  const handleMintNft = async (projectId: string) => { const updatedProject = await api.mintProjectAsNft(projectId); setProjects(prevProjects => prevProjects.map(p => p.id === updatedProject.id ? updatedProject : p)); addToast('NFT Minted Successfully', 'success'); };
 
   // --- E-Commerce ---
   useEffect(() => {
@@ -324,8 +413,8 @@ export const useArchitex = () => {
     }
   }, [orders, orderForUpsell]);
 
-  const handleConfirmDelivery = async (orderId: string) => { const updatedOrder = await api.updateOrderStatus(orderId, 'Delivered'); const newOrders = orders.map(o => o.id === orderId ? updatedOrder : o); setOrders(newOrders); if (updatedOrder.proofOfInstallationStatus === 'pending') { setOrderForProof(updatedOrder); setShowProofOfInstallationModal(true); } };
-  const handleRequestReturn = async (orderId: string) => { await api.updateOrderStatus(orderId, 'Returned'); const newOrders = await api.listOrders(); setOrders(newOrders); };
+  const handleConfirmDelivery = async (orderId: string) => { const updatedOrder = await api.updateOrderStatus(orderId, 'Delivered'); const newOrders = orders.map(o => o.id === orderId ? updatedOrder : o); setOrders(newOrders); if (updatedOrder.proofOfInstallationStatus === 'pending') { setOrderForProof(updatedOrder); setShowProofOfInstallationModal(true); } addToast('Delivery Confirmed', 'success'); };
+  const handleRequestReturn = async (orderId: string) => { await api.updateOrderStatus(orderId, 'Returned'); const newOrders = await api.listOrders(); setOrders(newOrders); addToast('Return Requested', 'info'); };
   const handleMarkAsShipped = async (orderId: string) => { await api.updateOrderStatus(orderId, 'Shipped'); const newOrders = await api.listOrders(); setOrders(newOrders); };
   const handleDisputeReturn = async (orderId: string) => { console.log(`[CONTRACT] Freezing escrow for order ${orderId} and initiating arbitration.`); };
 
@@ -346,33 +435,58 @@ export const useArchitex = () => {
         await api.fundServiceEscrow(activeServiceAgreement.id, validatorId); 
         setShowServiceAgreementModal(false); 
         setActiveServiceAgreement(null); 
+        addToast('Service Hired & Escrow Funded', 'success');
+      } else {
+          addToast('Payment Failed', 'error');
       }
   };
   
-  const handleConfirmServiceCompletion = async (agreement: ServiceAgreementEntity) => { await api.confirmServiceCompletion(agreement.id, 'client'); };
+  const handleConfirmServiceCompletion = async (agreement: ServiceAgreementEntity) => { await api.confirmServiceCompletion(agreement.id, 'client'); addToast('Service Completed', 'success'); };
   
   // --- Reputation & DAO ---
-  const handleSubmitRating = async (rating: number, comment: string) => { if(!userToRate) return; await api.submitRating(userToRate, rating, comment); const score = await api.calculateTrustScore(user!.id); setUser(prev => prev ? {...prev, trustScore: score} : null); setUserToRate(null); setShowRatingModal(false); };
-  const handleStake = async (amount: number) => { const updatedUser = await api.stakeArchi(amount); setUser(updatedUser); };
-  const handleUnstake = async (amount: number) => { const updatedUser = await api.unstakeArchi(amount); setUser(updatedUser); };
-  const handleVote = async (proposalId: string, vote: 'for' | 'against') => { if (!user) return; const votingPower = (user.stakedArchi || 0) + user.trustScore; const updatedProposal = await api.voteOnProposal(proposalId, vote, votingPower); setProposals(prev => prev.map(p => p.id === proposalId ? updatedProposal : p)); };
-
+  const handleSubmitRating = async (rating: number, comment: string) => { if(!userToRate) return; await api.submitRating(userToRate, rating, comment); const score = await api.calculateTrustScore(user!.id); setUser(prev => prev ? {...prev, trustScore: score} : null); setUserToRate(null); setShowRatingModal(false); addToast('Rating Submitted', 'success'); };
+  const handleStake = async (amount: number) => { const updatedUser = await api.stakeArchi(amount); setUser(updatedUser); addToast(`Staked ${amount} ARCHI`, 'success'); };
+  const handleUnstake = async (amount: number) => { const updatedUser = await api.unstakeArchi(amount); setUser(updatedUser); addToast(`Unstaked ${amount} ARCHI`, 'info'); };
+  const handleVote = async (proposalId: string, vote: 'for' | 'against') => { if (!user) return; const votingPower = (user.stakedArchi || 0) + user.trustScore; const updatedProposal = await api.voteOnProposal(proposalId, vote, votingPower); setProposals(prev => prev.map(p => p.id === proposalId ? updatedProposal : p)); addToast('Vote Cast', 'success'); };
   const handleExecuteProposal = async (proposalId: string) => {
     const updatedProposal = await api.executeProposal(proposalId);
     setProposals(prev => prev.map(p => p.id === proposalId ? updatedProposal : p));
+    addToast('Proposal Executed', 'success');
   };
+  
+  // DAO Discussion Logic
+  const openProposalDetails = (proposal: ProposalEntity) => {
+      setSelectedProposal(proposal);
+      setShowProposalDetailsModal(true);
+  };
+  const closeProposalDetails = () => {
+      setSelectedProposal(null);
+      setShowProposalDetailsModal(false);
+  };
+  const handleSubmitComment = async (proposalId: string, text: string) => {
+      const updatedProposal = await api.submitProposalComment(proposalId, text);
+      setProposals(prev => prev.map(p => p.id === proposalId ? updatedProposal : p));
+      setSelectedProposal(updatedProposal); // Update modal view
+  };
+
   const handleSubmitProofOfInstallation = async (orderId: string) => {
     await api.submitProofOfInstallation(orderId, 'mock_photo_data');
     const updatedOrder = await api.verifyProofOfInstallation(orderId);
     setOrders(prev => prev.map(o => o.id === orderId ? updatedOrder : o));
     const score = await api.calculateTrustScore(user!.id);
     setUser(prev => prev ? {...prev, trustScore: score} : null);
+    addToast('Proof Verified + Reward Claimed', 'success');
   };
   const openGovernanceTosModal = () => setShowGovernanceTosModal(true);
   const closeGovernanceTosModal = () => setShowGovernanceTosModal(false);
 
   const handleShareProject = async (projectId: string) => {
     const result = await api.shareToPiFeed(projectId);
+    if (result.success) {
+        addToast(result.message, 'success');
+    } else {
+        addToast(result.message, 'info');
+    }
     return result;
   };
 
@@ -398,6 +512,7 @@ export const useArchitex = () => {
     if (!projectToSubmit) return;
     await api.submitProjectToChallenge(projectToSubmit.id, challengeId);
     closeSubmitToChallengeModal();
+    addToast('Project Submitted to Challenge', 'success');
   };
   const handleVoteOnSubmission = async (submissionId: string) => {
     if (!user || !selectedChallenge) return;
@@ -405,14 +520,15 @@ export const useArchitex = () => {
     await api.voteOnChallengeSubmission(submissionId, votingPower);
     const challengeSubmissions = await api.getChallengeSubmissions(selectedChallenge.id);
     setSubmissions(challengeSubmissions);
+    addToast('Vote Recorded', 'success');
   };
 
   const uxTip = useMemo(() => getProactiveTip(activeTab), [activeTab]);
   const currentScanInstruction = guidedScanInstructions[currentScanStep];
 
   return {
-    phase, isMounted, activeTab, projects, bounties, arbitrators, availableArbitrators, user, isLoading, uxTip, orders, serviceProviders, serviceAgreements, proposals, designChallenges,
-    initialize, setActiveTab, toggleProfile, isProfileVisible,
+    phase, isMounted, activeTab, projects, bounties, arbitrators, availableArbitrators, user, isLoading, uxTip, orders, serviceProviders, serviceAgreements, proposals, designChallenges, products,
+    initialize, setActiveTab, toggleProfile, isProfileVisible, completeOnboarding,
     isScanning, scanProgress, currentScanInstruction, startScan, cancelScan, 
     showPaymentModal, confirmPayment, cancelPayment, isProcessingPayment, paymentError, scanAnalysis,
     handleProjectInteraction, showUpsellModal, closeUpsellModal, showProjectDetailsModal, selectedProject, setShowProjectDetailsModal, handleGetQuotes,
@@ -427,6 +543,8 @@ export const useArchitex = () => {
     showRatingModal, userToRate, setShowRatingModal, handleSubmitRating,
     handleStake, handleUnstake, handleVote,
     handleExecuteProposal,
+    // DAO Discussion
+    selectedProposal, showProposalDetailsModal, openProposalDetails, closeProposalDetails, handleSubmitComment,
     showProofOfInstallationModal, setShowProofOfInstallationModal, orderForProof, handleSubmitProofOfInstallation,
     showGovernanceTosModal, openGovernanceTosModal, closeGovernanceTosModal,
     handleShareProject,
@@ -434,6 +552,9 @@ export const useArchitex = () => {
     selectedChallenge, submissions, handleSelectChallenge, closeChallengeDetailsModal, handleVoteOnSubmission,
     showSubmitToChallengeModal, projectToSubmit, openSubmitToChallengeModal, closeSubmitToChallengeModal, handleSubmitProjectToChallenge,
     // Create Project
-    showCreateProjectModal, openCreateProjectModal, closeCreateProjectModal, handleCreateProject
+    showCreateProjectModal, openCreateProjectModal, closeCreateProjectModal, handleCreateProject,
+    // Cart & Vendor
+    cart, addToCart, removeFromCart, openShoppingCart, closeShoppingCart, showShoppingCartModal, handleCheckout,
+    openVendorProfile, showVendorProfileModal, selectedVendor, setShowVendorProfileModal
   };
 };
