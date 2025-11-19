@@ -1,23 +1,50 @@
 
+import { UserEntity, ProjectEntity, SystemNotification } from "../schemas/entities";
+
 export type ActiveTab = 'scan' | 'design' | 'market' | 'challenges';
 
+export interface UXContext {
+    activeTab: ActiveTab;
+    user: UserEntity | null;
+    projectCount: number;
+    hasPendingOrders: boolean;
+}
+
 /**
- * Provides proactive tips based on the current application state.
- * @param activeTab The currently active tab in the dashboard.
- * @returns A string containing a helpful, context-aware tip for the user.
+ * The Proactive UX Engine: Analyzes application state to determine the
+ * "Next Best Action" for the user, driving engagement via ArchieBot.
  */
-export const getProactiveTip = (activeTab: ActiveTab): string => {
+export const getProactiveTip = (context: UXContext): string => {
+  const { activeTab, user, projectCount, hasPendingOrders } = context;
+
+  // 1. Onboarding / Empty State
+  if (!user) return "Welcome! Initialize your blueprint to begin the journey.";
+  
+  if (projectCount === 0 && activeTab !== 'scan') {
+      return "Your portfolio is empty. Head to the Room Scanner to capture your first space!";
+  }
+
+  // 2. Context-Specific Tips
   switch (activeTab) {
     case 'scan':
-      return "Point your device at the center of the room and slowly pan around to capture the entire space.";
+      return "Pro Tip: Ensure the room is well-lit for the most accurate LIDAR measurements.";
     case 'design':
-      return "Tap on a project to enter the AI design studio and start visualizing styles.";
+      if (projectCount > 0) {
+          return "Tap on a project to view AI-generated variations or mint it as an NFT.";
+      }
+      return "Start a new project by scanning a room or describing your vision.";
     case 'market':
-      return "Filter materials by their eco-rating to find the most sustainable options for your project.";
+      if (user.trustScore < 50) {
+          return "Complete bounties to raise your Trust Score and unlock lower platform fees.";
+      }
+      if (hasPendingOrders) {
+          return "You have items on the way. Don't forget to request an installation quote!";
+      }
+      return "Filter materials by 'Eco-Rating' to find sustainable options that earn you ARCHI rewards.";
     case 'challenges':
-      return "Submit your best designs to challenges to earn rewards and build your reputation in the community.";
+      return "Winning a design challenge grants significant voting power in the DAO.";
     default:
-      return "Welcome to Architex. Let's build the future.";
+      return "Architex is ready. What will you build today?";
   }
 };
 

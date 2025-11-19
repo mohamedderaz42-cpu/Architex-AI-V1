@@ -43,6 +43,9 @@ export interface BillOfMaterialsEntry {
   materialId: string;
   quantity: number;
   status: MaterialStatus;
+  // Calculated fields for UI/Reports
+  estimatedCost?: number;
+  ecoImpactScore?: number; 
 }
 
 export interface ProjectEntity {
@@ -231,4 +234,12 @@ export interface ScanAnalysis {
     style: string;
     lighting: string;
     summary: string;
+}
+
+// --- UX Engine Entities ---
+export interface SystemNotification {
+    type: 'tip' | 'alert' | 'upsell';
+    message: string;
+    actionLabel?: string;
+    actionTarget?: string;
 }

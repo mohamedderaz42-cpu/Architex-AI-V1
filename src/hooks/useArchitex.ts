@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, ProductEntity, CartItem } from '../core/schemas/entities';
 import * as api from '../core/api/contract';
-import { getProactiveTip, guidedScanInstructions } from '../core/ux-engine/engine';
+import { getProactiveTip, guidedScanInstructions, UXContext } from '../core/ux-engine/engine';
 import { useToast } from '../components/Toast';
 
 // Define Window interface extension for Pi
@@ -219,10 +219,18 @@ export const useArchitex = () => {
       const total = cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
       const txid = await processPiPayment(total, `Architex Store Order`, { type: 'order' });
       if (txid) {
+          // Formalize order creation in contract
+          const orderItems = cart.map(c => ({ productId: c.product.id, quantity: c.quantity }));
+          await api.createOrder(orderItems, total);
+          
           setCart([]);
           setShowShoppingCartModal(false);
+          
+          // Refresh orders to show the new one
+          const newOrders = await api.listOrders();
+          setOrders(newOrders);
+          
           addToast('Order Placed Successfully!', 'success');
-          // In real app, would create Order entity here via API
       }
   };
 
@@ -523,7 +531,14 @@ export const useArchitex = () => {
     addToast('Vote Recorded', 'success');
   };
 
-  const uxTip = useMemo(() => getProactiveTip(activeTab), [activeTab]);
+  const uxContext = useMemo<UXContext>(() => ({
+    activeTab,
+    user,
+    projectCount: projects.length,
+    hasPendingOrders: orders.some(o => o.status === 'Shipped')
+  }), [activeTab, user, projects, orders]);
+
+  const uxTip = useMemo(() => getProactiveTip(uxContext), [uxContext]);
   const currentScanInstruction = guidedScanInstructions[currentScanStep];
 
   return {

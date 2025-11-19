@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { ProjectEntity, UserEntity, MaterialEntity, TokenEntity, LiquidityPoolEntity, BountyEntity, ArbitratorEntity, ProductEntity, ShippingZone, PromotionEntity, OrderEntity, OrderStatus, ServiceProviderProfile, ServiceAgreementEntity, ReputationEvent, ProposalEntity, ProofOfInstallationStatus, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, BillOfMaterialsEntry, ProposalComment } from '../schemas/entities';
+import { ProjectEntity, UserEntity, MaterialEntity, TokenEntity, LiquidityPoolEntity, BountyEntity, ArbitratorEntity, ProductEntity, ShippingZone, PromotionEntity, OrderEntity, OrderStatus, ServiceProviderProfile, ServiceAgreementEntity, ReputationEvent, ProposalEntity, ProofOfInstallationStatus, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, BillOfMaterialsEntry, ProposalComment, CartItem } from '../schemas/entities';
 import { PiCoinIcon } from '../../components/icons/PiCoinIcon';
 import { ArchitexLogo } from '../../components/icons/ArchitexLogo';
 
@@ -34,7 +34,7 @@ const defaultProjects: ProjectEntity[] = [
     ownerId: 'user_01',
     name: 'Living Room Remodel',
     status: 'Designing',
-    billOfMaterials: [{ materialId: 'mat_01', quantity: 20, status: 'Pending' }],
+    billOfMaterials: [{ materialId: 'mat_01', quantity: 20, status: 'Pending', estimatedCost: 1200, ecoImpactScore: 8 }],
     createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
     updatedAt: new Date().toISOString(),
     isPublic: true,
@@ -286,7 +286,9 @@ export const generateAIProject = async (params: { roomType: string, style: strin
             billOfMaterials = materialsRaw.map((m: any, idx: number) => ({
                 materialId: `gen_mat_${Date.now()}_${idx}`,
                 quantity: m.quantity || 1,
-                status: 'Pending'
+                status: 'Pending',
+                estimatedCost: Math.floor(Math.random() * 100) + 20, // Mock cost per item
+                ecoImpactScore: Math.floor(Math.random() * 5) + 5 // Mock eco score
             }));
 
         } catch (e) {
@@ -484,6 +486,31 @@ export const updateShippingZone = async (zoneId: string, active: boolean): Promi
 export const listPromotions = async (): Promise<PromotionEntity[]> => { return [...mockPromotions]; };
 export const createPromotion = async (promo: Omit<PromotionEntity, 'id'>): Promise<PromotionEntity> => { const newPromo: PromotionEntity = { ...promo, id: `promo_${Date.now()}`, }; mockPromotions.unshift(newPromo); return newPromo; };
 export const listOrders = async (): Promise<OrderEntity[]> => { return [...mockOrders]; };
+
+// NEW CONTRACT FUNCTION: formalize cart checkout
+export const createOrder = async (items: CartItem[], totalAmount: number): Promise<OrderEntity> => {
+    // In a real app, this would interact with the Pi Payment API and backend
+    // Here we update local state
+    const newOrder: OrderEntity = {
+        id: `ord_${Date.now()}`,
+        userId: mockUser.id,
+        items,
+        total: totalAmount,
+        status: 'Processing',
+        createdAt: new Date().toISOString(),
+        proofOfInstallationStatus: 'none'
+    };
+    mockOrders.unshift(newOrder);
+    save('orders', mockOrders);
+    return newOrder;
+};
+
+// NEW CONTRACT FUNCTION: Calculate Sustainability
+export const calculateProjectSustainability = (materials: BillOfMaterialsEntry[]): number => {
+    if (!materials.length) return 0;
+    const totalScore = materials.reduce((acc, item) => acc + (item.ecoImpactScore || 0), 0);
+    return Math.min(10, Math.round(totalScore / materials.length));
+};
 
 export const updateOrderStatus = async (orderId: string, status: OrderStatus): Promise<OrderEntity> => { 
     const idx = mockOrders.findIndex(o => o.id === orderId); 
