@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity, ProductEntity, ScanAnalysis, MessageEntity, ServiceProviderProfile, ArbitratorProfile } from '../core/schemas/entities';
 import * as api from '../core/api/contract';
@@ -99,6 +100,9 @@ export const useArchitex = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatContextId, setChatContextId] = useState<string | null>(null);
   const [messages, setMessages] = useState<MessageEntity[]>([]);
+
+  // Enterprise
+  const [showEnterprisePortal, setShowEnterprisePortal] = useState(false);
 
 
   useEffect(() => { setIsMounted(true); }, []);
@@ -410,6 +414,11 @@ export const useArchitex = () => {
       setMessages(prev => [...prev, newMsg]);
   };
 
+  // Enterprise
+  const openEnterprisePortal = () => setShowEnterprisePortal(true);
+  const closeEnterprisePortal = () => setShowEnterprisePortal(false);
+
+
   const uxTip = useMemo(() => {
       const context = {
           activeTab,
@@ -463,6 +472,8 @@ export const useArchitex = () => {
     handleClaimVestedTokens, handleSubscribe, handleJoinFounderProgram,
     // Onboarding Professionals
     showProviderOnboarding, setShowProviderOnboarding, handleProviderRegistration,
-    showArbitratorOnboarding, setShowArbitratorOnboarding, handleArbitratorRegistration
+    showArbitratorOnboarding, setShowArbitratorOnboarding, handleArbitratorRegistration,
+    // Enterprise
+    showEnterprisePortal, openEnterprisePortal, closeEnterprisePortal
   };
 };

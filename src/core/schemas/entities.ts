@@ -44,7 +44,7 @@ export interface UserEntity {
   walletAddress: string;
   trustScore: number; 
   avatarUrl?: string;
-  subscriptionTier: 'Free' | 'Accelerator';
+  subscriptionTier: 'Free' | 'Accelerator' | 'Enterprise';
   subscriptionExpiry?: string; // ISO Date
   vendorProfile?: VendorProfile;
   serviceProviderProfile?: ServiceProviderProfile;
@@ -54,6 +54,7 @@ export interface UserEntity {
   stakingPosition?: StakingPosition;
   miningPosition?: LiquidityMiningPosition;
   isFounder?: boolean; // Supply-side incentive status
+  organizationId?: string;
 }
 
 export interface BillOfMaterialsEntry {
@@ -108,6 +109,39 @@ export interface LiquidityPoolEntity {
     userShare: number;
     totalValueLocked: number;
     protocolLiquidity: number; // Amount seeded by the platform
+}
+
+// --- Enterprise & B2B Entities ---
+export interface OrganizationEntity {
+    id: string;
+    name: string;
+    plan: 'Enterprise' | 'Standard';
+    commissionRate: number; // e.g. 0.05 for 5%
+    balance: number; // Corporate account balance
+}
+
+export interface TeamMemberEntity {
+    id: string;
+    userId: string;
+    name: string;
+    role: 'Admin' | 'Designer' | 'Accountant';
+    avatarUrl: string;
+    lastActive: string;
+}
+
+export interface DesignTemplateEntity {
+    id: string;
+    name: string;
+    style: string;
+    thumbnailUrl: string;
+    itemCount: number;
+    createdAt: string;
+}
+
+export interface SpendingMetric {
+    month: string;
+    amount: number;
+    category: 'Materials' | 'Labor' | 'Software';
 }
 
 // --- Smart Contract Logic Entities ---

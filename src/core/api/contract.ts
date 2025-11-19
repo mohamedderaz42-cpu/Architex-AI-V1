@@ -1,5 +1,5 @@
 
-import { ProjectEntity, UserEntity, MaterialEntity, TokenEntity, LiquidityPoolEntity, BountyEntity, ArbitratorEntity, ProductEntity, ShippingZone, PromotionEntity, OrderEntity, OrderStatus, ServiceProviderProfile, ServiceAgreementEntity, ReputationEvent, ProposalEntity, ProofOfInstallationStatus, DesignChallengeEntity, ChallengeSubmissionEntity, InventoryConflict, CartOptimization, VestingSchedule, IntegrationTestResult, StressTestResult, FuzzTestResult, ScanAnalysis, SignedAgreement } from '../schemas/entities';
+import { ProjectEntity, UserEntity, MaterialEntity, TokenEntity, LiquidityPoolEntity, BountyEntity, ArbitratorEntity, ProductEntity, ShippingZone, PromotionEntity, OrderEntity, OrderStatus, ServiceProviderProfile, ServiceAgreementEntity, ReputationEvent, ProposalEntity, ProofOfInstallationStatus, DesignChallengeEntity, ChallengeSubmissionEntity, InventoryConflict, CartOptimization, VestingSchedule, IntegrationTestResult, StressTestResult, FuzzTestResult, ScanAnalysis, SignedAgreement, OrganizationEntity, TeamMemberEntity, DesignTemplateEntity, SpendingMetric } from '../schemas/entities';
 import { PiCoinIcon } from '../../components/icons/PiCoinIcon';
 import { ArchitexLogo } from '../../components/icons/ArchitexLogo';
 
@@ -170,12 +170,34 @@ let mockUser: UserEntity = {
     walletAddress: 'GD...QW', 
     trustScore: 95, 
     avatarUrl: 'https://placehold.co/100x100/020617/8B5CF6/png?text=A', 
-    subscriptionTier: 'Free', 
+    subscriptionTier: 'Enterprise', 
     role: 'user', 
     vendorProfile: { hasInsurance: false, agreedToIndemnity: false }, 
     stakedArchi: 5000,
-    stakingPosition: { amount: 5000, startTime: new Date().toISOString(), lastClaimTime: new Date().toISOString(), unclaimedRewards: 125.50 }
+    stakingPosition: { amount: 5000, startTime: new Date().toISOString(), lastClaimTime: new Date().toISOString(), unclaimedRewards: 125.50 },
+    organizationId: 'org_01'
 };
+
+// --- B2B Mocks ---
+const mockOrganization: OrganizationEntity = {
+    id: 'org_01',
+    name: 'Archie Design Corp',
+    plan: 'Enterprise',
+    commissionRate: 0.06, // Start at 6%
+    balance: 25000 // PiUSD
+};
+
+const mockTeam: TeamMemberEntity[] = [
+    { id: 'tm_1', userId: 'user_01', name: 'ArchieBot', role: 'Admin', avatarUrl: 'https://placehold.co/64x64/020617/8B5CF6/png?text=AB', lastActive: new Date().toISOString() },
+    { id: 'tm_2', userId: 'user_02', name: 'Designer Dave', role: 'Designer', avatarUrl: 'https://placehold.co/64x64/334155/FFFFFF/png?text=DD', lastActive: new Date(Date.now() - 3600000).toISOString() },
+    { id: 'tm_3', userId: 'user_03', name: 'Finance Fiona', role: 'Accountant', avatarUrl: 'https://placehold.co/64x64/10B981/FFFFFF/png?text=FF', lastActive: new Date(Date.now() - 86400000).toISOString() }
+];
+
+const mockTemplates: DesignTemplateEntity[] = [
+    { id: 'tmp_1', name: 'Modern Office Standard', style: 'Minimalist', thumbnailUrl: 'https://placehold.co/200x150/020617/FFFFFF/png?text=Office', itemCount: 15, createdAt: new Date(Date.now() - 86400000 * 10).toISOString() },
+    { id: 'tmp_2', name: 'Eco-Friendly Lobby', style: 'Biophilic', thumbnailUrl: 'https://placehold.co/200x150/10B981/FFFFFF/png?text=Lobby', itemCount: 32, createdAt: new Date(Date.now() - 86400000 * 5).toISOString() },
+];
+
 
 const TOTAL_VOTING_POWER = 1000000; // Mock total voting power in the DAO for turnout calculation
 
@@ -460,3 +482,80 @@ export const submitProposalComment = async (proposalId: string, text: string): P
     }
     throw new Error("Proposal not found");
 }
+
+// --- Enterprise & B2B Functions ---
+export const listTeamMembers = async (orgId: string): Promise<TeamMemberEntity[]> => {
+    // Return mock team, filtered if we had multiple orgs
+    return [...mockTeam];
+};
+
+export const inviteTeamMember = async (email: string, role: 'Admin' | 'Designer' | 'Accountant'): Promise<TeamMemberEntity> => {
+    const newMember: TeamMemberEntity = {
+        id: `tm_${Date.now()}`,
+        userId: 'pending',
+        name: email.split('@')[0],
+        role,
+        avatarUrl: 'https://placehold.co/64x64/CCCCCC/000000/png?text=New',
+        lastActive: 'Never'
+    };
+    mockTeam.push(newMember);
+    return newMember;
+};
+
+export const listDesignTemplates = async (): Promise<DesignTemplateEntity[]> => {
+    return [...mockTemplates];
+};
+
+export const createDesignTemplate = async (template: Omit<DesignTemplateEntity, 'id' | 'createdAt'>): Promise<DesignTemplateEntity> => {
+    const newTemplate: DesignTemplateEntity = {
+        ...template,
+        id: `tmp_${Date.now()}`,
+        createdAt: new Date().toISOString()
+    };
+    mockTemplates.push(newTemplate);
+    return newTemplate;
+};
+
+export const getEnterpriseAnalytics = async (): Promise<SpendingMetric[]> => {
+    // Mock data for the last 6 months
+    return [
+        { month: 'Jan', amount: 12500, category: 'Materials' },
+        { month: 'Feb', amount: 15200, category: 'Materials' },
+        { month: 'Mar', amount: 8900, category: 'Labor' },
+        { month: 'Apr', amount: 11000, category: 'Materials' },
+        { month: 'May', amount: 18500, category: 'Materials' },
+        { month: 'Jun', amount: 22000, category: 'Materials' },
+    ];
+};
+
+// B2B Commission Logic
+export const processBulkOrder = async (productIds: string[], quantities: number[]): Promise<{ total: number, commission: number, discount: number }> => {
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Calculate...
+    
+    // Calculate base total from products
+    let baseTotal = 0;
+    productIds.forEach((pid, idx) => {
+        const prod = mockProducts.find(p => p.id === pid);
+        if (prod) baseTotal += prod.price * quantities[idx];
+    });
+
+    // Dynamic B2B Commission (5-8% based on volume)
+    // If total > 5000, rate is 5%, else 8%
+    const commissionRate = baseTotal > 5000 ? 0.05 : 0.08;
+    
+    // Volume Discount for Bulk (e.g., 10% off products)
+    const discount = baseTotal > 1000 ? baseTotal * 0.10 : 0;
+    
+    const commission = (baseTotal - discount) * commissionRate;
+    const total = (baseTotal - discount) + commission;
+
+    return { total, commission, discount };
+};
+
+// Simulate Administration Bot Parameter Negotiation
+export const negotiateRate = async (orgId: string, volume: number): Promise<number> => {
+    await new Promise(resolve => setTimeout(resolve, 1500)); // AI processing
+    if (volume > 50000) return 0.04; // 4% for high volume
+    if (volume > 10000) return 0.05; // 5%
+    return 0.07; // 7% default negotiated
+};

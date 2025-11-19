@@ -49,6 +49,7 @@ import { ServiceProviderOnboarding } from './components/ServiceProviderOnboardin
 import { ArbitratorOnboarding } from './components/ArbitratorOnboarding';
 import { ShareModal } from './components/ShareModal';
 import { CreateChallengeModal } from './components/CreateChallengeModal';
+import { EnterprisePortal } from './components/EnterprisePortal';
 
 const AppContent: React.FC = () => {
   const {
@@ -91,7 +92,9 @@ const AppContent: React.FC = () => {
     showProviderOnboarding, setShowProviderOnboarding, handleProviderRegistration,
     showArbitratorOnboarding, setShowArbitratorOnboarding, handleArbitratorRegistration,
     // New Props
-    handleClaimStakingRewards, votingPower
+    handleClaimStakingRewards, votingPower,
+    // Enterprise
+    showEnterprisePortal, openEnterprisePortal, closeEnterprisePortal
   } = useArchitex();
 
   const renderDashboardContent = () => {
@@ -211,6 +214,7 @@ const AppContent: React.FC = () => {
             onClose={toggleProfile}
             onBecomeProvider={() => setShowProviderOnboarding(true)}
             onBecomeArbitrator={() => setShowArbitratorOnboarding(true)}
+            onOpenEnterprise={openEnterprisePortal}
           />
       )}
       {isProfileVisible && (
@@ -282,6 +286,9 @@ const AppContent: React.FC = () => {
       {/* Onboarding Modals */}
       {showProviderOnboarding && <ServiceProviderOnboarding onRegister={handleProviderRegistration} onClose={() => setShowProviderOnboarding(false)} />}
       {showArbitratorOnboarding && <ArbitratorOnboarding onRegister={handleArbitratorRegistration} onClose={() => setShowArbitratorOnboarding(false)} />}
+      
+      {/* Enterprise */}
+      {showEnterprisePortal && <EnterprisePortal onClose={closeEnterprisePortal} />}
 
       {isAdminModalOpen && <AdminPortal onClose={closeAdminModal} />}
       {isChatOpen && chatContextId && user && (
