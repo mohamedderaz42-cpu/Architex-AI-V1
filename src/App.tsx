@@ -34,12 +34,13 @@ import { AwardIcon } from './components/icons/AwardIcon';
 import { ChallengesGallery } from './components/ChallengesGallery';
 import { ChallengeDetailsModal } from './components/ChallengeDetailsModal';
 import { SubmitToChallengeModal } from './components/SubmitToChallengeModal';
+import { CreateProjectModal } from './components/CreateProjectModal';
 
 const App: React.FC = () => {
   const {
     phase, isMounted, activeTab, projects, bounties, arbitrators, availableArbitrators, uxTip, user, orders, serviceProviders, serviceAgreements, proposals, designChallenges,
     initialize, setActiveTab, isScanning, scanProgress, currentScanInstruction, startScan, cancelScan,
-    showPaymentModal, confirmPayment, cancelPayment, isProcessingPayment, paymentError, isProfileVisible, toggleProfile,
+    showPaymentModal, confirmPayment, cancelPayment, isProcessingPayment, paymentError, scanAnalysis, isProfileVisible, toggleProfile,
     handleProjectInteraction, showUpsellModal, closeUpsellModal, showCreateBountyModal, openCreateBountyModal,
     closeCreateBountyModal, handleCreateBounty, showMintNftModal, projectToMint, openMintNftModal,
     closeMintNftModal, handleMintNft, selectedBounty, handleSelectBounty, closeBountyDetailsModal,
@@ -58,6 +59,7 @@ const App: React.FC = () => {
     handleShareProject,
     selectedChallenge, submissions, handleSelectChallenge, closeChallengeDetailsModal, handleVoteOnSubmission,
     showSubmitToChallengeModal, projectToSubmit, openSubmitToChallengeModal, closeSubmitToChallengeModal, handleSubmitProjectToChallenge,
+    showCreateProjectModal, openCreateProjectModal, closeCreateProjectModal, handleCreateProject,
   } = useArchitex();
 
   const renderDashboardContent = () => {
@@ -75,7 +77,7 @@ const App: React.FC = () => {
           <div className="w-full h-full flex flex-col">
             <div className="flex justify-between items-center mb-4 px-2">
                 <h2 className="text-2xl font-bold text-white">Design Studio</h2>
-                <button className="flex items-center text-ai-violet hover:text-white transition-colors duration-300"><PlusCircleIcon className="w-6 h-6 mr-2" /><span className="font-semibold">New Project</span></button>
+                <button onClick={openCreateProjectModal} className="flex items-center text-ai-violet hover:text-white transition-colors duration-300"><PlusCircleIcon className="w-6 h-6 mr-2" /><span className="font-semibold">New Project</span></button>
             </div>
             <div className="flex-grow overflow-y-auto space-y-4 pr-2">
                 {projects.map((project) => (<ProjectCard key={project.id} project={project} onCardClick={() => handleProjectInteraction(project)} onMintClick={() => openMintNftModal(project)} />))}
@@ -132,7 +134,9 @@ const App: React.FC = () => {
         </footer>
       </div>
 
-      {showPaymentModal && <PaymentModal onConfirm={confirmPayment} onCancel={cancelPayment} isProcessing={isProcessingPayment} error={paymentError} />}
+      {showPaymentModal && <PaymentModal onConfirm={confirmPayment} onCancel={cancelPayment} isProcessing={isProcessingPayment} error={paymentError} analysis={scanAnalysis} />}
+      {showCreateProjectModal && <CreateProjectModal onConfirm={handleCreateProject} onCancel={closeCreateProjectModal} />}
+
       {isProfileVisible && user && <ProfileScreen user={user} projects={projects} orders={orders} serviceAgreements={serviceAgreements} onConfirmDelivery={handleConfirmDelivery} onRequestReturn={handleRequestReturn} onConfirmServiceCompletion={handleConfirmServiceCompletion} onClose={toggleProfile} />}
       {showUpsellModal && <UpsellModal onConfirm={() => { setActiveTab('market'); closeUpsellModal(); }} onCancel={closeUpsellModal}/>}
       {showCreateBountyModal && <CreateBountyModal onConfirm={handleCreateBounty} onCancel={closeCreateBountyModal}/>}

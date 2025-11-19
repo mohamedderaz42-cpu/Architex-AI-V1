@@ -7,25 +7,43 @@ import { XCircleIcon } from './icons/XCircleIcon';
 import { UserIcon } from './icons/UserIcon';
 import { ArchitexLogo } from './icons/ArchitexLogo';
 import { ChevronRightIcon } from './icons/ChevronRightIcon';
+import { ScanAnalysis } from '../core/schemas/entities';
 
 interface PaymentModalProps {
     onConfirm: () => void;
     onCancel: () => void;
     isProcessing: boolean;
     error?: string | null;
+    analysis?: ScanAnalysis | null;
 }
 
-export const PaymentModal: React.FC<PaymentModalProps> = ({ onConfirm, onCancel, isProcessing, error }) => {
+export const PaymentModal: React.FC<PaymentModalProps> = ({ onConfirm, onCancel, isProcessing, error, analysis }) => {
     return (
         <div className="fixed inset-0 bg-brand-dark/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
-            <GlassPanel className="w-full max-w-sm p-8 text-center animate-fade-in">
-                <Model3dIcon className="w-20 h-20 mx-auto text-ai-violet mb-4" />
+            <GlassPanel className="w-full max-w-sm p-6 text-center animate-fade-in flex flex-col max-h-[90vh] overflow-y-auto">
+                <Model3dIcon className="w-16 h-16 mx-auto text-ai-violet mb-4" />
                 <h2 className="text-2xl font-bold text-white">Model Generation</h2>
-                <p className="text-slate-300 mt-2">
-                    Your room scan is complete. Generate a high-fidelity 3D model.
-                </p>
+                
+                {analysis ? (
+                    <div className="mt-4 mb-6 text-left bg-slate-800/50 p-4 rounded-xl border border-ai-violet/30">
+                        <h3 className="text-sm font-bold text-ai-violet uppercase mb-2">AI Analysis Report</h3>
+                        <div className="space-y-2 text-xs text-slate-300">
+                            <p><span className="font-semibold text-white">Dimensions:</span> {analysis.dimensions}</p>
+                            <p><span className="font-semibold text-white">Style:</span> {analysis.style}</p>
+                            <p><span className="font-semibold text-white">Lighting:</span> {analysis.lighting}</p>
+                            <p className="italic opacity-80 border-t border-white/10 pt-2 mt-2">"{analysis.summary}"</p>
+                        </div>
+                        <p className="text-[10px] text-center text-slate-500 mt-3">
+                            Unlock full 3D model and bill of materials below.
+                        </p>
+                    </div>
+                ) : (
+                    <p className="text-slate-300 mt-2">
+                        Your room scan is complete. Generate a high-fidelity 3D model.
+                    </p>
+                )}
 
-                <div className="my-6 bg-slate-900/50 rounded-xl border border-white/10 overflow-hidden">
+                <div className="my-4 bg-slate-900/50 rounded-xl border border-white/10 overflow-hidden">
                     <div className="p-4 border-b border-white/5 flex justify-between items-center">
                         <span className="text-slate-400 font-medium">Service Fee:</span>
                         <div className="flex items-center space-x-2">
@@ -60,7 +78,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ onConfirm, onCancel,
                          ⚠️ CHECK YOUR WALLET
                     </p>
                     <p className="text-[11px] text-slate-400 leading-relaxed">
-                        The payment comes from the wallet <b>active in your browser</b>. Ensure it is set to <b>Testnet</b> and has Test-Pi. The App Wallet (Receiver) is handled automatically.
+                        The payment comes from the wallet <b>active in your browser</b>. Ensure it is set to <b>Testnet</b> and has Test-Pi.
                     </p>
                 </div>
                 

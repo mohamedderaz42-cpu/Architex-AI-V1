@@ -1,5 +1,4 @@
 
-
 // FIX: Import React to provide types for React.FC and React.SVGProps used in TokenEntity.
 import type { FC, SVGProps } from 'react';
 
@@ -214,4 +213,12 @@ export interface ChallengeSubmissionEntity {
     votes: number;
     thumbnailUrl: string;
     projectName: string;
+}
+
+// --- AI Analysis Entities ---
+export interface ScanAnalysis {
+    dimensions: string;
+    style: string;
+    lighting: string;
+    summary: string;
 }

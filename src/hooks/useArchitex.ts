@@ -1,5 +1,6 @@
+
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity } from '../core/schemas/entities';
+import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis } from '../core/schemas/entities';
 import * as api from '../core/api/contract';
 import { getProactiveTip, guidedScanInstructions } from '../core/ux-engine/engine';
 
@@ -28,15 +29,19 @@ export const useArchitex = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isProfileVisible, setIsProfileVisible] = useState(false);
 
-  // Scanning Flow
+  // Scanning & Analysis Flow
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
   const [currentScanStep, setCurrentScanStep] = useState(0);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [scanAnalysis, setScanAnalysis] = useState<ScanAnalysis | null>(null);
   const scanIntervalRef = useRef<number | null>(null);
   
+  // Project Creation Flow
+  const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
+
   // Upsell & Bounty Flow
   const [showUpsellModal, setShowUpsellModal] = useState(false);
   const [showCreateBountyModal, setShowCreateBountyModal] = useState(false);
@@ -91,8 +96,6 @@ export const useArchitex = () => {
 
       if(piUser) {
         userData.piUsername = piUser.username;
-        // In a real app, you would get the wallet address from your backend,
-        // but for this simulation, we'll use the user's unique ID (uid).
         userData.walletAddress = piUser.uid;
       }
 
@@ -111,7 +114,6 @@ export const useArchitex = () => {
   const initialize = async () => {
     setIsLoading(true);
     try {
-        // SAFELY ACCESS PI via window object
         if (!window.Pi) {
             console.warn("Pi SDK not detected on window object. Running in mock mode.");
             await refreshUserData();
@@ -122,12 +124,9 @@ export const useArchitex = () => {
 
         const scopes = ['username', 'payments'];
         
-        // IMPORTANT: Handle incomplete payments (Sandbox/Testnet Requirement)
         const onIncompletePaymentFound = async (payment: any) => {
             console.log('Incomplete payment found:', payment);
             try {
-                // Attempt to complete the payment on the server
-                // The payment object from Pi SDK contains 'transaction' if the user signed it
                 if (payment.transaction && payment.transaction.txid) {
                     await fetch(`${BACKEND_URL}/complete_payment`, {
                         method: 'POST',
@@ -139,8 +138,6 @@ export const useArchitex = () => {
                     });
                     console.log("Recovered and completed payment:", payment.identifier);
                 } else {
-                    // Use the generic completion endpoint to check status or cancel
-                    // For now, we just log it. In production, you might cancel it if it's too old.
                     console.warn("Payment found but no transaction ID yet.");
                 }
             } catch (e) {
@@ -154,7 +151,6 @@ export const useArchitex = () => {
         setPhase('dashboard');
     } catch (err) {
         console.error("Pi Authentication failed or not in Pi Browser. Falling back to mock mode.", err);
-        // Fallback to mock data if auth fails (e.g., when not in Pi Browser)
         await refreshUserData();
         setPhase('dashboard');
     } finally {
@@ -166,18 +162,44 @@ export const useArchitex = () => {
   const handleProjectInteraction = async (project: ProjectEntity) => { setSelectedProject(project); setShowProjectDetailsModal(true); };
   const closeUpsellModal = () => setShowUpsellModal(false);
 
-  // --- Scanning & Payment ---
-  const startScan = () => { setIsScanning(true); setCurrentScanStep(0); setScanProgress(0); const totalDuration = 8000; const stepDuration = totalDuration / guidedScanInstructions.length; scanIntervalRef.current = window.setInterval(() => { setCurrentScanStep(prevStep => { const nextStep = prevStep + 1; if (nextStep >= guidedScanInstructions.length) { clearInterval(scanIntervalRef.current!); setIsScanning(false); setShowPaymentModal(true); return prevStep; } return nextStep; }); setScanProgress(prev => prev + (100 / guidedScanInstructions.length)); }, stepDuration); };
+  // --- Scanning, Analysis & Payment ---
+  const startScan = () => { 
+      setIsScanning(true); 
+      setCurrentScanStep(0); 
+      setScanProgress(0); 
+      setScanAnalysis(null);
+      
+      const totalDuration = 8000; 
+      const stepDuration = totalDuration / guidedScanInstructions.length; 
+      
+      scanIntervalRef.current = window.setInterval(async () => { 
+          setCurrentScanStep(prevStep => { 
+              const nextStep = prevStep + 1; 
+              if (nextStep >= guidedScanInstructions.length) { 
+                  clearInterval(scanIntervalRef.current!); 
+                  // Scan complete, trigger analysis
+                  setIsScanning(false); 
+                  handleScanCompletion();
+                  return prevStep; 
+              } 
+              return nextStep; 
+          }); 
+          setScanProgress(prev => prev + (100 / guidedScanInstructions.length)); 
+      }, stepDuration); 
+  };
+
+  const handleScanCompletion = async () => {
+      // Show payment modal immediately but it might load data
+      setShowPaymentModal(true);
+      // Perform AI Analysis
+      const analysis = await api.getRoomAnalysis();
+      setScanAnalysis(analysis);
+  };
+
   const cancelScan = () => { if (scanIntervalRef.current) { clearInterval(scanIntervalRef.current); } setIsScanning(false); setScanProgress(0); setCurrentScanStep(0); };
   
-  /**
-   * Generic Pi Payment Processor
-   * Handles the Create -> Approve -> Complete lifecycle for any payment.
-   */
   const processPiPayment = async (amount: number, memo: string, metadata: object): Promise<string | null> => {
       setPaymentError(null);
-
-      // Fallback for Mock Mode if Pi is not available
       if (!window.Pi) {
           console.warn("Pi SDK missing. Simulating payment success.");
           await new Promise(resolve => setTimeout(resolve, 1500));
@@ -189,17 +211,13 @@ export const useArchitex = () => {
               const paymentData = { amount, memo, metadata };
               const callbacks = {
                   onReadyForServerApproval: async (paymentId: string) => {
-                      console.log("Approval needed for", paymentId);
                       try {
                         const res = await fetch(`${BACKEND_URL}/approve_payment`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ paymentId }),
                         });
-                        if(!res.ok) {
-                            const errData = await res.json();
-                            throw new Error(errData.error || "Server approval failed");
-                        }
+                        if(!res.ok) throw new Error("Server approval failed");
                       } catch(e: any) { 
                           console.error("Approval Error", e); 
                           setPaymentError(`Approval Failed: ${e.message}`);
@@ -207,17 +225,13 @@ export const useArchitex = () => {
                       }
                   },
                   onReadyForServerCompletion: async (paymentId: string, txid: string) => {
-                      console.log("Completion needed for", paymentId, txid);
                       try {
                         const res = await fetch(`${BACKEND_URL}/complete_payment`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ paymentId, txid }),
                         });
-                        if(!res.ok) {
-                             const errData = await res.json();
-                             throw new Error(errData.error || "Server completion failed");
-                        }
+                        if(!res.ok) throw new Error("Server completion failed");
                         resolve(txid);
                       } catch(e: any) { 
                           console.error("Completion Error", e); 
@@ -225,29 +239,14 @@ export const useArchitex = () => {
                           resolve(null); 
                       }
                   },
-                  onCancel: (paymentId: string) => {
-                      console.log("Payment cancelled by user", paymentId);
-                      resolve(null);
-                  },
+                  onCancel: (paymentId: string) => resolve(null),
                   onError: (error: Error, payment: any) => {
                       console.error('Pi Payment Error:', error, payment);
-                      // Provide actionable advice for the user
-                      const msg = error.message || "Transaction failed";
-                      setPaymentError(
-                          `Payment Failed: ${msg}.\n\n` +
-                          `⚠️ WALLET MISMATCH DETECTED?\n` +
-                          `Make sure you are using the correct Testnet Wallet.\n` +
-                          `1. Open wallet.pi\n` +
-                          `2. Ensure 'Testnet' is selected.\n` +
-                          `3. Ensure you have enough Test-Pi balance.\n` +
-                          `The app uses the wallet currently logged into your browser.`
-                      );
+                      setPaymentError(error.message || "Transaction failed");
                       resolve(null);
                   },
               };
-              
               await window.Pi.createPayment(paymentData, callbacks);
-
           } catch (error: any) {
               console.error("Payment failed.", error);
               setPaymentError(error.message || "Payment failed to initialize.");
@@ -265,15 +264,24 @@ export const useArchitex = () => {
           setProjects(prev => [newProject, ...prev]);
           setActiveTab('design');
           setShowPaymentModal(false);
+          setScanAnalysis(null);
       }
-      
       setIsProcessingPayment(false);
-      // Do not close modal on error, let user see error
   };
   
   const cancelPayment = () => {
       setShowPaymentModal(false);
       setPaymentError(null);
+      setScanAnalysis(null);
+  };
+
+  // --- Create Project (AI) Flow ---
+  const openCreateProjectModal = () => setShowCreateProjectModal(true);
+  const closeCreateProjectModal = () => setShowCreateProjectModal(false);
+  
+  const handleCreateProject = async (data: { roomType: string, style: string, prompt: string }) => {
+      const newProject = await api.generateAIProject(data);
+      setProjects(prev => [newProject, ...prev]);
   };
 
   // --- Bounty, Agreement, and Escrow Flow ---
@@ -327,15 +335,11 @@ export const useArchitex = () => {
   
   const handleConfirmServiceHiring = async (validatorId?: string) => { 
       if (!activeServiceAgreement) return; 
-      
-      // Calculate total cost including validator fee
       let totalCost = activeServiceAgreement.price;
       if (validatorId) {
           const validator = arbitrators.find(a => a.id === validatorId);
           if (validator) totalCost += validator.fee;
       }
-
-      // Payment Integration: Service Escrow
       const txid = await processPiPayment(totalCost, `Service Escrow: ${activeServiceAgreement.id}`, { agreementId: activeServiceAgreement.id, validatorId });
       
       if (txid) {
@@ -361,8 +365,6 @@ export const useArchitex = () => {
     await api.submitProofOfInstallation(orderId, 'mock_photo_data');
     const updatedOrder = await api.verifyProofOfInstallation(orderId);
     setOrders(prev => prev.map(o => o.id === orderId ? updatedOrder : o));
-    
-    // Refresh trust score
     const score = await api.calculateTrustScore(user!.id);
     setUser(prev => prev ? {...prev, trustScore: score} : null);
   };
@@ -374,7 +376,7 @@ export const useArchitex = () => {
     return result;
   };
 
-    // --- Design Challenges ---
+  // --- Design Challenges ---
   const handleSelectChallenge = async (challenge: DesignChallengeEntity) => {
     const challengeSubmissions = await api.getChallengeSubmissions(challenge.id);
     setSubmissions(challengeSubmissions);
@@ -384,7 +386,6 @@ export const useArchitex = () => {
     setSelectedChallenge(null);
     setSubmissions([]);
   };
-
   const openSubmitToChallengeModal = (project: ProjectEntity) => {
     setProjectToSubmit(project);
     setShowSubmitToChallengeModal(true);
@@ -402,7 +403,6 @@ export const useArchitex = () => {
     if (!user || !selectedChallenge) return;
     const votingPower = (user.stakedArchi || 0) + user.trustScore;
     await api.voteOnChallengeSubmission(submissionId, votingPower);
-    // Refresh submissions
     const challengeSubmissions = await api.getChallengeSubmissions(selectedChallenge.id);
     setSubmissions(challengeSubmissions);
   };
@@ -414,7 +414,7 @@ export const useArchitex = () => {
     phase, isMounted, activeTab, projects, bounties, arbitrators, availableArbitrators, user, isLoading, uxTip, orders, serviceProviders, serviceAgreements, proposals, designChallenges,
     initialize, setActiveTab, toggleProfile, isProfileVisible,
     isScanning, scanProgress, currentScanInstruction, startScan, cancelScan, 
-    showPaymentModal, confirmPayment, cancelPayment, isProcessingPayment, paymentError,
+    showPaymentModal, confirmPayment, cancelPayment, isProcessingPayment, paymentError, scanAnalysis,
     handleProjectInteraction, showUpsellModal, closeUpsellModal, showProjectDetailsModal, selectedProject, setShowProjectDetailsModal, handleGetQuotes,
     showCreateBountyModal, openCreateBountyModal, closeCreateBountyModal, handleCreateBounty, selectedBounty, handleSelectBounty, closeBountyDetailsModal,
     showAgreementModal, agreementText, handleInitiateFunding, handleConfirmFunding, closeAgreementModal, handleRaiseDispute, handleReleaseFunds, handleSelectArbitrator,
@@ -433,5 +433,7 @@ export const useArchitex = () => {
     // Design Challenges
     selectedChallenge, submissions, handleSelectChallenge, closeChallengeDetailsModal, handleVoteOnSubmission,
     showSubmitToChallengeModal, projectToSubmit, openSubmitToChallengeModal, closeSubmitToChallengeModal, handleSubmitProjectToChallenge,
+    // Create Project
+    showCreateProjectModal, openCreateProjectModal, closeCreateProjectModal, handleCreateProject
   };
 };
