@@ -8,7 +8,6 @@ import { PlusIcon } from './icons/PlusIcon';
 import { InfoIcon } from './icons/InfoIcon';
 import { AwardIcon } from './icons/AwardIcon';
 import { TrendingUpIcon } from './icons/TrendingUpIcon';
-import { useArchitex } from '../hooks/useArchitex';
 
 interface DaoInterfaceProps {
     user: UserEntity;
@@ -19,11 +18,13 @@ interface DaoInterfaceProps {
     onExecute: (proposalId: string) => void;
     onViewTos: () => void;
     onOpenDetails: (proposal: ProposalEntity) => void;
+    // Added props to replace hook usage
+    handleClaimStakingRewards: () => void;
+    votingPower: { total: number; fromTokens: number; fromTrust: number };
 }
 
-export const DaoInterface: React.FC<DaoInterfaceProps> = ({ user, proposals, onStake, onUnstake, onVote, onExecute, onViewTos, onOpenDetails }) => {
+export const DaoInterface: React.FC<DaoInterfaceProps> = ({ user, proposals, onStake, onUnstake, onVote, onExecute, onViewTos, onOpenDetails, handleClaimStakingRewards, votingPower }) => {
     const [stakeAmount, setStakeAmount] = useState('');
-    const { handleClaimStakingRewards, votingPower } = useArchitex();
     
     const handleStake = () => {
         const amount = parseFloat(stakeAmount);

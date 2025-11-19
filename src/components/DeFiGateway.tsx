@@ -11,13 +11,8 @@ import { DataApiInterface } from './DataApiInterface';
 import { VendorPortal } from './VendorPortal';
 import { ServiceMarketplace } from './ServiceMarketplace';
 import { MarketplaceShop } from './MarketplaceShop';
-import { WrenchIcon } from './icons/WrenchIcon';
-import { ShieldIcon } from './icons/ShieldIcon';
 import { ArbitratorMarketplace } from './ArbitratorMarketplace';
 import { DaoInterface } from './DaoInterface';
-import { VoteIcon } from './icons/VoteIcon';
-import { BoxIcon } from './icons/BoxIcon';
-
 
 type DeFiTab = 'swap' | 'liquidity' | 'bounties' | 'data' | 'vendor' | 'services' | 'arbitrators' | 'dao' | 'shop';
 
@@ -45,6 +40,9 @@ interface DeFiGatewayProps {
     onOpenDetails: (proposal: ProposalEntity) => void;
     // Promo Props
     onJoinFounderProgram: () => void;
+    // New Props for DAO State
+    handleClaimStakingRewards: () => void;
+    votingPower: { total: number; fromTokens: number; fromTrust: number };
 }
 
 export const DeFiGateway: React.FC<DeFiGatewayProps> = ({ 
@@ -53,7 +51,8 @@ export const DeFiGateway: React.FC<DeFiGatewayProps> = ({
     arbitrators, proposals, user, 
     onStake, onUnstake, onVote, onExecuteProposal, onViewTos,
     products, cartCount, onAddToCart, onOpenCart, onVendorClick,
-    onOpenDetails, onJoinFounderProgram
+    onOpenDetails, onJoinFounderProgram,
+    handleClaimStakingRewards, votingPower
 }) => {
     const [activeTab, setActiveTab] = useState<DeFiTab>('bounties');
 
@@ -66,7 +65,7 @@ export const DeFiGateway: React.FC<DeFiGatewayProps> = ({
             case 'vendor': return <VendorPortal />;
             case 'services': return <ServiceMarketplace providers={serviceProviders} onHire={onHireProvider} />;
             case 'arbitrators': return <ArbitratorMarketplace arbitrators={arbitrators} />;
-            case 'dao': return user && <DaoInterface user={user} proposals={proposals} onStake={onStake} onUnstake={onUnstake} onVote={onVote} onExecute={onExecuteProposal} onViewTos={onViewTos} onOpenDetails={onOpenDetails}/>;
+            case 'dao': return user && <DaoInterface user={user} proposals={proposals} onStake={onStake} onUnstake={onUnstake} onVote={onVote} onExecute={onExecuteProposal} onViewTos={onViewTos} onOpenDetails={onOpenDetails} handleClaimStakingRewards={handleClaimStakingRewards} votingPower={votingPower}/>;
             case 'shop': return <MarketplaceShop products={products} cartCount={cartCount} onAddToCart={onAddToCart} onOpenCart={onOpenCart} onVendorClick={onVendorClick} />;
             default: return null;
         }

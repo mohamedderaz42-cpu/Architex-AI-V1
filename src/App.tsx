@@ -38,7 +38,6 @@ import { CreateProjectModal } from './components/CreateProjectModal';
 import { ToastProvider } from './components/Toast';
 import { OnboardingTour } from './components/OnboardingTour';
 import { ShoppingCartModal } from './components/ShoppingCartModal';
-import { MarketplaceShop } from './components/MarketplaceShop';
 import { VendorProfileModal } from './components/VendorProfileModal';
 import { ProposalDetailsModal } from './components/ProposalDetailsModal';
 import { AdminPortal } from './components/AdminPortal';
@@ -48,6 +47,7 @@ import { SearchIcon } from './components/icons/SearchIcon';
 import { ArchieBotWidget } from './components/ArchieBotWidget';
 import { ServiceProviderOnboarding } from './components/ServiceProviderOnboarding';
 import { ArbitratorOnboarding } from './components/ArbitratorOnboarding';
+import { ShareModal } from './components/ShareModal';
 
 const AppContent: React.FC = () => {
   const {
@@ -69,7 +69,7 @@ const AppContent: React.FC = () => {
     handleStake, handleUnstake, handleVote,
     handleExecuteProposal, showProofOfInstallationModal, setShowProofOfInstallationModal, orderForProof, handleSubmitProofOfInstallation,
     showGovernanceTosModal, openGovernanceTosModal, closeGovernanceTosModal,
-    handleShareProject,
+    handleShareProject, handleConfirmShare, showShareModal, projectToShare, closeShareModal,
     selectedChallenge, submissions, handleSelectChallenge, closeChallengeDetailsModal, handleVoteOnSubmission,
     showSubmitToChallengeModal, projectToSubmit, openSubmitToChallengeModal, closeSubmitToChallengeModal, handleSubmitProjectToChallenge,
     showCreateProjectModal, openCreateProjectModal, closeCreateProjectModal, handleCreateProject,
@@ -87,7 +87,9 @@ const AppContent: React.FC = () => {
     handleSubscribe,
     // Professional Onboarding
     showProviderOnboarding, setShowProviderOnboarding, handleProviderRegistration,
-    showArbitratorOnboarding, setShowArbitratorOnboarding, handleArbitratorRegistration
+    showArbitratorOnboarding, setShowArbitratorOnboarding, handleArbitratorRegistration,
+    // New Props
+    handleClaimStakingRewards, votingPower
   } = useArchitex();
 
   const renderDashboardContent = () => {
@@ -145,6 +147,9 @@ const AppContent: React.FC = () => {
           onOpenDetails={openProposalDetails}
           // Founder Logic
           onJoinFounderProgram={handleJoinFounderProgram}
+          // DAO Props
+          handleClaimStakingRewards={handleClaimStakingRewards}
+          votingPower={votingPower}
         />;
       case 'challenges':
         return <ChallengesGallery challenges={designChallenges} onSelectChallenge={handleSelectChallenge} />;
@@ -225,7 +230,7 @@ const AppContent: React.FC = () => {
       {showAgreementModal && agreementText && <AgreementModal agreementText={agreementText} onConfirm={handleConfirmFunding} onCancel={closeAgreementModal}/>}
       {showInstallationUpsellModal && orderForUpsell && <InstallationUpsellModal order={orderForUpsell} onConfirm={() => setShowInstallationUpsellModal(false)} onCancel={() => setShowInstallationUpsellModal(false)}/>}
       
-      {/* Enhanced Project Details with Chat */}
+      {/* Enhanced Project Details with Chat and Share */}
       {showProjectDetailsModal && selectedProject && (
         <ProjectDetailsModal 
             project={selectedProject} 
@@ -236,6 +241,15 @@ const AppContent: React.FC = () => {
             onOpenChat={() => openChat(selectedProject.id)}
             onModify={handleModifyProject}
         />
+      )}
+      
+      {/* Social Share Modal */}
+      {showShareModal && projectToShare && (
+          <ShareModal 
+            project={projectToShare} 
+            onShare={handleConfirmShare} 
+            onCancel={closeShareModal} 
+          />
       )}
 
       {showServiceAgreementModal && activeServiceAgreement && user && <ServiceAgreementModal agreement={activeServiceAgreement} user={user} arbitrators={arbitrators} onConfirm={handleConfirmServiceHiring} onCancel={() => setShowServiceAgreementModal(false)}/>}

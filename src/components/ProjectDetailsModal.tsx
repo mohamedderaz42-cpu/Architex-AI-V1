@@ -4,7 +4,6 @@ import { ProjectEntity } from '../core/schemas/entities';
 import { GlassPanel } from './GlassPanel';
 import { SunMoonIcon } from './icons/SunMoonIcon';
 import { ShareIcon } from './icons/ShareIcon';
-import { CheckCircleIcon } from './icons/CheckCircleIcon';
 import { AwardIcon } from './icons/AwardIcon';
 import { ChatIcon } from './icons/ChatIcon';
 import { RefreshIcon } from './icons/RefreshIcon';
@@ -17,7 +16,7 @@ interface ProjectDetailsModalProps {
     project: ProjectEntity;
     onGetQuotes: () => void;
     onClose: () => void;
-    onShare: (projectId: string) => Promise<{ success: boolean; message: string }>;
+    onShare: (project: ProjectEntity) => void;
     onSubmitToChallenge: () => void;
     onOpenChat?: () => void;
     onModify?: (project: ProjectEntity) => void;
@@ -27,20 +26,9 @@ type ProjectTab = 'visuals' | 'bom';
 
 export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ project, onGetQuotes, onClose, onShare, onSubmitToChallenge, onOpenChat, onModify }) => {
     const [activeTab, setActiveTab] = useState<ProjectTab>('visuals');
-    const [isNightMode, setIsNightMode] = useState(false);
-    const [isSharing, setIsSharing] = useState(false);
-    const [shareStatus, setShareStatus] = useState<'idle' | 'success'>('idle');
+    const [timeOfDay, setTimeOfDay] = useState(12); // 0-24
     const [isRegenerating, setIsRegenerating] = useState(false);
     const { addToast } = useToast();
-
-    const handleShare = async () => {
-        setIsSharing(true);
-        setShareStatus('idle');
-        await onShare(project.id);
-        setIsSharing(false);
-        setShareStatus('success');
-        setTimeout(() => setShareStatus('idle'), 3000);
-    };
 
     const handleRegenerate = async () => {
         if (onModify) {
@@ -56,12 +44,56 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ projec
         addToast('Quote Request Sent to Service Providers', 'success');
     };
 
+    // Calculate lighting simulation styles
+    const getLightingStyle = () => {
+        // Brightness curve: Peak at 12 (1.1), low at 0/24 (0.4)
+        const brightness = 0.4 + 0.7 * Math.sin((timeOfDay / 24) * Math.PI);
+        
+        // Overlay color for tinting
+        let overlayColor = 'transparent';
+        let overlayOpacity = 0;
+
+        if (timeOfDay < 5 || timeOfDay > 20) {
+            // Night: Blue tint
+            overlayColor = '#0f172a'; // Slate-900
+            overlayOpacity = 0.4;
+        } else if (timeOfDay >= 5 && timeOfDay < 9) {
+            // Sunrise: Orange/Pink
+            overlayColor = '#f97316'; // Orange-500
+            overlayOpacity = 0.2;
+        } else if (timeOfDay >= 17 && timeOfDay <= 20) {
+            // Sunset: Red/Orange
+            overlayColor = '#ef4444'; // Red-500
+            overlayOpacity = 0.25;
+        }
+
+        return {
+            filter: `brightness(${brightness})`,
+            overlay: { backgroundColor: overlayColor, opacity: overlayOpacity }
+        };
+    };
+
+    const lighting = getLightingStyle();
+
     const renderVisuals = () => (
         <>
             {/* 3D Viewer Placeholder */}
             <div className="relative w-full aspect-video bg-slate-900/50 rounded-lg border border-white/10 flex items-center justify-center overflow-hidden group">
-                <img src={project.thumbnailUrl} alt={project.name} className={`w-full h-full object-cover transition-all duration-500 ${isNightMode ? 'brightness-50' : 'brightness-100'}`} />
-                <div className="absolute inset-0 bg-grid-ai-violet opacity-10" style={{
+                {/* Base Image with Brightness Filter */}
+                <img 
+                    src={project.thumbnailUrl} 
+                    alt={project.name} 
+                    className="w-full h-full object-cover transition-all duration-500"
+                    style={{ filter: lighting.filter }} 
+                />
+                
+                {/* Atmospheric Overlay */}
+                <div 
+                    className="absolute inset-0 transition-all duration-500 pointer-events-none"
+                    style={lighting.overlay}
+                ></div>
+
+                <div className="absolute inset-0 bg-grid-ai-violet opacity-10 pointer-events-none" style={{
                     backgroundImage: 'linear-gradient(to right, #8B5CF6 1px, transparent 1px), linear-gradient(to bottom, #8B5CF6 1px, transparent 1px)',
                     backgroundSize: '30px 30px',
                 }}></div>
@@ -92,33 +124,40 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ projec
                 )}
             </div>
             
-            {/* Controls */}
-            <div className="flex items-center justify-between mt-4">
-                <div className="flex items-center space-x-2">
-                    <SunMoonIcon className="w-6 h-6 text-slate-400" />
-                    <span className="text-sm font-medium text-slate-300">Environmental Simulation</span>
+            {/* Environmental Simulation Controls */}
+            <div className="mt-4 bg-slate-800/50 p-3 rounded-xl border border-white/5">
+                <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-2">
+                        <SunMoonIcon className="w-5 h-5 text-pi-gold" />
+                        <span className="text-xs font-bold text-slate-300 uppercase">Time of Day Simulation</span>
+                    </div>
+                    <span className="text-xs font-mono text-white">{timeOfDay}:00</span>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" checked={isNightMode} onChange={() => setIsNightMode(!isNightMode)} className="sr-only peer" />
-                    <div className="w-11 h-6 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-ai-violet"></div>
-                    <span className="ml-3 text-sm font-semibold text-white">{isNightMode ? 'Night' : 'Day'}</span>
-                </label>
+                <input 
+                    type="range" 
+                    min="0" 
+                    max="24" 
+                    step="1" 
+                    value={timeOfDay} 
+                    onChange={(e) => setTimeOfDay(parseInt(e.target.value))}
+                    className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-pi-gold"
+                />
+                <div className="flex justify-between text-[10px] text-slate-500 mt-1 px-1">
+                    <span>Night</span>
+                    <span>Sunrise</span>
+                    <span>Noon</span>
+                    <span>Sunset</span>
+                    <span>Night</span>
+                </div>
             </div>
             
-            <div className="mt-6 grid grid-cols-2 gap-3">
+            <div className="mt-4 grid grid-cols-2 gap-3">
                  <button
-                    onClick={handleShare}
-                    disabled={isSharing || shareStatus === 'success'}
-                    className="w-full flex items-center justify-center px-4 py-3 bg-slate-700/50 border border-white/10 rounded-full text-md font-semibold text-white hover:bg-eco-green/80 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => onShare(project)}
+                    className="w-full flex items-center justify-center px-4 py-3 bg-slate-700/50 border border-white/10 rounded-full text-md font-semibold text-white hover:bg-eco-green/80 transition-all"
                 >
-                    {isSharing ? (
-                       <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                    ) : shareStatus === 'success' ? (
-                        <CheckCircleIcon className="w-6 h-6 mr-2" />
-                    ) : (
-                        <ShareIcon className="w-6 h-6 mr-2" />
-                    )}
-                    {isSharing ? '' : shareStatus === 'success' ? 'Shared!' : 'Share'}
+                    <ShareIcon className="w-6 h-6 mr-2" />
+                    Share
                 </button>
                 <button onClick={onSubmitToChallenge} className="w-full flex items-center justify-center px-4 py-3 bg-slate-700/50 border border-white/10 rounded-full text-md font-semibold text-white hover:bg-pi-gold/80 transition-colors duration-300">
                     <AwardIcon className="w-6 h-6 mr-2" />

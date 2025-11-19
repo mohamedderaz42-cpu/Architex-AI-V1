@@ -1,6 +1,13 @@
 
 // Helper module for Pi Network Ads
 
+// Declare Global Window type for Pi
+declare global {
+  interface Window {
+    Pi: any;
+  }
+}
+
 let lastAdTime = 0;
 const AD_COOLDOWN = 120000; // 2 minutes cooldown between interstitials
 
