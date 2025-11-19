@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { GlassPanel } from './GlassPanel';
 import { ServiceAgreementEntity, UserEntity, ArbitratorEntity } from '../core/schemas/entities';
@@ -70,17 +71,24 @@ export const ServiceAgreementModal: React.FC<ServiceAgreementModalProps> = ({ ag
                             <div className="flex items-center">
                                 <ShieldCheckIcon className="w-6 h-6 mr-3 text-eco-green" />
                                 <div>
-                                    <h4 className="font-semibold text-white">Add Quality Assurance</h4>
-                                    <p className="text-xs text-slate-400">An arbitrator validates the work before payment.</p>
+                                    <h4 className="font-semibold text-white">Quality Assurance</h4>
+                                    <p className="text-xs text-slate-400">Hire an Arbitrator to validate work.</p>
                                 </div>
                             </div>
                             <input type="checkbox" checked={addValidator} onChange={() => setAddValidator(!addValidator)} className="w-5 h-5 text-ai-violet bg-slate-700 border-slate-500 rounded focus:ring-ai-violet" />
                         </label>
                         {addValidator && (
-                            <select onChange={(e) => setSelectedValidator(e.target.value)} value={selectedValidator ?? ''} className="mt-2 w-full bg-slate-800/70 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-ai-violet/50">
-                                <option value="" disabled>Select a Validator...</option>
-                                {arbitrators.map(a => <option key={a.id} value={a.id}>{a.name} (+{a.fee} PiUSD)</option>)}
-                            </select>
+                            <div className="mt-3 animate-fade-in">
+                                <select 
+                                    onChange={(e) => setSelectedValidator(e.target.value)} 
+                                    value={selectedValidator ?? ''} 
+                                    className="w-full bg-slate-800/70 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-ai-violet/50"
+                                >
+                                    <option value="" disabled>Select a Validator...</option>
+                                    {arbitrators.map(a => <option key={a.id} value={a.id}>{a.name} (+{a.fee} PiUSD)</option>)}
+                                </select>
+                                <p className="text-[10px] text-slate-500 mt-1 ml-1">Validator approval required for fund release.</p>
+                            </div>
                         )}
                     </div>
 
@@ -96,7 +104,7 @@ export const ServiceAgreementModal: React.FC<ServiceAgreementModalProps> = ({ ag
                             </div>
                         ) : null}
                          <div className="flex justify-between items-center mt-2 pt-2 border-t border-white/10">
-                            <span className="text-slate-400 font-medium">Total Cost:</span>
+                            <span className="text-slate-400 font-medium">Total to Escrow:</span>
                             <div className="flex items-center space-x-2">
                                 <PiCoinIcon className="w-5 h-5 text-pi-gold" />
                                 <span className="text-xl font-bold text-white">{totalCost.toFixed(2)}</span>

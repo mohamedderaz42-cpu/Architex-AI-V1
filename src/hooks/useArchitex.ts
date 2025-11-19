@@ -627,12 +627,35 @@ export const useArchitex = () => {
         setShowServiceAgreementModal(false); 
         setActiveServiceAgreement(null); 
         addToast('Service Hired & Escrow Funded', 'success');
+        // Refresh agreements list
+        const agreements = await api.listServiceAgreements();
+        setServiceAgreements(agreements);
       } else {
           addToast('Payment Failed', 'error');
       }
   };
   
-  const handleConfirmServiceCompletion = async (agreement: ServiceAgreementEntity) => { await api.confirmServiceCompletion(agreement.id, 'client'); addToast('Service Completed', 'success'); };
+  const handleConfirmServiceCompletion = async (agreement: ServiceAgreementEntity) => { 
+      const updatedAgreement = await api.confirmServiceCompletion(agreement.id, 'client'); 
+      
+      if (updatedAgreement.status === 'client-confirmed' && updatedAgreement.qualityAssuranceValidatorId) {
+          addToast('Work Approved. Waiting for QA Validator.', 'info');
+          
+          // Simulate Validator Approval after a delay (Demo purposes)
+          setTimeout(async () => {
+              await api.validateServiceCompletion(updatedAgreement.id);
+              addToast('QA Validation Passed. Funds Released.', 'success');
+              const agreements = await api.listServiceAgreements();
+              setServiceAgreements(agreements);
+          }, 5000);
+          
+      } else {
+          addToast('Service Completed. Funds Released.', 'success');
+      }
+      
+      // Refresh local state immediately
+      setServiceAgreements(prev => prev.map(a => a.id === updatedAgreement.id ? updatedAgreement : a));
+  };
   
   // --- Reputation & DAO ---
   const handleSubmitRating = async (rating: number, comment: string) => { if(!userToRate) return; await api.submitRating(userToRate, rating, comment); const score = await api.calculateTrustScore(user!.id); setUser(prev => prev ? {...prev, trustScore: score} : null); setUserToRate(null); setShowRatingModal(false); addToast('Rating Submitted', 'success'); };

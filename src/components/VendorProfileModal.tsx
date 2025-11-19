@@ -20,7 +20,9 @@ export const VendorProfileModal: React.FC<VendorProfileModalProps> = ({ vendor, 
                     <img src={vendor.avatarUrl} alt={vendor.piUsername} className="w-24 h-24 rounded-full border-4 border-slate-800 shadow-lg mb-4" />
                     <h2 className="text-2xl font-bold text-white flex items-center">
                         {vendor.piUsername}
-                        <ShieldCheckIcon className="w-5 h-5 text-eco-green ml-2" title="Verified Vendor" />
+                        <span title="Verified Vendor" className="ml-2">
+                            <ShieldCheckIcon className="w-5 h-5 text-eco-green" />
+                        </span>
                     </h2>
                     <p className="text-ai-violet text-sm font-medium">{vendor.subscriptionTier === 'Accelerator' ? 'Premium Supplier' : 'Verified Vendor'}</p>
                 </div>

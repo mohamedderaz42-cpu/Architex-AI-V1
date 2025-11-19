@@ -136,6 +136,7 @@ const AppContent: React.FC = () => {
           onExecuteProposal={handleExecuteProposal}
           onViewTos={openGovernanceTosModal}
           // New Props for Shop
+          products={products}
           cartCount={cart.length}
           onAddToCart={addToCart}
           onOpenCart={openShoppingCart}

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { GlassPanel } from './GlassPanel';
 import { ShieldQuestionIcon } from './icons/ShieldQuestionIcon';
@@ -15,19 +16,19 @@ export const UserLegalShieldModal: React.FC<{ onClose: () => void }> = ({ onClos
                 <div className="my-4 p-3 bg-slate-900/50 rounded-xl border border-white/10 flex-grow overflow-y-auto text-sm text-slate-300 space-y-4">
                     <div>
                         <h3 className="font-bold text-white mb-1">1. Smart Contract Escrow</h3>
-                        <p>All bounty funds are held in a secure, multi-signature smart contract until the project is marked as complete by you, or a resolution is determined by an arbitrator.</p>
+                        <p>All bounty and service funds are held in a secure, multi-signature smart contract until the project is marked as complete by you, or a resolution is determined by an arbitrator.</p>
                     </div>
                     <div>
-                        <h3 className="font-bold text-white mb-1">2. Decentralized Arbitration</h3>
+                        <h3 className="font-bold text-white mb-1">2. Quality Assurance Validators</h3>
+                        <p>For high-value services, you can opt to hire a <span className="text-eco-green font-semibold">QA Validator</span> (Arbitrator). Funds will <span className="font-bold text-white">not be released</span> from escrow until this neutral third party verifies the work meets the agreed-upon scope.</p>
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-white mb-1">3. Decentralized Arbitration</h3>
                         <p>In the event of a dispute, you can select from a pool of vetted, community-approved arbitrators. Their decisions are cryptographically signed and enforced by the smart contract.</p>
                     </div>
-                    <div>
-                        <h3 className="font-bold text-white mb-1">3. Reputation & Trust Score</h3>
-                        <p>Every participant has a dynamic Trust Score. Completing jobs, receiving positive ratings, and contributing to the ecosystem increases your score, making you a more trusted partner.</p>
-                    </div>
                      <div>
-                        <h3 className="font-bold text-white mb-1">4. Governance Rights</h3>
-                        <p>As a user, you have a say. Stake ARCHI tokens to vote on proposals that shape the rules of the marketplace, including the arbitration process and fee structures.</p>
+                        <h3 className="font-bold text-white mb-1">4. Reputation & Trust Score</h3>
+                        <p>Every participant has a dynamic Trust Score. Completing jobs, receiving positive ratings, and contributing to the ecosystem increases your score, making you a more trusted partner.</p>
                     </div>
                 </div>
 

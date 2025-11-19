@@ -1353,10 +1353,21 @@ export const fundServiceEscrow = async (agreementId: string, validatorId?: strin
     await signAgreement('Service', agreementId, await getServiceLevelAgreementText(agreement));
 
     mockServiceAgreements[idx].status = 'funded'; 
-    if (validatorId) mockServiceAgreements[idx].qualityAssuranceValidatorId = validatorId; 
     
-    // REVENUE ROUTING: 100% of Price to Escrow
-    escrowBalance += agreement.price; 
+    let totalCost = agreement.price;
+
+    if (validatorId) {
+         mockServiceAgreements[idx].qualityAssuranceValidatorId = validatorId;
+         const validator = mockArbitrators.find(a => a.id === validatorId);
+         if(validator) {
+             totalCost += validator.fee;
+             // Fee Logic: Send fee to Validator (or hold in Escrow)
+             // For simplicity, assume everything goes to Escrow for now
+         }
+    }
+    
+    // REVENUE ROUTING: 100% of Price + Fee to Escrow
+    escrowBalance += totalCost; 
     save('escrowBalance', escrowBalance);
     save('serviceAgreements', mockServiceAgreements);
     return { ...mockServiceAgreements[idx] }; 
@@ -1367,18 +1378,58 @@ export const confirmServiceCompletion = async (agreementId: string, userType: 'c
     if (idx === -1) throw new Error('Agreement not found'); 
     
     const agreement = mockServiceAgreements[idx]; 
-    if (userType === 'client') agreement.status = 'client-confirmed'; 
-    if (userType === 'validator' && agreement.status === 'client-confirmed') agreement.status = 'validator-confirmed'; 
     
-    const isComplete = agreement.status === 'client-confirmed' && !agreement.qualityAssuranceValidatorId || agreement.status === 'validator-confirmed'; 
-    if (isComplete) { 
-        agreement.status = 'complete'; 
-        // REVENUE ROUTING: Release from Escrow to Provider
+    if (userType === 'client') {
+        // If validator exists, move to intermediate state
+        if (agreement.qualityAssuranceValidatorId) {
+            agreement.status = 'client-confirmed'; // Waiting for validator
+        } else {
+            agreement.status = 'complete'; // No validator, done
+        }
+    } 
+    
+    // Release Logic
+    if (agreement.status === 'complete') { 
         escrowBalance -= agreement.price;
         save('escrowBalance', escrowBalance);
+        
+        // Reputation++
+        const provider = mockServiceProviders.find(p => p.id === agreement.providerId);
+        if (provider) {
+             reputationEvents.push({ id: `rev_${Date.now()}`, userId: provider.id, type: 'RatingReceived', value: 5, description: 'Service Completed Successfully', timestamp: new Date().toISOString()});
+             save('reputationEvents', reputationEvents);
+        }
     } 
+    
     save('serviceAgreements', mockServiceAgreements);
     return { ...agreement }; 
+};
+
+export const validateServiceCompletion = async (agreementId: string): Promise<ServiceAgreementEntity> => {
+    const idx = mockServiceAgreements.findIndex(sa => sa.id === agreementId); 
+    if (idx === -1) throw new Error('Agreement not found'); 
+    
+    const agreement = mockServiceAgreements[idx];
+    
+    if (agreement.status === 'client-confirmed' && agreement.qualityAssuranceValidatorId) {
+        agreement.status = 'complete';
+        
+        // Release Funds
+        // 1. Service Price -> Provider
+        // 2. Validator Fee -> Validator
+        const validator = mockArbitrators.find(a => a.id === agreement.qualityAssuranceValidatorId);
+        const totalRelease = agreement.price + (validator ? validator.fee : 0);
+        
+        escrowBalance -= totalRelease;
+        save('escrowBalance', escrowBalance);
+        
+        // Reputation++ for Provider
+        reputationEvents.push({ id: `rev_${Date.now()}`, userId: agreement.providerId, type: 'RatingReceived', value: 5, description: 'Service Validated & Completed', timestamp: new Date().toISOString()});
+        save('reputationEvents', reputationEvents);
+    }
+    
+    save('serviceAgreements', mockServiceAgreements);
+    return { ...agreement };
 };
 
 export const submitRating = async (userId: string, rating: number, comment: string): Promise<boolean> => { 
