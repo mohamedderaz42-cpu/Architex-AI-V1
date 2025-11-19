@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 export const TruckIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (

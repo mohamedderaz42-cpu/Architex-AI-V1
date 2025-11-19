@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ProductEntity } from '../core/schemas/entities';
 import { PiCoinIcon } from './icons/PiCoinIcon';

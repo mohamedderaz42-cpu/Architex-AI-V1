@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { PromotionEntity } from '../core/schemas/entities';
 import { PlusIcon } from './icons/PlusIcon';

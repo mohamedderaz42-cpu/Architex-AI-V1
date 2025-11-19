@@ -4,7 +4,7 @@ import { GlassPanel } from './GlassPanel';
 import { SwapInterface } from './SwapInterface';
 import { LiquidityInterface } from './LiquidityInterface';
 import { BountiesInterface } from './BountiesInterface';
-import { BountyEntity, UserEntity, ArbitratorEntity, ProposalEntity, ProductEntity } from '../core/schemas/entities';
+import { BountyEntity, UserEntity, ArbitratorEntity, ProposalEntity } from '../core/schemas/entities';
 import { SecurityStatus } from './SecurityStatus';
 import { PromoBanner } from './PromoBanner';
 import { DataApiInterface } from './DataApiInterface';
@@ -15,10 +15,9 @@ import { ShieldIcon } from './icons/ShieldIcon';
 import { ArbitratorMarketplace } from './ArbitratorMarketplace';
 import { DaoInterface } from './DaoInterface';
 import { VoteIcon } from './icons/VoteIcon';
-import { MarketplaceShop } from './MarketplaceShop'; 
-import { useArchitex } from '../hooks/useArchitex'; 
 
-type DeFiTab = 'shop' | 'swap' | 'liquidity' | 'bounties' | 'data' | 'vendor' | 'services' | 'arbitrators' | 'dao';
+
+type DeFiTab = 'swap' | 'liquidity' | 'bounties' | 'data' | 'vendor' | 'services' | 'arbitrators' | 'dao';
 
 interface DeFiGatewayProps {
     bounties: BountyEntity[];
@@ -34,26 +33,13 @@ interface DeFiGatewayProps {
     onVote: (proposalId: string, vote: 'for' | 'against') => void;
     onExecuteProposal: (proposalId: string) => void;
     onViewTos: () => void;
-    // New Props
-    cartCount: number;
-    onAddToCart: (product: ProductEntity) => void;
-    onOpenCart: () => void;
-    onVendorClick: (vendorId: string) => void;
-    // DAO
-    onOpenDetails: (proposal: ProposalEntity) => void;
-    // Founder
-    onJoinFounderProgram: () => void;
 }
 
-export const DeFiGateway: React.FC<DeFiGatewayProps> = ({ bounties, onCreateBounty, onBountySelect, serviceProviders, onHireProvider, arbitrators, proposals, user, onStake, onUnstake, onVote, onExecuteProposal, onViewTos, cartCount, onAddToCart, onOpenCart, onVendorClick, onOpenDetails, onJoinFounderProgram }) => {
-    const [activeTab, setActiveTab] = useState<DeFiTab>('shop');
-    
-    // Access global products data
-    const { products } = useArchitex();
+export const DeFiGateway: React.FC<DeFiGatewayProps> = ({ bounties, onCreateBounty, onBountySelect, serviceProviders, onHireProvider, arbitrators, proposals, user, onStake, onUnstake, onVote, onExecuteProposal, onViewTos }) => {
+    const [activeTab, setActiveTab] = useState<DeFiTab>('bounties');
 
     const renderTabContent = () => {
         switch (activeTab) {
-            case 'shop': return <MarketplaceShop products={products} cartCount={cartCount} onAddToCart={onAddToCart} onOpenCart={onOpenCart} onVendorClick={onVendorClick} />;
             case 'swap': return <SwapInterface />;
             case 'liquidity': return <LiquidityInterface />;
             case 'bounties': return <BountiesInterface bounties={bounties} onCreateBounty={onCreateBounty} onBountySelect={onBountySelect} />;
@@ -61,7 +47,7 @@ export const DeFiGateway: React.FC<DeFiGatewayProps> = ({ bounties, onCreateBoun
             case 'vendor': return <VendorPortal />;
             case 'services': return <ServiceMarketplace providers={serviceProviders} onHire={onHireProvider} />;
             case 'arbitrators': return <ArbitratorMarketplace arbitrators={arbitrators} />;
-            case 'dao': return user && <DaoInterface user={user} proposals={proposals} onStake={onStake} onUnstake={onUnstake} onVote={onVote} onExecute={onExecuteProposal} onViewTos={onViewTos} onOpenDetails={onOpenDetails}/>;
+            case 'dao': return user && <DaoInterface user={user} proposals={proposals} onStake={onStake} onUnstake={onUnstake} onVote={onVote} onExecute={onExecuteProposal} onViewTos={onViewTos}/>;
             default: return null;
         }
     };
@@ -74,8 +60,7 @@ export const DeFiGateway: React.FC<DeFiGatewayProps> = ({ bounties, onCreateBoun
             </div>
             
             <GlassPanel className="flex-grow p-2 flex flex-col min-h-0">
-                <div className="flex-shrink-0 flex items-center justify-center p-1 bg-slate-900/50 rounded-full mb-4 overflow-x-auto no-scrollbar">
-                    <button onClick={() => setActiveTab('shop')} className={`px-3 py-2 rounded-full font-semibold text-xs sm:text-sm transition-colors duration-300 whitespace-nowrap ${activeTab === 'shop' ? 'bg-eco-green/80 text-white' : 'text-slate-300'}`}>Shop</button>
+                <div className="flex-shrink-0 flex items-center justify-center p-1 bg-slate-900/50 rounded-full mb-4 overflow-x-auto">
                     <button onClick={() => setActiveTab('bounties')} className={`px-3 py-2 rounded-full font-semibold text-xs sm:text-sm transition-colors duration-300 whitespace-nowrap ${activeTab === 'bounties' ? 'bg-eco-green/80 text-white' : 'text-slate-300'}`}>Bounties</button>
                     <button onClick={() => setActiveTab('services')} className={`px-3 py-2 rounded-full font-semibold text-xs sm:text-sm transition-colors duration-300 whitespace-nowrap ${activeTab === 'services' ? 'bg-eco-green/80 text-white' : 'text-slate-300'}`}>Services</button>
                     <button onClick={() => setActiveTab('vendor')} className={`px-3 py-2 rounded-full font-semibold text-xs sm:text-sm transition-colors duration-300 whitespace-nowrap ${activeTab === 'vendor' ? 'bg-eco-green/80 text-white' : 'text-slate-300'}`}>Vendor Hub</button>
@@ -83,8 +68,8 @@ export const DeFiGateway: React.FC<DeFiGatewayProps> = ({ bounties, onCreateBoun
                     <button onClick={() => setActiveTab('arbitrators')} className={`px-3 py-2 rounded-full font-semibold text-xs sm:text-sm transition-colors duration-300 whitespace-nowrap ${activeTab === 'arbitrators' ? 'bg-eco-green/80 text-white' : 'text-slate-300'}`}>Arbitrators</button>
                     <button onClick={() => setActiveTab('swap')} className={`px-3 py-2 rounded-full font-semibold text-xs sm:text-sm transition-colors duration-300 whitespace-nowrap ${activeTab === 'swap' ? 'bg-eco-green/80 text-white' : 'text-slate-300'}`}>Swap</button>
                 </div>
-                {activeTab === 'bounties' && !user?.isFounder && <div className="px-2"><PromoBanner onJoinFounderProgram={onJoinFounderProgram} /></div>}
-                <div className="flex-grow overflow-y-auto min-h-0">
+                {activeTab === 'bounties' && <div className="px-2"><PromoBanner /></div>}
+                <div className="flex-grow overflow-y-auto">
                     {renderTabContent()}
                 </div>
             </GlassPanel>
