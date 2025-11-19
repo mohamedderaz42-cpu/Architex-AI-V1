@@ -51,7 +51,7 @@ const AppContent: React.FC = () => {
     phase, isMounted, activeTab, projects, publicProjects, bounties, arbitrators, availableArbitrators, uxTip, user, orders, serviceProviders, serviceAgreements, proposals, designChallenges, products,
     initialize, setActiveTab, isScanning, scanProgress, currentScanInstruction, startScan, cancelScan, completeOnboarding,
     showPaymentModal, confirmPayment, cancelPayment, isProcessingPayment, paymentError, scanAnalysis, isProfileVisible, toggleProfile,
-    handleProjectInteraction, showUpsellModal, closeUpsellModal, showCreateBountyModal, openCreateBountyModal,
+    handleProjectInteraction, handleModifyProject, showUpsellModal, closeUpsellModal, showCreateBountyModal, openCreateBountyModal,
     closeCreateBountyModal, handleCreateBounty, showMintNftModal, projectToMint, openMintNftModal,
     closeMintNftModal, handleMintNft, selectedBounty, handleSelectBounty, closeBountyDetailsModal,
     showAgreementModal, agreementText, handleInitiateFunding, handleConfirmFunding, closeAgreementModal,
@@ -208,6 +208,7 @@ const AppContent: React.FC = () => {
             onShare={handleShareProject} 
             onSubmitToChallenge={() => openSubmitToChallengeModal(selectedProject)} 
             onOpenChat={() => openChat(selectedProject.id)}
+            onModify={handleModifyProject}
         />
       )}
 

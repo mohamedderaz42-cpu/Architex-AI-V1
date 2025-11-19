@@ -7,6 +7,7 @@ import { ShareIcon } from './icons/ShareIcon';
 import { CheckCircleIcon } from './icons/CheckCircleIcon';
 import { AwardIcon } from './icons/AwardIcon';
 import { ChatIcon } from './icons/ChatIcon';
+import { RefreshIcon } from './icons/RefreshIcon';
 
 interface ProjectDetailsModalProps {
     project: ProjectEntity;
@@ -15,12 +16,14 @@ interface ProjectDetailsModalProps {
     onShare: (projectId: string) => Promise<{ success: boolean; message: string }>;
     onSubmitToChallenge: () => void;
     onOpenChat?: () => void;
+    onModify?: (project: ProjectEntity) => void;
 }
 
-export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ project, onGetQuotes, onClose, onShare, onSubmitToChallenge, onOpenChat }) => {
+export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ project, onGetQuotes, onClose, onShare, onSubmitToChallenge, onOpenChat, onModify }) => {
     const [isNightMode, setIsNightMode] = useState(false);
     const [isSharing, setIsSharing] = useState(false);
     const [shareStatus, setShareStatus] = useState<'idle' | 'success'>('idle');
+    const [isRegenerating, setIsRegenerating] = useState(false);
 
     const handleShare = async () => {
         setIsSharing(true);
@@ -31,6 +34,15 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ projec
         setTimeout(() => setShareStatus('idle'), 3000);
     };
 
+    const handleRegenerate = async () => {
+        if (onModify) {
+            setIsRegenerating(true);
+            await new Promise(resolve => setTimeout(resolve, 1500)); // Mock AI delay
+            onModify(project);
+            setIsRegenerating(false);
+        }
+    };
+
     return (
         <div className="fixed inset-0 bg-brand-dark/80 backdrop-blur-md flex items-center justify-center z-[70] p-4">
             <GlassPanel className="w-full max-w-md p-6 animate-fade-in flex flex-col max-h-[90vh]">
@@ -38,23 +50,38 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ projec
                 
                 <div className="text-center mb-4">
                     <h2 className="text-2xl font-bold text-white">{project.name}</h2>
-                    <p className="text-sm text-slate-400">Last updated: {new Date(project.updatedAt).toLocaleDateString()}</p>
+                    <p className="text-sm text-slate-400">
+                        Ver: {project.modificationCount || 0} • Last updated: {new Date(project.updatedAt).toLocaleDateString()}
+                    </p>
                 </div>
 
                 {/* 3D Viewer Placeholder */}
-                <div className="relative w-full aspect-video bg-slate-900/50 rounded-lg border border-white/10 flex items-center justify-center overflow-hidden">
+                <div className="relative w-full aspect-video bg-slate-900/50 rounded-lg border border-white/10 flex items-center justify-center overflow-hidden group">
                     <img src={project.thumbnailUrl} alt={project.name} className={`w-full h-full object-cover transition-all duration-500 ${isNightMode ? 'brightness-50' : 'brightness-100'}`} />
                     <div className="absolute inset-0 bg-grid-ai-violet opacity-10" style={{
                         backgroundImage: 'linear-gradient(to right, #8B5CF6 1px, transparent 1px), linear-gradient(to bottom, #8B5CF6 1px, transparent 1px)',
                         backgroundSize: '30px 30px',
                     }}></div>
-                    <span className="text-slate-500 font-semibold">3D Model Viewer</span>
+                    
+                    {/* Controls Overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
+                        <button 
+                            onClick={handleRegenerate}
+                            disabled={isRegenerating}
+                            className="flex flex-col items-center text-white hover:text-ai-violet transition-colors transform hover:scale-110"
+                        >
+                            <div className={`p-3 bg-black/50 rounded-full backdrop-blur-sm border border-white/20 ${isRegenerating ? 'animate-spin' : ''}`}>
+                                <RefreshIcon className="w-8 h-8" />
+                            </div>
+                            <span className="text-xs font-bold mt-2 bg-black/50 px-2 py-1 rounded backdrop-blur-sm">Regenerate AI</span>
+                        </button>
+                    </div>
                     
                     {/* Chat Overlay Button */}
                     {onOpenChat && (
                         <button 
                             onClick={onOpenChat}
-                            className="absolute bottom-3 right-3 p-2 bg-ai-violet text-white rounded-full shadow-glow-violet hover:scale-110 transition-transform"
+                            className="absolute bottom-3 right-3 p-2 bg-ai-violet text-white rounded-full shadow-glow-violet hover:scale-110 transition-transform z-20"
                             title="Project Chat"
                         >
                             <ChatIcon className="w-5 h-5" />

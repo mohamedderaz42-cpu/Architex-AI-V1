@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, ProductEntity, CartItem, MessageEntity } from '../core/schemas/entities';
 import * as api from '../core/api/contract';
-import { getProactiveTip, guidedScanInstructions, UXContext } from '../core/ux-engine/engine';
+import { getProactiveTip, guidedScanInstructions, UXContext, shouldTriggerDesignerUpsell } from '../core/ux-engine/engine';
 import { useToast } from '../components/Toast';
 
 // Define Window interface extension for Pi
@@ -205,6 +205,23 @@ export const useArchitex = () => {
 
   const toggleProfile = () => setIsProfileVisible(prev => !prev);
   const handleProjectInteraction = async (project: ProjectEntity) => { setSelectedProject(project); setShowProjectDetailsModal(true); };
+  
+  const handleModifyProject = async (project: ProjectEntity) => {
+      // 1. Update Modification Count via API
+      const updatedProject = await api.incrementProjectModification(project.id);
+      
+      // 2. Update Local State
+      setProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
+      setSelectedProject(updatedProject);
+      
+      // 3. Check UX Engine Rule for Upsell
+      if (shouldTriggerDesignerUpsell(updatedProject.modificationCount || 0)) {
+          setShowUpsellModal(true);
+      } else {
+          addToast('Design Regenerated', 'success');
+      }
+  };
+
   const closeUpsellModal = () => setShowUpsellModal(false);
   
   // --- Chat Logic ---
@@ -590,8 +607,9 @@ export const useArchitex = () => {
     activeTab,
     user,
     projectCount: projects.length,
-    hasPendingOrders: orders.some(o => o.status === 'Shipped')
-  }), [activeTab, user, projects, orders]);
+    hasPendingOrders: orders.some(o => o.status === 'Shipped'),
+    currentProjectModificationCount: selectedProject?.modificationCount // Pass current selected project's mod count
+  }), [activeTab, user, projects, orders, selectedProject]);
 
   const uxTip = useMemo(() => getProactiveTip(uxContext), [uxContext]);
   const currentScanInstruction = guidedScanInstructions[currentScanStep];
@@ -601,7 +619,7 @@ export const useArchitex = () => {
     initialize, setActiveTab, toggleProfile, isProfileVisible, completeOnboarding,
     isScanning, scanProgress, currentScanInstruction, startScan, cancelScan, 
     showPaymentModal, confirmPayment, cancelPayment, isProcessingPayment, paymentError, scanAnalysis,
-    handleProjectInteraction, showUpsellModal, closeUpsellModal, showProjectDetailsModal, selectedProject, setShowProjectDetailsModal, handleGetQuotes,
+    handleProjectInteraction, handleModifyProject, showUpsellModal, closeUpsellModal, showProjectDetailsModal, selectedProject, setShowProjectDetailsModal, handleGetQuotes,
     showCreateBountyModal, openCreateBountyModal, closeCreateBountyModal, handleCreateBounty, selectedBounty, handleSelectBounty, closeBountyDetailsModal,
     showAgreementModal, agreementText, handleInitiateFunding, handleConfirmFunding, closeAgreementModal, handleRaiseDispute, handleReleaseFunds, handleSelectArbitrator,
     showMintNftModal, projectToMint, openMintNftModal, closeMintNftModal, handleMintNft,
