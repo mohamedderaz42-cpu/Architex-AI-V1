@@ -39,9 +39,13 @@ interface DeFiGatewayProps {
     onAddToCart: (product: ProductEntity) => void;
     onOpenCart: () => void;
     onVendorClick: (vendorId: string) => void;
+    // DAO
+    onOpenDetails: (proposal: ProposalEntity) => void;
+    // Founder
+    onJoinFounderProgram: () => void;
 }
 
-export const DeFiGateway: React.FC<DeFiGatewayProps> = ({ bounties, onCreateBounty, onBountySelect, serviceProviders, onHireProvider, arbitrators, proposals, user, onStake, onUnstake, onVote, onExecuteProposal, onViewTos, cartCount, onAddToCart, onOpenCart, onVendorClick }) => {
+export const DeFiGateway: React.FC<DeFiGatewayProps> = ({ bounties, onCreateBounty, onBountySelect, serviceProviders, onHireProvider, arbitrators, proposals, user, onStake, onUnstake, onVote, onExecuteProposal, onViewTos, cartCount, onAddToCart, onOpenCart, onVendorClick, onOpenDetails, onJoinFounderProgram }) => {
     const [activeTab, setActiveTab] = useState<DeFiTab>('shop');
     
     // Access global products data
@@ -57,7 +61,7 @@ export const DeFiGateway: React.FC<DeFiGatewayProps> = ({ bounties, onCreateBoun
             case 'vendor': return <VendorPortal />;
             case 'services': return <ServiceMarketplace providers={serviceProviders} onHire={onHireProvider} />;
             case 'arbitrators': return <ArbitratorMarketplace arbitrators={arbitrators} />;
-            case 'dao': return user && <DaoInterface user={user} proposals={proposals} onStake={onStake} onUnstake={onUnstake} onVote={onVote} onExecute={onExecuteProposal} onViewTos={onViewTos}/>;
+            case 'dao': return user && <DaoInterface user={user} proposals={proposals} onStake={onStake} onUnstake={onUnstake} onVote={onVote} onExecute={onExecuteProposal} onViewTos={onViewTos} onOpenDetails={onOpenDetails}/>;
             default: return null;
         }
     };
@@ -79,7 +83,7 @@ export const DeFiGateway: React.FC<DeFiGatewayProps> = ({ bounties, onCreateBoun
                     <button onClick={() => setActiveTab('arbitrators')} className={`px-3 py-2 rounded-full font-semibold text-xs sm:text-sm transition-colors duration-300 whitespace-nowrap ${activeTab === 'arbitrators' ? 'bg-eco-green/80 text-white' : 'text-slate-300'}`}>Arbitrators</button>
                     <button onClick={() => setActiveTab('swap')} className={`px-3 py-2 rounded-full font-semibold text-xs sm:text-sm transition-colors duration-300 whitespace-nowrap ${activeTab === 'swap' ? 'bg-eco-green/80 text-white' : 'text-slate-300'}`}>Swap</button>
                 </div>
-                {activeTab === 'bounties' && <div className="px-2"><PromoBanner /></div>}
+                {activeTab === 'bounties' && !user?.isFounder && <div className="px-2"><PromoBanner onJoinFounderProgram={onJoinFounderProgram} /></div>}
                 <div className="flex-grow overflow-y-auto min-h-0">
                     {renderTabContent()}
                 </div>

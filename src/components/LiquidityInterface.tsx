@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { mockLiquidityPool, addLiquidity, stakeLpTokens, claimMiningRewards } from '../core/api/contract';
 import { PlusIcon } from './icons/PlusIcon';
@@ -33,42 +34,69 @@ export const LiquidityInterface: React.FC = () => {
         }
     }
 
-    const renderPool = () => (
-        <div className="space-y-3 mt-2">
-            <div className="relative">
-                <PiCoinIcon className="w-5 h-5 absolute top-1/2 left-3 -translate-y-1/2 text-pi-gold" />
-                <input 
-                    type="number" 
-                    value={piAmount}
-                    onChange={(e) => setPiAmount(e.target.value)}
-                    placeholder="PiUSD Amount"
-                    className="w-full bg-slate-900/50 border border-white/10 rounded-full pl-10 pr-4 py-3 text-white focus:outline-none focus:border-pi-gold/50" 
-                />
-            </div>
-                <div className="relative">
-                <ArchitexLogo className="w-5 h-5 absolute top-1/2 left-3 -translate-y-1/2 text-ai-violet" />
-                <input 
-                    type="number" 
-                    value={archiAmount}
-                    onChange={(e) => setArchiAmount(e.target.value)}
-                    placeholder="ARCHI Amount"
-                    className="w-full bg-slate-900/50 border border-white/10 rounded-full pl-10 pr-4 py-3 text-white focus:outline-none focus:border-ai-violet/50" 
-                />
-            </div>
+    const renderPool = () => {
+        // Calculate liquidity breakdown
+        const totalLocked = mockLiquidityPool.totalValueLocked;
+        const pol = mockLiquidityPool.protocolLiquidity || 0;
+        const communityLiquidity = totalLocked - pol;
+        const polPercentage = (pol / totalLocked) * 100;
+        
+        return (
+            <div className="space-y-4 mt-2">
+                 <div className="bg-slate-900/50 p-4 rounded-xl border border-white/10">
+                    <h4 className="text-xs text-slate-400 font-bold uppercase mb-2">Liquidity Composition</h4>
+                    <div className="relative h-4 bg-slate-700 rounded-full overflow-hidden mb-2">
+                        <div className="absolute h-full bg-pi-gold/80" style={{width: `${polPercentage}%`}} title={`Protocol Owned: ${polPercentage.toFixed(1)}%`}></div>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                        <div className="flex items-center">
+                            <div className="w-2 h-2 rounded-full bg-pi-gold/80 mr-1"></div>
+                            <span className="text-white font-semibold">Protocol Owned (Locked)</span>
+                        </div>
+                         <div className="flex items-center">
+                            <div className="w-2 h-2 rounded-full bg-slate-700 mr-1"></div>
+                            <span className="text-slate-400">Community</span>
+                        </div>
+                    </div>
+                    <p className="text-[10px] text-slate-500 mt-2 text-center">
+                        The Liquidity Fund guarantees deep liquidity and price stability.
+                    </p>
+                </div>
 
-            <button
-                onClick={handleAddLiquidity}
-                disabled={isAdding || !piAmount || !archiAmount}
-                className="group mt-4 flex items-center justify-center w-full px-6 py-3 bg-eco-green/80 border border-eco-green/90 rounded-full text-lg font-semibold text-white backdrop-blur-md hover:bg-eco-green transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-                <PlusIcon className="w-6 h-6 mr-2" />
-                {isAdding ? 'Adding...' : 'Add Liquidity'}
-            </button>
-            <div className="mt-2 text-xs text-slate-500 text-center">
-                LP Tokens are automatically staked in the farm.
+                <div className="space-y-3">
+                    <div className="relative">
+                        <PiCoinIcon className="w-5 h-5 absolute top-1/2 left-3 -translate-y-1/2 text-pi-gold" />
+                        <input 
+                            type="number" 
+                            value={piAmount}
+                            onChange={(e) => setPiAmount(e.target.value)}
+                            placeholder="PiUSD Amount"
+                            className="w-full bg-slate-900/50 border border-white/10 rounded-full pl-10 pr-4 py-3 text-white focus:outline-none focus:border-pi-gold/50" 
+                        />
+                    </div>
+                        <div className="relative">
+                        <ArchitexLogo className="w-5 h-5 absolute top-1/2 left-3 -translate-y-1/2 text-ai-violet" />
+                        <input 
+                            type="number" 
+                            value={archiAmount}
+                            onChange={(e) => setArchiAmount(e.target.value)}
+                            placeholder="ARCHI Amount"
+                            className="w-full bg-slate-900/50 border border-white/10 rounded-full pl-10 pr-4 py-3 text-white focus:outline-none focus:border-ai-violet/50" 
+                        />
+                    </div>
+
+                    <button
+                        onClick={handleAddLiquidity}
+                        disabled={isAdding || !piAmount || !archiAmount}
+                        className="group mt-4 flex items-center justify-center w-full px-6 py-3 bg-eco-green/80 border border-eco-green/90 rounded-full text-lg font-semibold text-white backdrop-blur-md hover:bg-eco-green transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <PlusIcon className="w-6 h-6 mr-2" />
+                        {isAdding ? 'Adding...' : 'Add Liquidity'}
+                    </button>
+                </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     const renderFarm = () => (
         <div className="mt-2">
@@ -128,7 +156,7 @@ export const LiquidityInterface: React.FC = () => {
 
             <div className="mt-auto pt-4 flex items-center justify-center text-xs text-slate-500">
                 <AnchorIcon className="w-4 h-4 mr-2" />
-                <span>Pool seeded by the Architex Liquidity Fund.</span>
+                <span>Stable Pool Strategy Active.</span>
             </div>
         </div>
     );

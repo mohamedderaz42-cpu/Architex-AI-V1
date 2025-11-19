@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { LockIcon } from './icons/LockIcon';
 import * as api from '../core/api/contract';
@@ -10,6 +11,7 @@ import { PackageIcon } from './icons/PackageIcon';
 import { TruckIcon } from './icons/TruckIcon';
 import { PercentIcon } from './icons/PercentIcon';
 import { DatabaseIcon } from './icons/DatabaseIcon';
+import { ShieldCheckIcon } from './icons/ShieldCheckIcon';
 
 type VendorTab = 'products' | 'shipping' | 'promotions' | 'api';
 
@@ -18,6 +20,7 @@ export const VendorPortal: React.FC = () => {
     const [hasInsurance, setHasInsurance] = useState(false);
     const [agreedToIndemnity, setAgreedToIndemnity] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [isFounder, setIsFounder] = useState(false);
     const [activeTab, setActiveTab] = useState<VendorTab>('products');
 
     const [products, setProducts] = useState<ProductEntity[]>([]);
@@ -32,14 +35,16 @@ export const VendorPortal: React.FC = () => {
         console.log("Vendor has attested to insurance and indemnity.");
         
         // Fetch initial data
-        const [productsData, zonesData, promosData] = await Promise.all([
+        const [productsData, zonesData, promosData, userData] = await Promise.all([
             api.listVendorProducts(),
             api.listShippingZones(),
             api.listPromotions(),
+            api.authenticateWithPi()
         ]);
         setProducts(productsData);
         setShippingZones(zonesData);
         setPromotions(promosData);
+        setIsFounder(userData.isFounder || false);
 
         setIsVerified(true);
         setIsLoading(false);
@@ -105,6 +110,13 @@ export const VendorPortal: React.FC = () => {
 
     return (
         <div className="flex flex-col h-full">
+             {isFounder && (
+                <div className="mx-2 mb-3 p-2 bg-gradient-to-r from-pi-gold/20 to-pi-gold/5 border border-pi-gold/30 rounded-lg flex items-center justify-center space-x-2">
+                    <ShieldCheckIcon className="w-4 h-4 text-pi-gold" />
+                    <span className="text-xs font-bold text-pi-gold uppercase tracking-wide">Founder Program: 0% Commission Active</span>
+                </div>
+            )}
+
             <div className="flex-shrink-0 flex items-center justify-around p-1 bg-slate-900/50 rounded-full mb-2">
                 <button onClick={() => setActiveTab('products')} className={`flex items-center space-x-2 px-3 py-1.5 rounded-full font-semibold text-xs transition-colors duration-300 ${activeTab === 'products' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
                     <PackageIcon className="w-4 h-4" /> <span>Products</span>

@@ -200,7 +200,8 @@ const defaultUser: UserEntity = {
     vendorProfile: { hasInsurance: false, agreedToIndemnity: false }, 
     stakedArchi: 5000,
     stakingPosition: { amount: 5000, startTime: new Date(Date.now() - 86400000 * 30).toISOString(), lastClaimTime: new Date(Date.now() - 86400000 * 1).toISOString(), unclaimedRewards: 50 },
-    miningPosition: { lpTokenAmount: 0, lastClaimTime: new Date().toISOString(), unclaimedRewards: 0 }
+    miningPosition: { lpTokenAmount: 0, lastClaimTime: new Date().toISOString(), unclaimedRewards: 0 },
+    isFounder: false // Default false
 };
 
 // --- RICH DATA SEEDING ---
@@ -280,8 +281,8 @@ const mockArbitrators: ArbitratorEntity[] = [
 const mockShippingZones: ShippingZone[] = [{ id: 'zone_na', name: 'North America', active: true },{ id: 'zone_eu', name: 'European Union', active: true },{ id: 'zone_asia', name: 'Asia-Pacific', active: false }];
 const mockPromotions: PromotionEntity[] = [{ id: 'promo_01', type: 'item', description: '15% off Eco-Timber', discountValue: 15, targetId: 'prod_01' },{ id: 'promo_02', type: 'invoice', description: '10% off orders over 200 PiUSD', discountValue: 10, minSpend: 200 }];
 const mockServiceProviders: Omit<UserEntity, 'role'>[] = [
-    { id: 'sp_01', piUsername: 'InstallPro', walletAddress: 'GC...P1', trustScore: 98, avatarUrl: 'https://placehold.co/100x100/10B981/FFFFFF/png?text=IP', subscriptionTier: 'Accelerator', serviceProviderProfile: { specialty: 'General Construction', portfolioUrl: '#', serviceZones: ['USA-CA'], hasLiabilityInsurance: true } },
-    { id: 'sp_02', piUsername: 'ElecTech', walletAddress: 'GC...P2', trustScore: 95, avatarUrl: 'https://placehold.co/100x100/FDB300/FFFFFF/png?text=ET', subscriptionTier: 'Accelerator', serviceProviderProfile: { specialty: 'Electrical & Automation', portfolioUrl: '#', serviceZones: ['USA-CA', 'USA-NV'], hasLiabilityInsurance: true } },
+    { id: 'sp_01', piUsername: 'InstallPro', walletAddress: 'GC...P1', trustScore: 98, avatarUrl: 'https://placehold.co/100x100/10B981/FFFFFF/png?text=IP', subscriptionTier: 'Accelerator', serviceProviderProfile: { specialty: 'General Construction', portfolioUrl: '#', serviceZones: ['USA-CA'], hasLiabilityInsurance: true }, isFounder: true },
+    { id: 'sp_02', piUsername: 'ElecTech', walletAddress: 'GC...P2', trustScore: 95, avatarUrl: 'https://placehold.co/100x100/FDB300/FFFFFF/png?text=ET', subscriptionTier: 'Accelerator', serviceProviderProfile: { specialty: 'Electrical & Automation', portfolioUrl: '#', serviceZones: ['USA-CA', 'USA-NV'], hasLiabilityInsurance: true }, isFounder: false },
 ];
 let mockServiceAgreements = load<ServiceAgreementEntity[]>('serviceAgreements', [
     { id: 'sa_01', clientId: 'user_01', providerId: 'sp_01', projectId: 'proj_01', scope: 'Installation of all materials for Living Room Remodel', price: 1500, status: 'funded', createdAt: new Date(Date.now() - 86400000 * 3).toISOString() }
@@ -300,6 +301,7 @@ export const mockLiquidityPool: LiquidityPoolEntity = {
     pair: [mockUserTokens[0], mockUserTokens[1]],
     userShare: 0.05,
     totalValueLocked: 5000000,
+    protocolLiquidity: 4000000, // $4M provided by the protocol/fund
 };
 
 // --- Design Challenge Mocks ---
@@ -436,6 +438,14 @@ export const authenticateWithPi = async (): Promise<UserEntity> => {
     // Always reload user from storage in case of changes
     mockUser = load('user', mockUser);
     return { ...mockUser }; 
+};
+
+export const claimFounderStatus = async (): Promise<UserEntity> => {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    mockUser.isFounder = true;
+    // In a real scenario, this would also check eligibility or whitelist
+    save('user', mockUser);
+    return {...mockUser};
 };
 
 export const getUserTokens = async (): Promise<TokenEntity[]> => {

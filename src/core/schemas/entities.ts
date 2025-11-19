@@ -38,6 +38,7 @@ export interface UserEntity {
   stakedArchi?: number;
   stakingPosition?: StakingPosition;
   miningPosition?: LiquidityMiningPosition;
+  isFounder?: boolean; // Supply-side incentive status
 }
 
 export interface BillOfMaterialsEntry {
@@ -89,6 +90,7 @@ export interface LiquidityPoolEntity {
     pair: [TokenEntity, TokenEntity];
     userShare: number;
     totalValueLocked: number;
+    protocolLiquidity: number; // Amount seeded by the platform
 }
 
 // --- Smart Contract Logic Entities ---

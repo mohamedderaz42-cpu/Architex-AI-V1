@@ -305,7 +305,8 @@ export const useArchitex = () => {
           avatarUrl: `https://placehold.co/100x100/10B981/FFFFFF/png?text=${vendorId.slice(0,2)}`,
           role: 'vendor',
           walletAddress: 'G...Vendor',
-          subscriptionTier: 'Accelerator'
+          subscriptionTier: 'Accelerator',
+          isFounder: true // Simulate Founder status for unknown vendors too
       } as UserEntity;
       
       setSelectedVendor(vendor);
@@ -611,6 +612,17 @@ export const useArchitex = () => {
     return result;
   };
 
+  // Founder Logic
+  const handleJoinFounderProgram = async () => {
+      if(user?.isFounder) {
+          addToast('You are already a Founder!', 'info');
+          return;
+      }
+      const updatedUser = await api.claimFounderStatus();
+      setUser(updatedUser);
+      addToast('Welcome to the Founder Program!', 'success');
+  };
+
   // --- Design Challenges ---
   const handleSelectChallenge = async (challenge: DesignChallengeEntity) => {
     const challengeSubmissions = await api.getChallengeSubmissions(challenge.id);
@@ -694,6 +706,8 @@ export const useArchitex = () => {
     // Legal
     signedAgreements,
     // System Test
-    runIntegrationTest: api.runIntegrationTest
+    runIntegrationTest: api.runIntegrationTest,
+    // Founder Logic
+    handleJoinFounderProgram
   };
 };

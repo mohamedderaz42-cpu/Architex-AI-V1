@@ -78,8 +78,8 @@ const AppContent: React.FC = () => {
     // Admin & Chat
     isAdminModalOpen, openAdminModal, closeAdminModal,
     isChatOpen, openChat, closeChat, messages, handleSendMessage, chatContextId,
-    // Wallet
-    userTokens, handleClaimVestedTokens
+    // Wallet & Founder
+    userTokens, handleClaimVestedTokens, handleJoinFounderProgram
   } = useArchitex();
 
   const renderDashboardContent = () => {
@@ -134,6 +134,8 @@ const AppContent: React.FC = () => {
           onVendorClick={openVendorProfile}
           // DAO Discussion
           onOpenDetails={openProposalDetails}
+          // Founder Logic
+          onJoinFounderProgram={handleJoinFounderProgram}
         />;
       case 'challenges':
         return <ChallengesGallery challenges={designChallenges} onSelectChallenge={handleSelectChallenge} />;

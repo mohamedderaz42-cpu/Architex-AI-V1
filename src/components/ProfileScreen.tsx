@@ -137,10 +137,23 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, projects, or
                     {user.avatarUrl && (
                         <img src={user.avatarUrl} alt="User Avatar" className="w-24 h-24 rounded-full mx-auto border-2 border-ai-violet" />
                     )}
-                    <h2 className="text-2xl font-bold text-white mt-4">{user.piUsername}</h2>
+                    <h2 className="text-2xl font-bold text-white mt-4 flex items-center justify-center">
+                        {user.piUsername}
+                        {user.isFounder && (
+                             <ShieldCheckIcon className="w-5 h-5 text-pi-gold ml-2" title="Founder Member" />
+                        )}
+                    </h2>
                     <p className="text-sm text-slate-400 truncate">{user.walletAddress}</p>
-                    <div className="mt-4 inline-flex items-center bg-eco-green/20 text-eco-green px-3 py-1 rounded-full text-sm font-semibold">
-                        Trust Score: {user.trustScore}
+                    
+                    <div className="mt-4 flex justify-center space-x-2">
+                        <div className="inline-flex items-center bg-eco-green/20 text-eco-green px-3 py-1 rounded-full text-sm font-semibold">
+                            Trust Score: {user.trustScore}
+                        </div>
+                        {user.isFounder && (
+                            <div className="inline-flex items-center bg-pi-gold/20 text-pi-gold px-3 py-1 rounded-full text-xs font-bold uppercase">
+                                Founder Member
+                            </div>
+                        )}
                     </div>
                 </div>
 
