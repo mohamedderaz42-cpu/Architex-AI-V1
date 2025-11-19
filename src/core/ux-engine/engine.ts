@@ -1,5 +1,5 @@
 
-import { UserEntity, ProjectEntity, SystemNotification } from "../schemas/entities";
+import { UserEntity } from "../schemas/entities";
 
 export type ActiveTab = 'scan' | 'design' | 'market' | 'challenges' | 'explore';
 
@@ -9,7 +9,8 @@ export interface UXContext {
     projectCount: number;
     hasPendingOrders: boolean;
     currentProjectModificationCount?: number;
-    pendingReviews: number; // New context
+    pendingReviews: number; 
+    hasUnverifiedInstallation: boolean;
 }
 
 /**
@@ -17,7 +18,7 @@ export interface UXContext {
  * "Next Best Action" for the user, driving engagement via ArchieBot.
  */
 export const getProactiveTip = (context: UXContext): string => {
-  const { activeTab, user, projectCount, hasPendingOrders, currentProjectModificationCount, pendingReviews } = context;
+  const { activeTab, user, projectCount, hasPendingOrders, currentProjectModificationCount, pendingReviews, hasUnverifiedInstallation } = context;
 
   // 1. Onboarding / Empty State
   if (!user) return "Welcome! Initialize your blueprint to begin the journey.";
@@ -26,7 +27,11 @@ export const getProactiveTip = (context: UXContext): string => {
       return "Your portfolio is empty. Head to the Room Scanner to capture your first space!";
   }
   
-  // 2. Reputation Building Rule (High Priority)
+  // 2. Reward & Reputation Rules (High Priority)
+  if (hasUnverifiedInstallation) {
+      return "Reward Alert: You have a delivered order. Upload a photo of the installation to verify and claim your cashback reward!";
+  }
+
   if (pendingReviews > 0) {
       return `You have ${pendingReviews} completed service(s) awaiting feedback. Rate your provider to boost your own Trust Score!`;
   }

@@ -1,6 +1,6 @@
+
 import React from 'react';
 import { GlassPanel } from './GlassPanel';
-import { FileTextIcon } from './icons/FileTextIcon';
 import { VoteIcon } from './icons/VoteIcon';
 
 export const GovernanceTosModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
@@ -15,29 +15,29 @@ export const GovernanceTosModal: React.FC<{ onClose: () => void }> = ({ onClose 
 
                 <div className="my-4 p-3 bg-slate-900/50 rounded-xl border border-white/10 flex-grow overflow-y-auto text-sm text-slate-300 space-y-4">
                     <div>
-                        <h3 className="font-bold text-white mb-1">1. The Role of the DAO</h3>
-                        <p>The Architex Decentralized Autonomous Organization (DAO) provides a framework for community-led governance. Members can propose, discuss, and vote on changes to the platform's protocol and treasury allocations.</p>
+                        <h3 className="font-bold text-white mb-1">1. The DAO & Binding Votes</h3>
+                        <p>The Architex Decentralized Autonomous Organization (DAO) is the supreme governing body of the protocol. Proposals that pass the voting process are legally and technically <span className="text-white font-semibold">binding</span>. The code is law.</p>
                     </div>
                     <div>
-                        <h3 className="font-bold text-white mb-1">2. Binding Votes</h3>
-                        <p>All proposals that successfully pass the voting process are considered binding. The outcomes will be automatically implemented by the system's smart contracts and the Administration Bot where applicable.</p>
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-white mb-1">3. Quorum Requirement</h3>
-                        <p>For a vote to be considered valid, a minimum participation threshold, or "quorum," must be met. The current quorum is set to <span className="font-bold text-pi-gold">20%</span> of the total active voting power. If quorum is not met by the end of the voting period, the proposal automatically fails, regardless of the vote distribution.</p>
+                        <h3 className="font-bold text-white mb-1">2. Quorum Requirement</h3>
+                        <p>To prevent minority rule, a proposal must reach a minimum participation threshold (Quorum) of <span className="text-pi-gold font-bold">20%</span> of the total circulating voting power. If this threshold is not met by the deadline, the proposal fails regardless of the vote ratio.</p>
                     </div>
                      <div>
-                        <h3 className="font-bold text-white mb-1">4. The Administration Bot</h3>
-                        <p>The Administration Bot is an automated agent responsible for executing the will of the community. Once a proposal is successfully passed and the voting period concludes, the bot will verify the quorum and vote count, then automatically execute the on-chain instructions defined in the proposal.</p>
+                        <h3 className="font-bold text-white mb-1">3. The Administration Bot</h3>
+                        <p>The Administration Bot is a decentralized oracle service tasked with executing the community's will. Upon the successful conclusion of a vote (Pass + Quorum Met), the Bot automatically triggers the smart contract functions to implement changes, transfer treasury funds, or update protocol parameters without human intervention.</p>
+                    </div>
+                     <div>
+                        <h3 className="font-bold text-white mb-1">4. Reputation-Weighted Voting</h3>
+                        <p>Voting power is derived from both staked ARCHI tokens and your earned Trust Score, ensuring that active, reputable contributors have a significant voice in governance.</p>
                     </div>
                 </div>
 
                 <div className="flex-shrink-0 mt-2">
                     <button
                         onClick={onClose}
-                        className="w-full px-6 py-3 bg-ai-violet/80 border border-ai-violet/90 rounded-full text-lg font-semibold text-white"
+                        className="w-full px-6 py-3 bg-ai-violet/80 border border-ai-violet/90 rounded-full text-lg font-semibold text-white hover:bg-ai-violet transition-all"
                     >
-                        Acknowledge & Close
+                        I Understand the Model
                     </button>
                 </div>
             </GlassPanel>

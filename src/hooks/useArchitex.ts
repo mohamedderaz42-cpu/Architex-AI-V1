@@ -786,8 +786,9 @@ export const useArchitex = () => {
     projectCount: projects.length,
     hasPendingOrders: orders.some(o => o.status === 'Shipped'),
     currentProjectModificationCount: selectedProject?.modificationCount,
-    // Calculate unrated services for nudge
-    pendingReviews: serviceAgreements.filter(sa => sa.status === 'complete' && sa.clientId === user?.id).length 
+    pendingReviews: serviceAgreements.filter(sa => sa.status === 'complete' && sa.clientId === user?.id).length,
+    // Check for orders that are delivered but not yet verified (proof is 'none')
+    hasUnverifiedInstallation: orders.some(o => o.status === 'Delivered' && o.proofOfInstallationStatus === 'none')
   }), [activeTab, user, projects, orders, selectedProject, serviceAgreements]);
 
   const uxTip = useMemo(() => getProactiveTip(uxContext), [uxContext]);
