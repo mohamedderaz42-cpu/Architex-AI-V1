@@ -9,6 +9,7 @@ export interface UXContext {
     projectCount: number;
     hasPendingOrders: boolean;
     currentProjectModificationCount?: number;
+    pendingReviews: number; // New context
 }
 
 /**
@@ -16,7 +17,7 @@ export interface UXContext {
  * "Next Best Action" for the user, driving engagement via ArchieBot.
  */
 export const getProactiveTip = (context: UXContext): string => {
-  const { activeTab, user, projectCount, hasPendingOrders, currentProjectModificationCount } = context;
+  const { activeTab, user, projectCount, hasPendingOrders, currentProjectModificationCount, pendingReviews } = context;
 
   // 1. Onboarding / Empty State
   if (!user) return "Welcome! Initialize your blueprint to begin the journey.";
@@ -24,13 +25,18 @@ export const getProactiveTip = (context: UXContext): string => {
   if (projectCount === 0 && activeTab !== 'scan') {
       return "Your portfolio is empty. Head to the Room Scanner to capture your first space!";
   }
+  
+  // 2. Reputation Building Rule (High Priority)
+  if (pendingReviews > 0) {
+      return `You have ${pendingReviews} completed service(s) awaiting feedback. Rate your provider to boost your own Trust Score!`;
+  }
 
-  // 2. Proactive Upsell Rule (Tip Fallback)
+  // 3. Proactive Upsell Rule (Tip Fallback)
   if (currentProjectModificationCount && currentProjectModificationCount >= 2) {
       return "You've iterated on this design multiple times. Our professional designers can help finalize your vision.";
   }
 
-  // 3. Context-Specific Tips
+  // 4. Context-Specific Tips
   switch (activeTab) {
     case 'scan':
       return "Pro Tip: Ensure the room is well-lit for the most accurate LIDAR measurements.";

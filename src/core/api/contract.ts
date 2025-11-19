@@ -1,5 +1,5 @@
 
-import { ProjectEntity, UserEntity, MaterialEntity, TokenEntity, LiquidityPoolEntity, BountyEntity, ArbitratorEntity, ProductEntity, ShippingZone, PromotionEntity, OrderEntity, OrderStatus, ServiceProviderProfile, ServiceAgreementEntity, ReputationEvent, ProposalEntity, ProofOfInstallationStatus, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, BillOfMaterialsEntry, ProposalComment, CartItem, MessageEntity, VestingSchedule, OracleData, FuzzTestResult, SignedAgreement, IntegrationTestResult, IntegrationTestStep, StressTestResult, InventoryConflict, CartOptimization, ArbitratorProfile } from '../schemas/entities';
+import { ProjectEntity, UserEntity, MaterialEntity, TokenEntity, LiquidityPoolEntity, BountyEntity, ArbitratorEntity, ProductEntity, ShippingZone, PromotionEntity, OrderEntity, OrderStatus, ServiceProviderProfile, ServiceAgreementEntity, ReputationEvent, ProposalEntity, ProofOfInstallationStatus, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, BillOfMaterialsEntry, ProposalComment, CartItem, MessageEntity, VestingSchedule, OracleData, FuzzTestResult, SignedAgreement, IntegrationTestResult, IntegrationTestStep, StressTestResult, InventoryConflict, CartOptimization, ArbitratorProfile, ReputationEventType } from '../schemas/entities';
 import { PiCoinIcon } from '../../components/icons/PiCoinIcon';
 import { ArchitexLogo } from '../../components/icons/ArchitexLogo';
 import { GoogleGenAI, Type, Modality } from "@google/genai";
@@ -183,7 +183,7 @@ const defaultUser: UserEntity = {
     id: 'user_01', 
     piUsername: 'ArchieBot', 
     walletAddress: 'GD...QW', 
-    trustScore: 85, 
+    trustScore: 50, 
     avatarUrl: 'https://placehold.co/100x100/020617/8B5CF6/png?text=A', 
     subscriptionTier: 'Free', 
     role: 'user', 
@@ -319,6 +319,109 @@ const updateTokens = (newTokens: TokenEntity[]) => {
 };
 
 
+// --- REPUTATION & TRUST SCORE LOGIC ---
+
+const TRUST_SCORE_WEIGHTS = {
+    BASE: 50,
+    MAX: 100,
+    MIN: 0,
+    // Event Weights
+    BountyCompleted: 5,       // Winning or successfully completing a bounty
+    ServiceCompleted: 5,      // Successfully delivering a service
+    ServiceHired: 2,          // Hiring a service (Client activity)
+    ProofOfInstallation: 10,  // Verifying installation
+    DisputeLost: -20,         // Losing an arbitration case
+    DisputeWon: 5,            // Winning an arbitration case (vindication)
+    RatingReceived: 1,        // Multiplier for star rating deviation from neutral (3)
+};
+
+export const addReputationEvent = async (userId: string, type: ReputationEventType, value: number, description: string) => {
+    const event: ReputationEvent = {
+        id: `rev_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+        userId,
+        type,
+        value,
+        description,
+        timestamp: new Date().toISOString()
+    };
+    reputationEvents.push(event);
+    save('reputationEvents', reputationEvents);
+    
+    // Recalculate Trust Score immediately
+    await calculateTrustScore(userId);
+};
+
+export const calculateTrustScore = async (userId: string): Promise<number> => { 
+    const userEvents = reputationEvents.filter(e => e.userId === userId); 
+    let score = TRUST_SCORE_WEIGHTS.BASE;
+    
+    for (const event of userEvents) { 
+        score += event.value; 
+    } 
+    
+    // Clamp score between MIN and MAX
+    score = Math.max(TRUST_SCORE_WEIGHTS.MIN, Math.min(TRUST_SCORE_WEIGHTS.MAX, score));
+    
+    // Update User State
+    if (mockUser.id === userId) {
+        mockUser.trustScore = score;
+        save('user', mockUser);
+    } else {
+        const providerIdx = mockServiceProviders.findIndex(p => p.id === userId);
+        if (providerIdx !== -1) {
+            mockServiceProviders[providerIdx].trustScore = score;
+            save('serviceProviders', mockServiceProviders);
+        }
+    }
+    
+    return score; 
+};
+
+// --- DAO GOVERNANCE LOGIC (ArchitexDAO.sol) ---
+
+// Voting Power = (Staked Tokens * 1) + (Trust Score * 50)
+// This gives reputation significant weight: 1 Trust Point ~= 50 ARCHI
+const VOTE_WEIGHT_TOKEN = 1;
+const VOTE_WEIGHT_TRUST = 50; 
+
+export const getVotingPower = async (userId: string): Promise<{ total: number, fromTokens: number, fromTrust: number }> => {
+    // Determine if we are querying the current user or another (mock) user
+    const user = mockUser.id === userId ? mockUser : mockServiceProviders.find(u => u.id === userId);
+    
+    if (!user) return { total: 0, fromTokens: 0, fromTrust: 0 };
+
+    const stakedAmount = user.stakedArchi || 0;
+    const trustScore = user.trustScore || 50;
+
+    const fromTokens = stakedAmount * VOTE_WEIGHT_TOKEN;
+    const fromTrust = trustScore * VOTE_WEIGHT_TRUST;
+
+    return {
+        total: fromTokens + fromTrust,
+        fromTokens,
+        fromTrust
+    };
+};
+
+export const voteOnProposal = async (proposalId: string, vote: 'for' | 'against', votingPower: number): Promise<ProposalEntity> => { 
+    const idx = mockProposals.findIndex(p => p.id === proposalId); 
+    if (idx === -1) throw new Error('Proposal not found'); 
+    
+    // In a real contract, we would verify votingPower here based on `msg.sender`
+    // For this simulation, we accept the passed power but could re-calculate to be safe
+    // const power = await getVotingPower(mockUser.id);
+    
+    if (vote === 'for') mockProposals[idx].forVotes += votingPower; 
+    else mockProposals[idx].againstVotes += votingPower; 
+    
+    // Update Turnout
+    mockProposals[idx].turnout += (votingPower / TOTAL_VOTING_POWER); 
+    
+    save('proposals', mockProposals);
+    return { ...mockProposals[idx] }; 
+};
+
+
 // --- DISPUTE & ARBITRATION LOGIC (UPDATED) ---
 
 export const raiseDispute = async (bountyId: string): Promise<BountyEntity> => { 
@@ -326,7 +429,6 @@ export const raiseDispute = async (bountyId: string): Promise<BountyEntity> => {
     if (idx === -1) throw new Error("Bounty not found"); 
     
     // FREEZE FUNDS LOGIC
-    // In a real contract, this sets a flag that prevents releaseEscrow() from being called by the client/provider
     mockBounties[idx].status = 'In Dispute'; 
     save('bounties', mockBounties);
     return {...mockBounties[idx]}; 
@@ -340,7 +442,6 @@ export const selectArbitrator = async (bountyId: string, arbitratorId: string): 
     if (!arbitrator) throw new Error("Arbitrator not found"); 
     
     // REVENUE ROUTING: Fee Collection
-    // Deduct from User Wallet (PiUSD)
     const tIdx = mockUserTokens.findIndex(t => t.symbol === 'PiUSD');
     if(mockUserTokens[tIdx].balance < arbitrator.fee) {
         throw new Error("Insufficient PiUSD for arbitrator fee.");
@@ -348,14 +449,12 @@ export const selectArbitrator = async (bountyId: string, arbitratorId: string): 
     mockUserTokens[tIdx].balance -= arbitrator.fee;
     updateTokens([...mockUserTokens]);
 
-    // Add to Arbitration Contract Balance (Escrow for the Arbitrator)
     arbitrationContractBalance += arbitrator.fee;
     save('arbitrationContractBalance', arbitrationContractBalance);
 
     mockBounties[bIdx].status = 'Arbitration'; 
     save('bounties', mockBounties);
     
-    console.log(`[Arbitration] ${arbitrator.fee} PiUSD collected and held for ${arbitrator.name}`);
     return {...mockBounties[bIdx]}; 
 };
 
@@ -375,22 +474,29 @@ export const resolveArbitration = async (bountyId: string, decision: 'Release' |
         save('escrowBalance', escrowBalance);
 
         if (decision === 'Refund') { 
-            // Return funds to User Wallet
             const tIdx = mockUserTokens.findIndex(t => t.symbol === 'ARCHI'); 
             mockUserTokens[tIdx].balance += bounty.reward; 
             updateTokens([...mockUserTokens]);
-        } 
-        // If 'Release', funds go to Provider (external wallet, just removed from escrow here)
+            
+            // Reputation Impact: Dispute Won by Client (Refund)
+            await addReputationEvent(mockUser.id, 'DisputeWon', TRUST_SCORE_WEIGHTS.DisputeWon, `Won dispute on bounty: ${bounty.title}`);
+            if (bounty.winnerId) {
+                 await addReputationEvent(bounty.winnerId, 'DisputeLost', TRUST_SCORE_WEIGHTS.DisputeLost, `Lost dispute on bounty: ${bounty.title}`);
+            }
+        } else {
+             // Release means Client lost dispute (Provider gets funds)
+             await addReputationEvent(mockUser.id, 'DisputeLost', TRUST_SCORE_WEIGHTS.DisputeLost, `Lost dispute on bounty: ${bounty.title}`);
+             if (bounty.winnerId) {
+                 await addReputationEvent(bounty.winnerId, 'DisputeWon', TRUST_SCORE_WEIGHTS.DisputeWon, `Won dispute on bounty: ${bounty.title}`);
+            }
+        }
     }
 
-    // 2. Pay Arbitrator (Release fee from Arbitration Contract)
-    // In a real app, we'd track which arbitrator handled this bounty
-    // For sim, we just assume a standard fee payout roughly matching what was collected
+    // 2. Pay Arbitrator
     if (arbitrationContractBalance > 0) {
-        const payout = 50; // Simplified logic
+        const payout = 50; 
         arbitrationContractBalance -= payout;
         save('arbitrationContractBalance', arbitrationContractBalance);
-        console.log(`[Arbitration] Payout released to Arbitrator.`);
     }
 
     save('bounties', mockBounties);
@@ -457,8 +563,14 @@ export const releaseEscrow = async (bountyId: string): Promise<BountyEntity> => 
     mockBounties[idx].status = 'Complete'; 
     escrowBalance -= bounty.reward;
     save('escrowBalance', escrowBalance);
-    reputationEvents.push({ id: `rev_${Date.now()}`, userId: mockBounties[idx].winnerId || 'unknown', type: 'BountyCompleted', value: 10, description: `Completed bounty: ${mockBounties[idx].title}`, timestamp: new Date().toISOString()}); 
-    save('reputationEvents', reputationEvents);
+    
+    // Reputation: Award completion points
+    if (mockBounties[idx].winnerId) {
+        await addReputationEvent(mockBounties[idx].winnerId!, 'BountyCompleted', TRUST_SCORE_WEIGHTS.BountyCompleted, `Completed bounty: ${mockBounties[idx].title}`);
+    }
+    // Award client points for hiring
+    await addReputationEvent(mockUser.id, 'BountyCompleted', 2, `Paid out bounty: ${mockBounties[idx].title}`);
+
     save('bounties', mockBounties);
     return {...mockBounties[idx]}; 
 }
@@ -563,6 +675,8 @@ export const fundServiceEscrow = async (agreementId: string, validatorId?: strin
     escrowBalance += totalCost; 
     save('escrowBalance', escrowBalance);
     save('serviceAgreements', mockServiceAgreements);
+    // Reputation: Hiring a service
+    await addReputationEvent(mockUser.id, 'RatingReceived', 1, `Hired service for agreement ${agreementId}`); // Small bump for activity
     return { ...mockServiceAgreements[idx] }; 
 };
 export const confirmServiceCompletion = async (agreementId: string, userType: 'client' | 'validator'): Promise<ServiceAgreementEntity> => { 
@@ -581,9 +695,9 @@ export const confirmServiceCompletion = async (agreementId: string, userType: 'c
         save('escrowBalance', escrowBalance);
         const provider = mockServiceProviders.find(p => p.id === agreement.providerId);
         if (provider) {
-             reputationEvents.push({ id: `rev_${Date.now()}`, userId: provider.id, type: 'RatingReceived', value: 5, description: 'Service Completed Successfully', timestamp: new Date().toISOString()});
-             save('reputationEvents', reputationEvents);
+             await addReputationEvent(provider.id, 'ServiceCompleted', TRUST_SCORE_WEIGHTS.ServiceCompleted, 'Service Completed Successfully');
         }
+        await addReputationEvent(agreement.clientId, 'ServiceCompleted', 2, 'Service Completion Confirmed');
     } 
     save('serviceAgreements', mockServiceAgreements);
     return { ...agreement }; 
@@ -598,37 +712,26 @@ export const validateServiceCompletion = async (agreementId: string): Promise<Se
         const totalRelease = agreement.price + (validator ? validator.fee : 0);
         escrowBalance -= totalRelease;
         save('escrowBalance', escrowBalance);
-        reputationEvents.push({ id: `rev_${Date.now()}`, userId: agreement.providerId, type: 'RatingReceived', value: 5, description: 'Service Validated & Completed', timestamp: new Date().toISOString()});
-        save('reputationEvents', reputationEvents);
+        
+        // Reputation Update
+        await addReputationEvent(agreement.providerId, 'ServiceCompleted', TRUST_SCORE_WEIGHTS.ServiceCompleted, 'Service Validated & Completed');
+        if(validator) {
+            // Tracking arbitrator stats could go here
+        }
     }
     save('serviceAgreements', mockServiceAgreements);
     return { ...agreement };
 };
 export const submitRating = async (userId: string, rating: number, comment: string): Promise<boolean> => { 
-    reputationEvents.push({ id: `rev_${Date.now()}`, userId, type: 'RatingReceived', value: rating, description: comment, timestamp: new Date().toISOString() }); 
-    save('reputationEvents', reputationEvents);
+    const deviation = rating - 3; // 1=-2, 2=-1, 3=0, 4=1, 5=2
+    const points = deviation * TRUST_SCORE_WEIGHTS.RatingReceived;
+    
+    await addReputationEvent(userId, 'RatingReceived', points, `Received ${rating}-star rating: ${comment}`);
     return true; 
-};
-export const calculateTrustScore = async (userId: string): Promise<number> => { 
-    const userEvents = reputationEvents.filter(e => e.userId === userId); 
-    let score = 50; 
-    for (const event of userEvents) { score += event.value; } 
-    mockUser.trustScore = Math.max(0, Math.min(100, score)); 
-    save('user', mockUser);
-    return mockUser.trustScore; 
 };
 export const listProposals = async (): Promise<ProposalEntity[]> => { 
     mockProposals.forEach(p => {}); 
     return [...mockProposals]; 
-};
-export const voteOnProposal = async (proposalId: string, vote: 'for' | 'against', votingPower: number): Promise<ProposalEntity> => { 
-    const idx = mockProposals.findIndex(p => p.id === proposalId); 
-    if (idx === -1) throw new Error('Proposal not found'); 
-    if (vote === 'for') mockProposals[idx].forVotes += votingPower; 
-    else mockProposals[idx].againstVotes += votingPower; 
-    mockProposals[idx].turnout += (votingPower / TOTAL_VOTING_POWER); 
-    save('proposals', mockProposals);
-    return { ...mockProposals[idx] }; 
 };
 export const executeProposal = async(proposalId: string): Promise<ProposalEntity> => {
     console.log(`[AdminBot] Attempting to execute proposal ${proposalId}...`);
@@ -678,15 +781,10 @@ export const verifyProofOfInstallation = async(orderId: string): Promise<OrderEn
     const archiIndex = mockUserTokens.findIndex(t => t.symbol === 'ARCHI');
     mockUserTokens[archiIndex].balance += cashbackAmount;
     updateTokens([...mockUserTokens]);
-    reputationEvents.push({
-        id: `rev_${Date.now()}`,
-        userId: mockOrders[idx].userId,
-        type: 'ProofOfInstallation',
-        value: 5, 
-        description: `Verified physical installation for order ${orderId}`,
-        timestamp: new Date().toISOString(),
-    });
-    save('reputationEvents', reputationEvents);
+    
+    // Reputation: Proof of Installation
+    await addReputationEvent(mockOrders[idx].userId, 'ProofOfInstallation', TRUST_SCORE_WEIGHTS.ProofOfInstallation, `Verified physical installation for order ${orderId}`);
+    
     save('orders', mockOrders);
     return {...mockOrders[idx]};
 };

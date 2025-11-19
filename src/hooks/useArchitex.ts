@@ -37,6 +37,7 @@ export const useArchitex = () => {
   const [oracleData, setOracleData] = useState<OracleData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProfileVisible, setIsProfileVisible] = useState(false);
+  const [votingPower, setVotingPower] = useState({ total: 0, fromTokens: 0, fromTrust: 0 });
 
   // Admin Logic
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
@@ -153,6 +154,13 @@ export const useArchitex = () => {
       setProducts(productsData);
       setUserTokens(tokensData);
       setOracleData(oracle);
+
+      // Calculate Voting Power on Refresh
+      if (userData) {
+          const vp = await api.getVotingPower(userData.id);
+          setVotingPower(vp);
+      }
+      
       return { ordersData };
   };
 
@@ -622,12 +630,50 @@ export const useArchitex = () => {
           addToast('Service Completed. Funds Released.', 'success');
       }
       setServiceAgreements(prev => prev.map(a => a.id === updatedAgreement.id ? updatedAgreement : a));
+      // Refresh user data to update trust score after completion
+      if(user) {
+           const updatedUser = await api.authenticateWithPi();
+           setUser(updatedUser);
+      }
   };
   
   const handleSubmitRating = async (rating: number, comment: string) => { if(!userToRate) return; await api.submitRating(userToRate, rating, comment); const score = await api.calculateTrustScore(user!.id); setUser(prev => prev ? {...prev, trustScore: score} : null); setUserToRate(null); setShowRatingModal(false); addToast('Rating Submitted', 'success'); };
-  const handleStake = async (amount: number) => { const updatedUser = await api.stakeArchi(amount); setUser(updatedUser); const updatedTokens = await api.getUserTokens(); setUserTokens(updatedTokens); addToast(`Staked ${amount} ARCHI`, 'success'); };
-  const handleUnstake = async (amount: number) => { const updatedUser = await api.unstakeArchi(amount); setUser(updatedUser); const updatedTokens = await api.getUserTokens(); setUserTokens(updatedTokens); addToast(`Unstaked ${amount} ARCHI`, 'info'); };
-  const handleVote = async (proposalId: string, vote: 'for' | 'against') => { if (!user) return; const votingPower = (user.stakedArchi || 0) + user.trustScore; const updatedProposal = await api.voteOnProposal(proposalId, vote, votingPower); setProposals(prev => prev.map(p => p.id === proposalId ? updatedProposal : p)); addToast('Vote Cast', 'success'); };
+  
+  const handleStake = async (amount: number) => { 
+      const updatedUser = await api.stakeArchi(amount); 
+      setUser(updatedUser); 
+      const updatedTokens = await api.getUserTokens(); 
+      setUserTokens(updatedTokens); 
+      
+      // Update voting power
+      const vp = await api.getVotingPower(updatedUser.id);
+      setVotingPower(vp);
+      
+      addToast(`Staked ${amount} ARCHI`, 'success'); 
+  };
+  
+  const handleUnstake = async (amount: number) => { 
+      const updatedUser = await api.unstakeArchi(amount); 
+      setUser(updatedUser); 
+      const updatedTokens = await api.getUserTokens(); 
+      setUserTokens(updatedTokens); 
+      
+      // Update voting power
+      const vp = await api.getVotingPower(updatedUser.id);
+      setVotingPower(vp);
+      
+      addToast(`Unstaked ${amount} ARCHI`, 'info'); 
+  };
+  
+  const handleVote = async (proposalId: string, vote: 'for' | 'against') => { 
+      if (!user) return; 
+      // Use calculated voting power from state
+      const power = votingPower.total; 
+      const updatedProposal = await api.voteOnProposal(proposalId, vote, power); 
+      setProposals(prev => prev.map(p => p.id === proposalId ? updatedProposal : p)); 
+      addToast('Vote Cast', 'success'); 
+  };
+  
   const handleExecuteProposal = async (proposalId: string) => {
     const updatedProposal = await api.executeProposal(proposalId);
     setProposals(prev => prev.map(p => p.id === proposalId ? updatedProposal : p));
@@ -739,8 +785,10 @@ export const useArchitex = () => {
     user,
     projectCount: projects.length,
     hasPendingOrders: orders.some(o => o.status === 'Shipped'),
-    currentProjectModificationCount: selectedProject?.modificationCount 
-  }), [activeTab, user, projects, orders, selectedProject]);
+    currentProjectModificationCount: selectedProject?.modificationCount,
+    // Calculate unrated services for nudge
+    pendingReviews: serviceAgreements.filter(sa => sa.status === 'complete' && sa.clientId === user?.id).length 
+  }), [activeTab, user, projects, orders, selectedProject, serviceAgreements]);
 
   const uxTip = useMemo(() => getProactiveTip(uxContext), [uxContext]);
   const currentScanInstruction = guidedScanInstructions[currentScanStep];
@@ -782,6 +830,7 @@ export const useArchitex = () => {
     handleJoinFounderProgram,
     handleSubscribe,
     showProviderOnboarding, setShowProviderOnboarding, handleProviderRegistration,
-    showArbitratorOnboarding, setShowArbitratorOnboarding, handleArbitratorRegistration
+    showArbitratorOnboarding, setShowArbitratorOnboarding, handleArbitratorRegistration,
+    votingPower // Export Voting Power
   };
 };

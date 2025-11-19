@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { UserEntity, ProposalEntity } from '../core/schemas/entities';
 import { ArchitexLogo } from './icons/ArchitexLogo';
@@ -22,9 +23,8 @@ interface DaoInterfaceProps {
 
 export const DaoInterface: React.FC<DaoInterfaceProps> = ({ user, proposals, onStake, onUnstake, onVote, onExecute, onViewTos, onOpenDetails }) => {
     const [stakeAmount, setStakeAmount] = useState('');
-    const { handleClaimStakingRewards } = useArchitex();
-    const votingPower = (user.stakedArchi || 0) + user.trustScore;
-
+    const { handleClaimStakingRewards, votingPower } = useArchitex();
+    
     const handleStake = () => {
         const amount = parseFloat(stakeAmount);
         if (amount > 0) {
@@ -102,7 +102,15 @@ export const DaoInterface: React.FC<DaoInterfaceProps> = ({ user, proposals, onS
             
             <div className="flex justify-between items-center mb-2 px-1">
                 <h4 className="font-semibold text-white">Proposals</h4>
-                <div className="text-xs text-slate-400">Voting Power: <span className="text-white font-bold">{votingPower}</span></div>
+                
+                {/* Weighted Voting Power Tooltip */}
+                <div className="group relative flex flex-col items-end">
+                    <div className="text-xs text-slate-400 cursor-help">Voting Power: <span className="text-white font-bold">{votingPower.total.toLocaleString()}</span></div>
+                    <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block bg-black p-2 rounded border border-white/20 text-[10px] w-32 z-20">
+                        <div className="flex justify-between"><span>Tokens:</span> <span>{votingPower.fromTokens.toLocaleString()}</span></div>
+                        <div className="flex justify-between text-eco-green"><span>Trust (x50):</span> <span>+{votingPower.fromTrust.toLocaleString()}</span></div>
+                    </div>
+                </div>
             </div>
 
 

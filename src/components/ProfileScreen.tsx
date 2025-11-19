@@ -189,10 +189,21 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, projects, or
                     </h2>
                     <p className="text-sm text-slate-400 truncate">{user.walletAddress}</p>
                     
-                    <div className="mt-4 flex justify-center space-x-2">
-                        <div className="inline-flex items-center bg-eco-green/20 text-eco-green px-3 py-1 rounded-full text-sm font-semibold">
+                    <div className="mt-4 flex flex-col items-center space-y-2">
+                        <div className="group relative inline-flex items-center bg-eco-green/20 text-eco-green px-4 py-2 rounded-full text-sm font-semibold border border-eco-green/30 cursor-help">
+                            <ShieldCheckIcon className="w-4 h-4 mr-1" />
                             Trust Score: {user.trustScore}
+                            
+                            {/* Trust Score Breakdown Tooltip */}
+                            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-48 bg-black p-3 rounded-xl border border-white/20 hidden group-hover:block z-20 text-[10px] text-left">
+                                <div className="font-bold text-white mb-1 border-b border-white/10 pb-1">Score Components</div>
+                                <div className="flex justify-between text-slate-400"><span>Base</span> <span>50</span></div>
+                                <div className="flex justify-between text-eco-green"><span>Service</span> <span>+5/job</span></div>
+                                <div className="flex justify-between text-red-400"><span>Disputes</span> <span>-20/loss</span></div>
+                                <div className="flex justify-between text-pi-gold"><span>Ratings</span> <span>Weighted</span></div>
+                            </div>
                         </div>
+                        
                         {user.isFounder && (
                             <div className="inline-flex items-center bg-pi-gold/20 text-pi-gold px-3 py-1 rounded-full text-xs font-bold uppercase">
                                 Founder Member

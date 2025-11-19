@@ -9,7 +9,7 @@ export type PromotionType = 'item' | 'invoice';
 export type OrderStatus = 'Processing' | 'Shipped' | 'Delivered' | 'Return Requested' | 'Returned' | 'In Dispute' | 'Refunded';
 export type ProofOfInstallationStatus = 'none' | 'pending' | 'submitted' | 'verified' | 'rejected';
 export type ProposalStatus = 'Voting' | 'Passed' | 'Failed' | 'Executing' | 'Executed';
-export type ReputationEventType = 'BountyCompleted' | 'DisputeWon' | 'RatingReceived' | 'ProofOfInstallation';
+export type ReputationEventType = 'BountyCompleted' | 'DisputeWon' | 'RatingReceived' | 'ProofOfInstallation' | 'DisputeLost' | 'ServiceCompleted';
 export type DesignChallengeStatus = 'Open' | 'Voting' | 'Complete';
 export type VerificationStatus = 'none' | 'pending' | 'verified' | 'rejected';
 
