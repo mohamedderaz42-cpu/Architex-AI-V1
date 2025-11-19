@@ -8,6 +8,7 @@ import { PlusIcon } from './icons/PlusIcon';
 import { InfoIcon } from './icons/InfoIcon';
 import { AwardIcon } from './icons/AwardIcon';
 import { TrendingUpIcon } from './icons/TrendingUpIcon';
+import * as api from '../core/api/contract';
 
 interface DaoInterfaceProps {
     user: UserEntity;
@@ -18,12 +19,12 @@ interface DaoInterfaceProps {
     onExecute: (proposalId: string) => void;
     onViewTos: () => void;
     onOpenDetails: (proposal: ProposalEntity) => void;
-    // Added props to replace hook usage
     handleClaimStakingRewards: () => void;
     votingPower: { total: number; fromTokens: number; fromTrust: number };
+    onCreateChallenge: () => void;
 }
 
-export const DaoInterface: React.FC<DaoInterfaceProps> = ({ user, proposals, onStake, onUnstake, onVote, onExecute, onViewTos, onOpenDetails, handleClaimStakingRewards, votingPower }) => {
+export const DaoInterface: React.FC<DaoInterfaceProps> = ({ user, proposals, onStake, onUnstake, onVote, onExecute, onViewTos, onOpenDetails, handleClaimStakingRewards, votingPower, onCreateChallenge }) => {
     const [stakeAmount, setStakeAmount] = useState('');
     
     const handleStake = () => {
@@ -58,7 +59,7 @@ export const DaoInterface: React.FC<DaoInterfaceProps> = ({ user, proposals, onS
                         <div>
                             <p className="text-xs text-slate-400">Total Value Locked</p>
                             <div className="flex items-center space-x-2">
-                                <span className="text-2xl font-bold text-white">1,250,000</span>
+                                <span className="text-2xl font-bold text-white">{api.treasuryBalance.toLocaleString()}</span>
                                 <span className="text-xs font-bold text-ai-violet bg-ai-violet/20 px-2 py-0.5 rounded">ARCHI</span>
                             </div>
                         </div>
@@ -131,9 +132,12 @@ export const DaoInterface: React.FC<DaoInterfaceProps> = ({ user, proposals, onS
                     <PlusIcon className="w-4 h-4 mr-2" />
                     Propose
                 </button>
-                 <button className="group flex items-center justify-center w-full px-4 py-3 bg-pi-gold/10 border border-pi-gold/50 rounded-full text-sm font-semibold text-pi-gold hover:bg-pi-gold/20 transition-all duration-300">
+                 <button 
+                    onClick={onCreateChallenge}
+                    className="group flex items-center justify-center w-full px-4 py-3 bg-pi-gold/10 border border-pi-gold/50 rounded-full text-sm font-semibold text-pi-gold hover:bg-pi-gold/20 transition-all duration-300"
+                >
                     <AwardIcon className="w-4 h-4 mr-2" />
-                    Challenge
+                    New Challenge
                 </button>
              </div>
         </div>

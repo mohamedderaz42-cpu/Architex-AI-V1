@@ -48,6 +48,7 @@ import { ArchieBotWidget } from './components/ArchieBotWidget';
 import { ServiceProviderOnboarding } from './components/ServiceProviderOnboarding';
 import { ArbitratorOnboarding } from './components/ArbitratorOnboarding';
 import { ShareModal } from './components/ShareModal';
+import { CreateChallengeModal } from './components/CreateChallengeModal';
 
 const AppContent: React.FC = () => {
   const {
@@ -72,6 +73,7 @@ const AppContent: React.FC = () => {
     handleShareProject, handleConfirmShare, showShareModal, projectToShare, closeShareModal,
     selectedChallenge, submissions, handleSelectChallenge, closeChallengeDetailsModal, handleVoteOnSubmission,
     showSubmitToChallengeModal, projectToSubmit, openSubmitToChallengeModal, closeSubmitToChallengeModal, handleSubmitProjectToChallenge,
+    showCreateChallengeModal, openCreateChallengeModal, closeCreateChallengeModal, handleCreateChallenge,
     showCreateProjectModal, openCreateProjectModal, closeCreateProjectModal, handleCreateProject,
     // Cart & Vendor
     cart, addToCart, removeFromCart, updateCartItem, openShoppingCart, closeShoppingCart, showShoppingCartModal, handleCheckout,
@@ -121,7 +123,7 @@ const AppContent: React.FC = () => {
           </div>
         );
       case 'explore':
-        return <PublicGallery projects={publicProjects} onViewProject={handleProjectInteraction} />;
+        return <PublicGallery projects={publicProjects} activeChallenges={designChallenges} onViewProject={handleProjectInteraction} />;
       case 'market':
         return <DeFiGateway 
           bounties={bounties} 
@@ -150,6 +152,7 @@ const AppContent: React.FC = () => {
           // DAO Props
           handleClaimStakingRewards={handleClaimStakingRewards}
           votingPower={votingPower}
+          onCreateChallenge={openCreateChallengeModal}
         />;
       case 'challenges':
         return <ChallengesGallery challenges={designChallenges} onSelectChallenge={handleSelectChallenge} />;
@@ -190,6 +193,7 @@ const AppContent: React.FC = () => {
 
       {showPaymentModal && <PaymentModal onConfirm={confirmPayment} onCancel={cancelPayment} isProcessing={isProcessingPayment} error={paymentError} analysis={scanAnalysis} />}
       {showCreateProjectModal && <CreateProjectModal onConfirm={handleCreateProject} onCancel={closeCreateProjectModal} />}
+      {showCreateChallengeModal && <CreateChallengeModal onConfirm={handleCreateChallenge} onCancel={closeCreateChallengeModal} />}
 
       {/* Profile with Admin Link Injection */}
       {isProfileVisible && user && (

@@ -1,24 +1,61 @@
 
 import React from 'react';
-import { ProjectEntity } from '../core/schemas/entities';
+import { ProjectEntity, DesignChallengeEntity } from '../core/schemas/entities';
 import { GlassPanel } from './GlassPanel';
 import { NftIcon } from './icons/NftIcon';
 import { ThumbsUpIcon } from './icons/ThumbsUpIcon';
 import { UserIcon } from './icons/UserIcon';
 import { SearchIcon } from './icons/SearchIcon';
+import { AwardIcon } from './icons/AwardIcon';
+import { ArchitexLogo } from './icons/ArchitexLogo';
 
 interface PublicGalleryProps {
     projects: ProjectEntity[];
+    activeChallenges?: DesignChallengeEntity[];
     onViewProject: (project: ProjectEntity) => void;
 }
 
-export const PublicGallery: React.FC<PublicGalleryProps> = ({ projects, onViewProject }) => {
+export const PublicGallery: React.FC<PublicGalleryProps> = ({ projects, activeChallenges = [], onViewProject }) => {
+    // Get the highest reward active challenge
+    const featuredChallenge = activeChallenges
+        .filter(c => c.status === 'Open' || c.status === 'Voting')
+        .sort((a, b) => b.reward - a.reward)[0];
+
     return (
         <div className="w-full h-full flex flex-col">
             <div className="px-2 mb-4">
                 <h2 className="text-2xl font-bold text-white mb-1">Community Explore</h2>
                 <p className="text-slate-400 text-sm">Discover trending designs from across the network.</p>
             </div>
+
+            {/* Featured Challenge Banner */}
+            {featuredChallenge && (
+                <div className="px-2 mb-4">
+                    <div className="bg-gradient-to-r from-pi-gold/20 to-orange-500/20 border border-pi-gold/30 rounded-2xl p-4 relative overflow-hidden animate-fade-in">
+                        <div className="absolute top-0 right-0 p-2 opacity-10">
+                            <AwardIcon className="w-24 h-24 text-pi-gold" />
+                        </div>
+                        <div className="relative z-10">
+                            <div className="flex items-center mb-1">
+                                <span className="bg-pi-gold text-brand-dark text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Featured Challenge</span>
+                                <span className="ml-2 text-xs text-pi-gold font-mono animate-pulse">LIVE NOW</span>
+                            </div>
+                            <h3 className="text-lg font-bold text-white mb-1">{featuredChallenge.title}</h3>
+                            <div className="flex items-center space-x-4 mt-2">
+                                <div className="flex items-center">
+                                    <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center mr-1.5">
+                                        <ArchitexLogo className="w-4 h-4 text-ai-violet" />
+                                    </div>
+                                    <span className="text-sm font-bold text-white">{featuredChallenge.reward.toLocaleString()} ARCHI</span>
+                                </div>
+                                <div className="text-xs text-slate-300">
+                                    Ends: {new Date(featuredChallenge.endsAt).toLocaleDateString()}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Search Bar (Visual Only) */}
             <div className="px-2 mb-4">

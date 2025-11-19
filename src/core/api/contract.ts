@@ -191,7 +191,8 @@ let mockChallengeSubmissions: ChallengeSubmissionEntity[] = [
     { id: 'sub_02', challengeId: 'dc_01', projectId: 'proj_xx', submitterId: 'user_02', submitterName: 'CreativeCat', votes: 1840, thumbnailUrl: 'https://placehold.co/400x300/10B981/020617/png?text=Green+Kitchen', projectName: 'Verdant Kitchen' }
 ];
 
-export const treasuryBalance = 1250000;
+// FIX: Changed to `let` to allow mutation for DAO sponsorship
+export let treasuryBalance = 1250000;
 export const escrowBalance = 450000;
 
 // --- API CONTRACT ---
@@ -275,6 +276,64 @@ export const shareToPiFeed = async (projectId: string, caption?: string): Promis
 
 export const listDesignChallenges = async (): Promise<DesignChallengeEntity[]> => {
     return [...mockDesignChallenges];
+};
+
+export const createDesignChallenge = async (challenge: Omit<DesignChallengeEntity, 'id' | 'status' | 'winnerId'>): Promise<DesignChallengeEntity> => {
+    if (treasuryBalance < challenge.reward) {
+        throw new Error("Insufficient Treasury Funds");
+    }
+    treasuryBalance -= challenge.reward;
+    const newChallenge: DesignChallengeEntity = {
+        ...challenge,
+        id: `dc_${Date.now()}`,
+        status: 'Open',
+    };
+    mockDesignChallenges.unshift(newChallenge);
+    console.log(`[DAO] Created challenge '${challenge.title}' with ${challenge.reward} ARCHI reward.`);
+    return newChallenge;
+};
+
+// Simulated Administration Bot function
+export const processExpiredChallenges = async (): Promise<DesignChallengeEntity[]> => {
+    const now = new Date();
+    let updated = false;
+
+    for (let i = 0; i < mockDesignChallenges.length; i++) {
+        const challenge = mockDesignChallenges[i];
+        if (challenge.status !== 'Complete' && new Date(challenge.endsAt) < now) {
+            // Find winner
+            const submissions = mockChallengeSubmissions.filter(s => s.challengeId === challenge.id);
+            if (submissions.length > 0) {
+                const winner = submissions.sort((a, b) => b.votes - a.votes)[0];
+                challenge.winnerId = winner.submitterId;
+                
+                // Automatic Payout (Simulated)
+                console.log(`[AdminBot] Challenge '${challenge.title}' expired. Winner: ${winner.submitterName}. Payout: ${challenge.reward} ARCHI.`);
+                // In real contract, this triggers transfer
+                if (winner.submitterId === mockUser.id) {
+                     const idx = mockUserTokens.findIndex(t => t.symbol === 'ARCHI');
+                     mockUserTokens[idx].balance += challenge.reward;
+                }
+                
+                reputationEvents.push({
+                    id: `rev_${Date.now()}`,
+                    userId: winner.submitterId,
+                    type: 'BountyCompleted', // Reusing type or create new 'ChallengeWon'
+                    value: 50,
+                    description: `Won Design Challenge: ${challenge.title}`,
+                    timestamp: now.toISOString()
+                });
+            } else {
+                 console.log(`[AdminBot] Challenge '${challenge.title}' expired with no submissions. Refunded to Treasury.`);
+                 treasuryBalance += challenge.reward;
+            }
+            challenge.status = 'Complete';
+            updated = true;
+        }
+    }
+    
+    if (updated) return [...mockDesignChallenges];
+    return []; // No changes
 };
 
 export const getChallengeSubmissions = async (challengeId: string): Promise<ChallengeSubmissionEntity[]> => {

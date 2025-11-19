@@ -43,6 +43,7 @@ interface DeFiGatewayProps {
     // New Props for DAO State
     handleClaimStakingRewards: () => void;
     votingPower: { total: number; fromTokens: number; fromTrust: number };
+    onCreateChallenge: () => void;
 }
 
 export const DeFiGateway: React.FC<DeFiGatewayProps> = ({ 
@@ -52,7 +53,7 @@ export const DeFiGateway: React.FC<DeFiGatewayProps> = ({
     onStake, onUnstake, onVote, onExecuteProposal, onViewTos,
     products, cartCount, onAddToCart, onOpenCart, onVendorClick,
     onOpenDetails, onJoinFounderProgram,
-    handleClaimStakingRewards, votingPower
+    handleClaimStakingRewards, votingPower, onCreateChallenge
 }) => {
     const [activeTab, setActiveTab] = useState<DeFiTab>('bounties');
 
@@ -65,7 +66,7 @@ export const DeFiGateway: React.FC<DeFiGatewayProps> = ({
             case 'vendor': return <VendorPortal />;
             case 'services': return <ServiceMarketplace providers={serviceProviders} onHire={onHireProvider} />;
             case 'arbitrators': return <ArbitratorMarketplace arbitrators={arbitrators} />;
-            case 'dao': return user && <DaoInterface user={user} proposals={proposals} onStake={onStake} onUnstake={onUnstake} onVote={onVote} onExecute={onExecuteProposal} onViewTos={onViewTos} onOpenDetails={onOpenDetails} handleClaimStakingRewards={handleClaimStakingRewards} votingPower={votingPower}/>;
+            case 'dao': return user && <DaoInterface user={user} proposals={proposals} onStake={onStake} onUnstake={onUnstake} onVote={onVote} onExecute={onExecuteProposal} onViewTos={onViewTos} onOpenDetails={onOpenDetails} handleClaimStakingRewards={handleClaimStakingRewards} votingPower={votingPower} onCreateChallenge={onCreateChallenge} />;
             case 'shop': return <MarketplaceShop products={products} cartCount={cartCount} onAddToCart={onAddToCart} onOpenCart={onOpenCart} onVendorClick={onVendorClick} />;
             default: return null;
         }

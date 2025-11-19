@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity, ProductEntity, ScanAnalysis, MessageEntity, ServiceProviderProfile, ArbitratorProfile } from '../core/schemas/entities';
 import * as api from '../core/api/contract';
@@ -85,6 +84,8 @@ export const useArchitex = () => {
   const [submissions, setSubmissions] = useState<ChallengeSubmissionEntity[]>([]);
   const [showSubmitToChallengeModal, setShowSubmitToChallengeModal] = useState(false);
   const [projectToSubmit, setProjectToSubmit] = useState<ProjectEntity | null>(null);
+  const [showCreateChallengeModal, setShowCreateChallengeModal] = useState(false);
+
 
   // Social Share
   const [showShareModal, setShowShareModal] = useState(false);
@@ -102,6 +103,22 @@ export const useArchitex = () => {
 
   useEffect(() => { setIsMounted(true); }, []);
   
+  // Polling for challenge updates (Simulating the Admin Bot)
+  useEffect(() => {
+    if (!isMounted) return;
+    
+    const interval = setInterval(async () => {
+        const updated = await api.processExpiredChallenges();
+        if (updated.length > 0) {
+            setDesignChallenges(updated);
+            addToast("A Design Challenge has been finalized.", "info");
+        }
+    }, 10000); // Check every 10s in demo
+
+    return () => clearInterval(interval);
+  }, [isMounted, addToast]);
+
+
   const refreshUserData = async () => {
       const [userData, userProjects, publicProjs, userBounties, arbitratorsData, ordersData, serviceProvidersData, proposalsData, agreementsData, challengesData, productsData] = await Promise.all([
         api.authenticateWithPi(), api.listProjects(), api.listPublicProjects(), api.listBounties(), api.listArbitrators(), api.listOrders(), api.listServiceProviders(), api.listProposals(), api.listServiceAgreements(), api.listDesignChallenges(), api.listVendorProducts()
@@ -221,9 +238,11 @@ export const useArchitex = () => {
 
   const openVendorProfile = (vendorId: string) => {
       // Mock fetch vendor
-      const vendor = api.mockServiceProviders.find(u => u.id === vendorId) as UserEntity || user;
-      setSelectedVendor(vendor);
-      setShowVendorProfileModal(true);
+      const vendor = serviceProviders.find(u => u.id === vendorId) || user;
+      if (vendor) {
+        setSelectedVendor(vendor);
+        setShowVendorProfileModal(true);
+      }
   };
 
   // --- Service Provider ---
@@ -330,6 +349,17 @@ export const useArchitex = () => {
     setSubmissions(challengeSubmissions);
     addToast("Vote recorded", "success");
   };
+  const openCreateChallengeModal = () => setShowCreateChallengeModal(true);
+  const closeCreateChallengeModal = () => setShowCreateChallengeModal(false);
+  const handleCreateChallenge = async (data: Omit<DesignChallengeEntity, 'id' | 'status' | 'winnerId'>) => {
+      try {
+          const newChallenge = await api.createDesignChallenge(data);
+          setDesignChallenges(prev => [newChallenge, ...prev]);
+          addToast(`Challenge "${data.title}" Created!`, 'success');
+      } catch (e) {
+          addToast("Failed to create challenge. Check funds.", "error");
+      }
+  };
 
   // --- AI Project Creation ---
   const openCreateProjectModal = () => setShowCreateProjectModal(true);
@@ -420,6 +450,7 @@ export const useArchitex = () => {
     // Design Challenges
     selectedChallenge, submissions, handleSelectChallenge, closeChallengeDetailsModal, handleVoteOnSubmission,
     showSubmitToChallengeModal, projectToSubmit, openSubmitToChallengeModal, closeSubmitToChallengeModal, handleSubmitProjectToChallenge,
+    showCreateChallengeModal, openCreateChallengeModal, closeCreateChallengeModal, handleCreateChallenge,
     // AI Creation
     showCreateProjectModal, openCreateProjectModal, closeCreateProjectModal, handleCreateProject,
     // Cart & Vendor
