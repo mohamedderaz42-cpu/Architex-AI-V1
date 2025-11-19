@@ -147,6 +147,18 @@ export interface IntegrationTestResult {
     finalEscrowBalance: number;
 }
 
+export interface StressTestResult {
+    testId: string;
+    timestamp: string;
+    virtualUsers: number;
+    totalTransactions: number;
+    tps: number; // Transactions Per Second
+    avgLatencyMs: number;
+    errorRate: number; // Percentage
+    bottlenecks: string[];
+    status: 'Passed' | 'Failed' | 'Warning';
+}
+
 export interface SignedAgreement {
     id: string;
     type: 'Bounty' | 'Service';

@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type, Modality } from "@google/genai";
-import { ProjectEntity, UserEntity, MaterialEntity, TokenEntity, LiquidityPoolEntity, BountyEntity, ArbitratorEntity, ProductEntity, ShippingZone, PromotionEntity, OrderEntity, OrderStatus, ServiceProviderProfile, ServiceAgreementEntity, ReputationEvent, ProposalEntity, ProofOfInstallationStatus, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, BillOfMaterialsEntry, ProposalComment, CartItem, MessageEntity, VestingSchedule, OracleData, FuzzTestResult, SignedAgreement, IntegrationTestResult, IntegrationTestStep } from '../schemas/entities';
+import { ProjectEntity, UserEntity, MaterialEntity, TokenEntity, LiquidityPoolEntity, BountyEntity, ArbitratorEntity, ProductEntity, ShippingZone, PromotionEntity, OrderEntity, OrderStatus, ServiceProviderProfile, ServiceAgreementEntity, ReputationEvent, ProposalEntity, ProofOfInstallationStatus, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, BillOfMaterialsEntry, ProposalComment, CartItem, MessageEntity, VestingSchedule, OracleData, FuzzTestResult, SignedAgreement, IntegrationTestResult, IntegrationTestStep, StressTestResult } from '../schemas/entities';
 import { PiCoinIcon } from '../../components/icons/PiCoinIcon';
 import { ArchitexLogo } from '../../components/icons/ArchitexLogo';
 
@@ -1448,5 +1448,51 @@ export const runIntegrationTest = async (): Promise<IntegrationTestResult> => {
         steps,
         finalTreasuryBalance: treasuryBalance,
         finalEscrowBalance: escrowBalance
+    };
+};
+
+// --- INFRASTRUCTURE STRESS TEST (Load Simulation) ---
+
+export const runStressTest = async (onProgress: (users: number) => void): Promise<StressTestResult> => {
+    const MAX_VIRTUAL_USERS = 1000;
+    const DURATION_MS = 5000;
+    const startTime = Date.now();
+    
+    let totalTransactions = 0;
+    let failedTransactions = 0;
+    
+    // Simulation Loop
+    for (let i = 0; i <= 10; i++) {
+        const currentUsers = Math.floor((i / 10) * MAX_VIRTUAL_USERS);
+        onProgress(currentUsers);
+        
+        // Simulate batch of operations per user step
+        const batchSize = Math.max(10, Math.floor(currentUsers / 5));
+        
+        // Simulate network latency & processing
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        totalTransactions += batchSize;
+        
+        // Introduce artificial random failures
+        if (Math.random() > 0.98) {
+            failedTransactions += Math.floor(Math.random() * 5);
+        }
+    }
+    
+    const endTime = Date.now();
+    const totalTimeSeconds = (endTime - startTime) / 1000;
+    const tps = totalTransactions / totalTimeSeconds;
+    
+    return {
+        testId: `stress_${startTime}`,
+        timestamp: new Date().toISOString(),
+        virtualUsers: MAX_VIRTUAL_USERS,
+        totalTransactions,
+        tps: Math.round(tps),
+        avgLatencyMs: Math.floor(Math.random() * 50) + 120, // Simulated 120-170ms
+        errorRate: (failedTransactions / totalTransactions) * 100,
+        bottlenecks: tps > 500 ? ['Database Write Capacity'] : [],
+        status: failedTransactions / totalTransactions < 0.01 ? 'Passed' : 'Warning'
     };
 };

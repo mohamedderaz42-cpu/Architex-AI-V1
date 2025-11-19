@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { GlassPanel } from './GlassPanel';
 import { ServerIcon } from './icons/ServerIcon';
@@ -22,8 +23,12 @@ export const SystemStatus: React.FC = () => {
                     <span className="font-semibold text-slate-200">Code Freeze Active</span>
                 </div>
                  <div className="flex justify-between items-center">
-                    <span className="text-slate-400">Version:</span>
-                    <span className="font-semibold text-pi-gold">Closed Beta</span>
+                    <span className="text-slate-400">Phase:</span>
+                    <span className="font-semibold text-pi-gold">Closed Beta (Testnet)</span>
+                </div>
+                 <div className="flex justify-between items-center">
+                    <span className="text-slate-400">Audit Readiness:</span>
+                    <span className="font-semibold text-blue-400">Pending External Review</span>
                 </div>
             </div>
             <div className="mt-3 pt-3 border-t border-white/10">
