@@ -448,6 +448,35 @@ export const claimFounderStatus = async (): Promise<UserEntity> => {
     return {...mockUser};
 };
 
+export const subscribeToAccelerator = async (): Promise<UserEntity> => {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    mockUser.subscriptionTier = 'Accelerator';
+    // Set expiry to 30 days from now
+    const expiry = new Date();
+    expiry.setDate(expiry.getDate() + 30);
+    mockUser.subscriptionExpiry = expiry.toISOString();
+    
+    save('user', mockUser);
+    return {...mockUser};
+};
+
+export const generateApiKey = async (): Promise<string> => {
+    await new Promise(resolve => setTimeout(resolve, 800));
+    // Simulate provisioning
+    return "arch_pk_live_" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+};
+
+export const getMarketMetrics = async (): Promise<{ name: string, change: number, price: number }[]> => {
+    // Mock live data feed
+    return [
+        { name: 'Eco-Friendly Timber', change: 2.5, price: 15.50 },
+        { name: 'Recycled Steel Beams', change: -1.8, price: 125.00 },
+        { name: 'Solar Glass Tiles', change: 5.2, price: 85.00 },
+        { name: 'Hempcrete Blocks', change: 0.4, price: 12.00 },
+        { name: 'Low-VOC Paint', change: -0.2, price: 45.00 }
+    ];
+};
+
 export const getUserTokens = async (): Promise<TokenEntity[]> => {
     return [...mockUserTokens];
 };

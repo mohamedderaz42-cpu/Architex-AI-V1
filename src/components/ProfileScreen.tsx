@@ -22,12 +22,13 @@ interface ProfileScreenProps {
     onRequestReturn: (orderId: string) => void;
     onConfirmServiceCompletion: (agreement: ServiceAgreementEntity) => void;
     onClaimVestedTokens: () => Promise<void>;
+    onSubscribe: () => void;
     onClose: () => void;
 }
 
 type ProfileTab = 'gallery' | 'orders' | 'services' | 'wallet' | 'contracts';
 
-export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, projects, orders, serviceAgreements, userTokens, onConfirmDelivery, onRequestReturn, onConfirmServiceCompletion, onClaimVestedTokens, onClose }) => {
+export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, projects, orders, serviceAgreements, userTokens, onConfirmDelivery, onRequestReturn, onConfirmServiceCompletion, onClaimVestedTokens, onSubscribe, onClose }) => {
     const publicProjects = projects.filter(p => p.isPublic);
     const [activeTab, setActiveTab] = useState<ProfileTab>('gallery');
     const [agreements, setAgreements] = useState<SignedAgreement[]>([]);
@@ -155,6 +156,10 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, projects, or
                             </div>
                         )}
                     </div>
+                </div>
+                
+                <div className="mt-4">
+                    <AcceleratorSubscription user={user} onSubscribe={onSubscribe} />
                 </div>
 
                 <div className="flex-grow mt-6 flex flex-col min-h-0">

@@ -214,14 +214,9 @@ export const useArchitex = () => {
   const handleProjectInteraction = async (project: ProjectEntity) => { setSelectedProject(project); setShowProjectDetailsModal(true); };
   
   const handleModifyProject = async (project: ProjectEntity) => {
-      // 1. Update Modification Count via API
       const updatedProject = await api.incrementProjectModification(project.id);
-      
-      // 2. Update Local State
       setProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
       setSelectedProject(updatedProject);
-      
-      // 3. Check UX Engine Rule for Upsell
       if (shouldTriggerDesignerUpsell(updatedProject.modificationCount || 0)) {
           setShowUpsellModal(true);
       } else {
@@ -281,23 +276,17 @@ export const useArchitex = () => {
       const total = cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
       const txid = await processPiPayment(total, `Architex Store Order`, { type: 'order' });
       if (txid) {
-          // Formalize order creation in contract
           const orderItems = cart.map(c => ({ productId: c.product.id, quantity: c.quantity }));
           await api.createOrder(orderItems, total);
-          
           setCart([]);
           setShowShoppingCartModal(false);
-          
-          // Refresh orders to show the new one
           const newOrders = await api.listOrders();
           setOrders(newOrders);
-          
           addToast('Order Placed Successfully!', 'success');
       }
   };
 
   const openVendorProfile = (vendorId: string) => {
-      // Mocking vendor fetch - normally would come from API
       const vendor = serviceProviders.find(p => p.id === vendorId) || {
           id: vendorId,
           piUsername: 'EcoSupplier_Ltd',
@@ -306,9 +295,8 @@ export const useArchitex = () => {
           role: 'vendor',
           walletAddress: 'G...Vendor',
           subscriptionTier: 'Accelerator',
-          isFounder: true // Simulate Founder status for unknown vendors too
+          isFounder: true 
       } as UserEntity;
-      
       setSelectedVendor(vendor);
       setShowVendorProfileModal(true);
   };
@@ -330,11 +318,9 @@ export const useArchitex = () => {
       setCurrentScanStep(0); 
       setScanProgress(0); 
       setScanAnalysis(null);
-      
-      // Initial Audio
       playInstructionAudio(guidedScanInstructions[0]);
       
-      const totalDuration = 12000; // Slightly longer for audio
+      const totalDuration = 12000; 
       const stepDuration = totalDuration / guidedScanInstructions.length; 
       
       scanIntervalRef.current = window.setInterval(async () => { 
@@ -342,12 +328,10 @@ export const useArchitex = () => {
               const nextStep = prevStep + 1; 
               if (nextStep >= guidedScanInstructions.length) { 
                   clearInterval(scanIntervalRef.current!); 
-                  // Scan complete, trigger analysis
                   setIsScanning(false); 
                   handleScanCompletion();
                   return prevStep; 
               } 
-              // Trigger audio for the next step
               playInstructionAudio(guidedScanInstructions[nextStep]);
               return nextStep; 
           }); 
@@ -423,7 +407,6 @@ export const useArchitex = () => {
 
   const confirmPayment = async () => {
       setIsProcessingPayment(true);
-      // Core MVP Monetization: 0.50 PiUSD
       const txid = await processPiPayment(0.50, "Architex 3D Model Generation", { forProjectId: `proj_scan_${Date.now()}` });
       
       if (txid) {
@@ -476,10 +459,9 @@ export const useArchitex = () => {
   const handleConfirmDispute = async (bounty: BountyEntity) => { const updatedBounty = await api.raiseDispute(bounty.id); setBounties(prev => prev.map(b => b.id === updatedBounty.id ? updatedBounty : b)); setSelectedBounty(updatedBounty); addToast('Dispute Raised', 'error'); };
   
   const handleSelectArbitrator = async (bounty: BountyEntity, arbitrator: ArbitratorEntity) => { 
-      // Payment Integration: Arbitrator Fee
       if (arbitrator.fee > 0) {
           const txid = await processPiPayment(arbitrator.fee, `Arbitrator Fee: ${arbitrator.name}`, { bountyId: bounty.id, arbitratorId: arbitrator.id });
-          if (!txid) return; // User cancelled
+          if (!txid) return; 
       }
       const updatedBounty = await api.selectArbitrator(bounty.id, arbitrator.id); 
       setBounties(prev => prev.map(b => b.id === updatedBounty.id ? updatedBounty : b)); 
@@ -516,7 +498,6 @@ export const useArchitex = () => {
       try {
           await api.claimStakingRewards();
           addToast('Staking Rewards Claimed', 'success');
-          // Refresh user data
           const updatedUser = await api.authenticateWithPi();
           const updatedTokens = await api.getUserTokens();
           setUser(updatedUser);
@@ -588,7 +569,7 @@ export const useArchitex = () => {
   const handleSubmitComment = async (proposalId: string, text: string) => {
       const updatedProposal = await api.submitProposalComment(proposalId, text);
       setProposals(prev => prev.map(p => p.id === proposalId ? updatedProposal : p));
-      setSelectedProposal(updatedProposal); // Update modal view
+      setSelectedProposal(updatedProposal); 
   };
 
   const handleSubmitProofOfInstallation = async (orderId: string) => {
@@ -621,6 +602,18 @@ export const useArchitex = () => {
       const updatedUser = await api.claimFounderStatus();
       setUser(updatedUser);
       addToast('Welcome to the Founder Program!', 'success');
+  };
+  
+  // Subscription Logic
+  const handleSubscribe = async () => {
+      const txid = await processPiPayment(52.00, "Accelerator Subscription (1 Month)", { type: 'subscription', tier: 'accelerator' });
+      if (txid) {
+          const updatedUser = await api.subscribeToAccelerator();
+          setUser(updatedUser);
+          addToast('Welcome to Accelerator Tier!', 'success');
+      } else {
+          addToast('Subscription Payment Failed', 'error');
+      }
   };
 
   // --- Design Challenges ---
@@ -708,6 +701,8 @@ export const useArchitex = () => {
     // System Test
     runIntegrationTest: api.runIntegrationTest,
     // Founder Logic
-    handleJoinFounderProgram
+    handleJoinFounderProgram,
+    // Subscription Logic
+    handleSubscribe
   };
 };

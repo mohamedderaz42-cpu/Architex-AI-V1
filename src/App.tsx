@@ -79,7 +79,9 @@ const AppContent: React.FC = () => {
     isAdminModalOpen, openAdminModal, closeAdminModal,
     isChatOpen, openChat, closeChat, messages, handleSendMessage, chatContextId,
     // Wallet & Founder
-    userTokens, handleClaimVestedTokens, handleJoinFounderProgram
+    userTokens, handleClaimVestedTokens, handleJoinFounderProgram,
+    // Subscription
+    handleSubscribe
   } = useArchitex();
 
   const renderDashboardContent = () => {
@@ -189,6 +191,7 @@ const AppContent: React.FC = () => {
             onRequestReturn={handleRequestReturn} 
             onConfirmServiceCompletion={handleConfirmServiceCompletion} 
             onClaimVestedTokens={handleClaimVestedTokens}
+            onSubscribe={handleSubscribe}
             onClose={toggleProfile} 
           />
       )}

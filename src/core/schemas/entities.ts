@@ -32,6 +32,7 @@ export interface UserEntity {
   trustScore: number; 
   avatarUrl?: string;
   subscriptionTier: 'Free' | 'Accelerator';
+  subscriptionExpiry?: string; // ISO Date
   vendorProfile?: VendorProfile;
   serviceProviderProfile?: ServiceProviderProfile;
   role: 'user' | 'vendor' | 'service-provider' | 'arbitrator' | 'admin';
