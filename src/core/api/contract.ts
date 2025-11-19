@@ -108,6 +108,21 @@ const defaultOrders: OrderEntity[] = [
 
 const defaultUser: UserEntity = { id: 'user_01', piUsername: 'ArchieBot', walletAddress: 'GD...QW', trustScore: 95, avatarUrl: 'https://placehold.co/100x100/020617/8B5CF6/png?text=A', subscriptionTier: 'Free', role: 'user', vendorProfile: { hasInsurance: false, agreedToIndemnity: false }, stakedArchi: 5000 };
 
+// --- RICH DATA SEEDING ---
+const defaultProducts: ProductEntity[] = [
+    { id: 'prod_01', vendorId: 'user_01', name: 'Bamboo Flooring (Dark Walnut)', price: 45.50, inStock: 500, imageUrl: 'https://placehold.co/100x100/5D4037/FFFFFF/png?text=Bamboo', tags: ['requires-installation', 'eco-friendly'] },
+    { id: 'prod_02', vendorId: 'user_01', name: 'Recycled Steel I-Beams', price: 125.00, inStock: 80, imageUrl: 'https://placehold.co/100x100/607D8B/FFFFFF/png?text=Steel', tags: ['requires-installation', 'industrial'] },
+    { id: 'prod_03', vendorId: 'user_01', name: 'Low-VOC Paint (Eggshell)', price: 45.00, inStock: 250, imageUrl: 'https://placehold.co/100x100/FFF9C4/000000/png?text=Paint' },
+    { id: 'prod_04', vendorId: 'user_02', name: 'Solar Glass Roof Tiles', price: 85.00, inStock: 1200, imageUrl: 'https://placehold.co/100x100/0288D1/FFFFFF/png?text=Solar', tags: ['requires-installation', 'energy-saving'] },
+    { id: 'prod_05', vendorId: 'user_02', name: 'Hempcrete Blocks', price: 12.00, inStock: 3000, imageUrl: 'https://placehold.co/100x100/8D6E63/FFFFFF/png?text=Hemp', tags: ['insulation', 'carbon-negative'] },
+    { id: 'prod_06', vendorId: 'user_03', name: 'Smart Thermostat V2', price: 199.00, inStock: 150, imageUrl: 'https://placehold.co/100x100/212121/FFFFFF/png?text=Smart', tags: ['automation'] },
+];
+
+const defaultMaterials: MaterialEntity[] = [
+    { id: 'mat_01', name: 'Reclaimed Oak', description: 'Salvaged from old barns, high durability.', supplierId: 'supp_01', ecoRating: 9.5, price: 120, imageUrl: 'https://placehold.co/100x100/795548/FFFFFF/png?text=Oak' },
+    { id: 'mat_02', name: 'Recycled Aluminum', description: '90% recycled content, lightweight.', supplierId: 'supp_02', ecoRating: 8.8, price: 80, imageUrl: 'https://placehold.co/100x100/B0BEC5/000000/png?text=Alum' },
+];
+
 
 // --- LIVE STATE (Loaded from LocalStorage) ---
 let mockProjects = load('projects', defaultProjects);
@@ -115,17 +130,15 @@ export let mockUserTokens = load('tokens', defaultUserTokens); // Export for Swa
 let mockBounties = load('bounties', defaultBounties);
 let mockOrders = load('orders', defaultOrders);
 let mockUser = load('user', defaultUser);
+let mockProducts = load('products', defaultProducts); // Now loading rich products
+let mockMaterials = load('materials', defaultMaterials);
 
-// These are generally static for the demo, but we can persist them if needed
 const mockArbitrators: ArbitratorEntity[] = [
     { id: 'arb_01', name: 'Judge Pi', specialty: 'Residential Design', fee: 50, resolutionRate: 98, casesResolved: 152, avatarUrl: 'https://placehold.co/100x100/020617/FDB300/png?text=JP', conflictsWithProjectIds: ['proj_03'] },
-    { id: 'arb_02', name: 'ArchiLex', specialty: 'Commercial & NFT', fee: 100, resolutionRate: 95, casesResolved: 88, avatarUrl: 'https://placehold.co/100x100/020617/10B981/png?text=AL' }
+    { id: 'arb_02', name: 'ArchiLex', specialty: 'Commercial & NFT', fee: 100, resolutionRate: 95, casesResolved: 88, avatarUrl: 'https://placehold.co/100x100/020617/10B981/png?text=AL' },
+    { id: 'arb_03', name: 'Structura', specialty: 'Engineering Disputes', fee: 75, resolutionRate: 92, casesResolved: 45, avatarUrl: 'https://placehold.co/100x100/020617/8B5CF6/png?text=ST' }
 ];
-const mockProducts: ProductEntity[] = [
-    { id: 'prod_01', vendorId: 'user_01', name: 'Eco-Friendly Timber', price: 15.50, inStock: 500, imageUrl: 'https://placehold.co/100x100/10B981/FFFFFF/png?text=Timber', tags: ['requires-installation'] },
-    { id: 'prod_02', vendorId: 'user_01', name: 'Recycled Steel Beams', price: 125.00, inStock: 80, imageUrl: 'https://placehold.co/100x100/8B5CF6/FFFFFF/png?text=Steel', tags: ['requires-installation'] },
-    { id: 'prod_03', vendorId: 'user_01', name: 'Low-VOC Paint', price: 45.00, inStock: 250, imageUrl: 'https://placehold.co/100x100/FDB300/FFFFFF/png?text=Paint' },
-];
+
 const mockShippingZones: ShippingZone[] = [{ id: 'zone_na', name: 'North America', active: true },{ id: 'zone_eu', name: 'European Union', active: true },{ id: 'zone_asia', name: 'Asia-Pacific', active: false }];
 const mockPromotions: PromotionEntity[] = [{ id: 'promo_01', type: 'item', description: '15% off Eco-Timber', discountValue: 15, targetId: 'prod_01' },{ id: 'promo_02', type: 'invoice', description: '10% off orders over 200 PiUSD', discountValue: 10, minSpend: 200 }];
 const mockServiceProviders: Omit<UserEntity, 'role'>[] = [
@@ -323,7 +336,7 @@ export const generateModelFromScan = async (): Promise<ProjectEntity> => {
     return newProject; 
 };
 
-export const listMaterials = async (): Promise<MaterialEntity[]> => { return []; };
+export const listMaterials = async (): Promise<MaterialEntity[]> => { return [...mockMaterials]; };
 
 export const swapTokens = async (from: TokenEntity['symbol'], to: TokenEntity['symbol'], amount: number): Promise<boolean> => { 
     const fromIdx = mockUserTokens.findIndex(t => t.symbol === from);
