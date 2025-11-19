@@ -25,7 +25,17 @@
       }
     </script>
     <script src="https://sdk.pi-network.dev/v2/pi-sdk.js"></script>
-    <script>Pi.init({ version: "2.0", sandbox: true });</script>
+    <script>
+      try {
+        if (typeof Pi !== 'undefined') {
+          Pi.init({ version: "2.0", sandbox: true });
+        } else {
+          console.warn("Pi SDK not loaded yet. Functionality may be limited.");
+        }
+      } catch (e) {
+        console.error("Error initializing Pi SDK:", e);
+      }
+    </script>
   <script type="importmap">
 {
   "imports": {

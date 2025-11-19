@@ -232,7 +232,9 @@ export const useArchitex = () => {
                   },
                   onError: (error: Error, payment: any) => {
                       console.error('Pi Payment Error:', error, payment);
-                      setPaymentError(`Payment Error: ${error.message}`);
+                      // Provide actionable advice for the user
+                      const msg = error.message || "Transaction failed";
+                      setPaymentError(`Payment Failed: ${msg}. \n\n💡 Hint: Ensure your Pi Browser Wallet is on TESTNET and has sufficient Test-Pi.`);
                       resolve(null);
                   },
               };
