@@ -1,6 +1,5 @@
-
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, ProductEntity, CartItem, MessageEntity } from '../core/schemas/entities';
+import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, ProductEntity, CartItem, MessageEntity, OracleData } from '../core/schemas/entities';
 import * as api from '../core/api/contract';
 import { getProactiveTip, guidedScanInstructions, UXContext, shouldTriggerDesignerUpsell } from '../core/ux-engine/engine';
 import { useToast } from '../components/Toast';
@@ -31,6 +30,7 @@ export const useArchitex = () => {
   const [availableArbitrators, setAvailableArbitrators] = useState<ArbitratorEntity[]>([]);
   const [user, setUser] = useState<UserEntity | null>(null);
   const [userTokens, setUserTokens] = useState<TokenEntity[]>([]);
+  const [oracleData, setOracleData] = useState<OracleData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProfileVisible, setIsProfileVisible] = useState(false);
 
@@ -112,7 +112,7 @@ export const useArchitex = () => {
   useEffect(() => { setIsMounted(true); }, []);
   
   const refreshUserData = async (piUser?: any) => {
-      const [userData, userProjects, publicProjs, userBounties, arbitratorsData, ordersData, serviceProvidersData, proposalsData, agreementsData, challengesData, productsData, tokensData] = await Promise.all([
+      const [userData, userProjects, publicProjs, userBounties, arbitratorsData, ordersData, serviceProvidersData, proposalsData, agreementsData, challengesData, productsData, tokensData, oracle] = await Promise.all([
         api.authenticateWithPi(), 
         api.listProjects(), 
         api.listPublicProjects(),
@@ -124,7 +124,8 @@ export const useArchitex = () => {
         api.listServiceAgreements(), 
         api.listDesignChallenges(),
         api.listVendorProducts(),
-        api.getUserTokens()
+        api.getUserTokens(),
+        api.getOracleData()
       ]);
 
       if(piUser) {
@@ -144,6 +145,7 @@ export const useArchitex = () => {
       setDesignChallenges(challengesData);
       setProducts(productsData);
       setUserTokens(tokensData);
+      setOracleData(oracle);
       return { ordersData };
   };
 
@@ -507,6 +509,20 @@ export const useArchitex = () => {
       }
   };
 
+  const handleClaimStakingRewards = async () => {
+      try {
+          await api.claimStakingRewards();
+          addToast('Staking Rewards Claimed', 'success');
+          // Refresh user data
+          const updatedUser = await api.authenticateWithPi();
+          const updatedTokens = await api.getUserTokens();
+          setUser(updatedUser);
+          setUserTokens(updatedTokens);
+      } catch (e: any) {
+          addToast(e.message, 'error');
+      }
+  };
+
   // --- E-Commerce ---
   useEffect(() => {
     const shippedOrderWithInstallable = orders.find(o => o.status === 'Shipped' && o.items.some(i => i.productId === 'prod_01' || i.productId === 'prod_02'));
@@ -548,8 +564,8 @@ export const useArchitex = () => {
   
   // --- Reputation & DAO ---
   const handleSubmitRating = async (rating: number, comment: string) => { if(!userToRate) return; await api.submitRating(userToRate, rating, comment); const score = await api.calculateTrustScore(user!.id); setUser(prev => prev ? {...prev, trustScore: score} : null); setUserToRate(null); setShowRatingModal(false); addToast('Rating Submitted', 'success'); };
-  const handleStake = async (amount: number) => { const updatedUser = await api.stakeArchi(amount); setUser(updatedUser); addToast(`Staked ${amount} ARCHI`, 'success'); };
-  const handleUnstake = async (amount: number) => { const updatedUser = await api.unstakeArchi(amount); setUser(updatedUser); addToast(`Unstaked ${amount} ARCHI`, 'info'); };
+  const handleStake = async (amount: number) => { const updatedUser = await api.stakeArchi(amount); setUser(updatedUser); const updatedTokens = await api.getUserTokens(); setUserTokens(updatedTokens); addToast(`Staked ${amount} ARCHI`, 'success'); };
+  const handleUnstake = async (amount: number) => { const updatedUser = await api.unstakeArchi(amount); setUser(updatedUser); const updatedTokens = await api.getUserTokens(); setUserTokens(updatedTokens); addToast(`Unstaked ${amount} ARCHI`, 'info'); };
   const handleVote = async (proposalId: string, vote: 'for' | 'against') => { if (!user) return; const votingPower = (user.stakedArchi || 0) + user.trustScore; const updatedProposal = await api.voteOnProposal(proposalId, vote, votingPower); setProposals(prev => prev.map(p => p.id === proposalId ? updatedProposal : p)); addToast('Vote Cast', 'success'); };
   const handleExecuteProposal = async (proposalId: string) => {
     const updatedProposal = await api.executeProposal(proposalId);
@@ -671,7 +687,7 @@ export const useArchitex = () => {
     isAdminModalOpen, openAdminModal, closeAdminModal,
     // Chat
     isChatOpen, openChat, closeChat, messages, handleSendMessage, chatContextId,
-    // Wallet
-    userTokens, handleClaimVestedTokens
+    // Wallet & Incentives
+    userTokens, handleClaimVestedTokens, handleClaimStakingRewards, oracleData
   };
 };

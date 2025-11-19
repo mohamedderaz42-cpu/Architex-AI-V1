@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { GlassPanel } from './GlassPanel';
 import { ShieldCheckIcon } from './icons/ShieldCheckIcon';
@@ -7,6 +6,7 @@ import { UserIcon } from './icons/UserIcon';
 import { GavelIcon } from './icons/GavelIcon';
 import * as api from '../core/api/contract';
 import { useToast } from './Toast';
+import { SecurityTerminal } from './SecurityTerminal';
 
 interface AdminPortalProps {
     onClose: () => void;
@@ -87,7 +87,6 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onClose }) => {
             <p className="text-sm text-slate-400 mb-6">Please enter the 6-digit code sent to your secure device.</p>
             
             <div className="flex justify-center space-x-2 mb-6">
-                {/* Simplified input for demo */}
                 <input 
                     type="text" 
                     maxLength={6}
@@ -111,61 +110,37 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onClose }) => {
 
     const renderDashboard = () => (
         <div className="h-full flex flex-col">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-white flex items-center">
                     <ShieldCheckIcon className="w-6 h-6 mr-2 text-eco-green" />
                     Admin Console
                 </h2>
-                <div className="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded border border-red-500/50">
-                    Live Mode
-                </div>
+                <button onClick={onClose} className="text-slate-500 hover:text-white">Close</button>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="bg-slate-800/50 p-3 rounded-xl border border-white/5">
-                    <div className="text-xs text-slate-400">Total Users</div>
-                    <div className="text-xl font-bold text-white">{stats.totalUsers}</div>
-                </div>
+            <div className="grid grid-cols-2 gap-3 mb-4">
                  <div className="bg-slate-800/50 p-3 rounded-xl border border-white/5">
                     <div className="text-xs text-slate-400">Treasury</div>
-                    <div className="text-xl font-bold text-pi-gold">{stats.treasuryBalance.toLocaleString()}</div>
+                    <div className="text-lg font-bold text-pi-gold">{stats.treasuryBalance.toLocaleString()}</div>
                 </div>
                  <div className="bg-slate-800/50 p-3 rounded-xl border border-white/5">
-                    <div className="text-xs text-slate-400">Active Disputes</div>
-                    <div className="text-xl font-bold text-red-400">{stats.activeDisputes}</div>
-                </div>
-                 <div className="bg-slate-800/50 p-3 rounded-xl border border-white/5">
-                    <div className="text-xs text-slate-400">Flagged Content</div>
-                    <div className="text-xl font-bold text-orange-400">{stats.flaggedContent}</div>
+                    <div className="text-xs text-slate-400">Flagged</div>
+                    <div className="text-lg font-bold text-orange-400">{stats.flaggedContent}</div>
                 </div>
             </div>
 
-            <div className="flex-grow overflow-y-auto space-y-3">
-                <h3 className="text-sm font-bold text-slate-300 uppercase">Recent Alerts</h3>
-                <div className="bg-slate-900/50 p-3 rounded-lg border border-white/10 flex justify-between items-center">
-                    <span className="text-sm text-white">User reported for spam</span>
-                    <button className="text-xs bg-slate-700 px-2 py-1 rounded hover:bg-slate-600">Review</button>
-                </div>
-                 <div className="bg-slate-900/50 p-3 rounded-lg border border-white/10 flex justify-between items-center">
-                    <span className="text-sm text-white">High value transaction flagged</span>
-                    <button className="text-xs bg-slate-700 px-2 py-1 rounded hover:bg-slate-600">Inspect</button>
+            <div className="flex-grow overflow-hidden">
+                <h3 className="text-sm font-bold text-slate-300 uppercase mb-2">Live Security Monitor</h3>
+                <div className="h-[300px]">
+                    <SecurityTerminal />
                 </div>
             </div>
-            
-             <button 
-                onClick={onClose}
-                className="mt-4 w-full bg-slate-700/50 text-slate-400 font-bold py-3 rounded-full hover:bg-slate-700 hover:text-white transition-colors"
-            >
-                Log Out
-            </button>
         </div>
     );
 
     return (
         <div className="fixed inset-0 bg-brand-dark/95 backdrop-blur-xl flex items-center justify-center z-[100] p-4">
-            <GlassPanel className="w-full max-w-sm p-6 animate-fade-in h-[600px] flex flex-col relative">
-                {step !== 'dashboard' && <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 hover:text-white text-2xl">&times;</button>}
-                
+            <GlassPanel className="w-full max-w-md p-6 animate-fade-in h-[650px] flex flex-col relative">
                 <div className="flex-grow flex flex-col justify-center">
                     {step === 'login' && renderLogin()}
                     {step === 'mfa' && renderMfa()}

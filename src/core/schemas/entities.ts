@@ -1,5 +1,3 @@
-
-// FIX: Import React to provide types for React.FC and React.SVGProps used in TokenEntity.
 import type { FC, SVGProps } from 'react';
 
 export type ProjectStatus = 'Scanning' | 'Designing' | 'Sourcing' | 'Complete';
@@ -37,6 +35,8 @@ export interface UserEntity {
   serviceProviderProfile?: ServiceProviderProfile;
   role: 'user' | 'vendor' | 'service-provider' | 'arbitrator' | 'admin';
   stakedArchi?: number;
+  stakingPosition?: StakingPosition;
+  miningPosition?: LiquidityMiningPosition;
 }
 
 export interface BillOfMaterialsEntry {
@@ -100,6 +100,36 @@ export interface VestingSchedule {
     cliff: number; // Seconds
     duration: number; // Seconds
     revocable: boolean;
+}
+
+export interface StakingPosition {
+    amount: number;
+    startTime: string;
+    lastClaimTime: string;
+    unclaimedRewards: number;
+}
+
+export interface LiquidityMiningPosition {
+    lpTokenAmount: number;
+    lastClaimTime: string;
+    unclaimedRewards: number;
+}
+
+export interface OracleData {
+    price: number;
+    lastUpdate: string;
+    confidenceScore: number; // 0-100
+    isCircuitBreakerActive: boolean;
+}
+
+export interface FuzzTestResult {
+    testId: string;
+    timestamp: string;
+    operationsCount: number;
+    invariantsChecked: string[];
+    status: 'Passed' | 'Failed';
+    logs: string[];
+    coverage: number;
 }
 
 export interface BountyEntity {

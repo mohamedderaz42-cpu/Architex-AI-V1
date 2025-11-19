@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { UserEntity, ProposalEntity } from '../core/schemas/entities';
 import { ArchitexLogo } from './icons/ArchitexLogo';
@@ -8,6 +7,7 @@ import { PlusIcon } from './icons/PlusIcon';
 import { InfoIcon } from './icons/InfoIcon';
 import { AwardIcon } from './icons/AwardIcon';
 import { TrendingUpIcon } from './icons/TrendingUpIcon';
+import { useArchitex } from '../hooks/useArchitex';
 
 interface DaoInterfaceProps {
     user: UserEntity;
@@ -22,6 +22,7 @@ interface DaoInterfaceProps {
 
 export const DaoInterface: React.FC<DaoInterfaceProps> = ({ user, proposals, onStake, onUnstake, onVote, onExecute, onViewTos, onOpenDetails }) => {
     const [stakeAmount, setStakeAmount] = useState('');
+    const { handleClaimStakingRewards } = useArchitex();
     const votingPower = (user.stakedArchi || 0) + user.trustScore;
 
     const handleStake = () => {
@@ -42,7 +43,7 @@ export const DaoInterface: React.FC<DaoInterfaceProps> = ({ user, proposals, onS
 
     return (
         <div className="p-2 flex flex-col h-full">
-            {/* Treasury Dashboard - NEW SECTION */}
+            {/* Treasury Dashboard */}
             <div className="flex-shrink-0 mb-3 p-4 bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl border border-pi-gold/30 shadow-glow-violet relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-2 opacity-10">
                     <ArchitexLogo className="w-32 h-32 text-white" />
@@ -61,37 +62,27 @@ export const DaoInterface: React.FC<DaoInterfaceProps> = ({ user, proposals, onS
                             </div>
                         </div>
                         <div className="text-right">
-                            <p className="text-xs text-slate-400">Monthly Inflow</p>
+                            <p className="text-xs text-slate-400">Governance APY</p>
                             <div className="flex items-center justify-end text-eco-green font-semibold">
                                 <TrendingUpIcon className="w-4 h-4 mr-1" />
-                                <span>+12.5%</span>
+                                <span>15.0%</span>
                             </div>
                         </div>
                     </div>
-                    <div className="mt-3 h-1.5 w-full bg-slate-700 rounded-full overflow-hidden flex">
-                        <div className="h-full bg-pi-gold w-[40%]" title="Grants (40%)"></div>
-                        <div className="h-full bg-eco-green w-[30%]" title="Liquidity (30%)"></div>
-                        <div className="h-full bg-ai-violet w-[30%]" title="Rewards (30%)"></div>
-                    </div>
-                    <div className="flex justify-between mt-1 text-[10px] text-slate-500">
-                        <span className="flex items-center"><div className="w-1.5 h-1.5 rounded-full bg-pi-gold mr-1"></div>Grants</span>
-                        <span className="flex items-center"><div className="w-1.5 h-1.5 rounded-full bg-eco-green mr-1"></div>Liquidity</span>
-                        <span className="flex items-center"><div className="w-1.5 h-1.5 rounded-full bg-ai-violet mr-1"></div>Rewards</span>
-                    </div>
-                </div>
-            </div>
-
-            {/* Voting Power Card */}
-            <div className="flex-shrink-0 p-3 bg-slate-900/50 rounded-xl border border-white/10 text-center mb-3">
-                <h4 className="font-semibold text-white text-sm">Your Voting Power</h4>
-                <div className="text-3xl font-bold text-ai-violet my-1">{votingPower.toLocaleString(undefined, {maximumFractionDigits: 0})}</div>
-                <div className="text-xs text-slate-400">
-                    <span className="font-semibold text-slate-200">{(user.stakedArchi || 0).toLocaleString()}</span> Staked ARCHI + <span className="font-semibold text-slate-200">{user.trustScore}</span> Trust Score
                 </div>
             </div>
 
             {/* Staking Interface */}
             <div className="flex-shrink-0 mb-3 p-3 bg-slate-900/50 rounded-xl border border-white/10">
+                 <div className="flex justify-between items-center mb-2">
+                    <div className="text-xs text-slate-400">
+                        Staked: <span className="font-bold text-white">{(user.stakedArchi || 0).toLocaleString()}</span>
+                    </div>
+                     <div className="text-xs text-slate-400">
+                        Pending: <span className="font-bold text-pi-gold">{user.stakingPosition?.unclaimedRewards.toFixed(2) || 0}</span>
+                    </div>
+                </div>
+
                 <div className="relative">
                     <ArchitexLogo className="w-5 h-5 absolute top-1/2 left-3 -translate-y-1/2 text-ai-violet" />
                     <input 
@@ -102,18 +93,16 @@ export const DaoInterface: React.FC<DaoInterfaceProps> = ({ user, proposals, onS
                         className="w-full bg-slate-800/70 border border-white/10 rounded-full pl-10 pr-4 py-2 text-white focus:outline-none focus:border-ai-violet/50" 
                     />
                 </div>
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                    <button onClick={handleStake} disabled={!stakeAmount} className="px-3 py-1.5 bg-ai-violet/80 rounded-full text-sm font-semibold text-white hover:bg-ai-violet disabled:opacity-50 transition-all">Stake</button>
-                    <button onClick={handleUnstake} disabled={!stakeAmount} className="px-3 py-1.5 bg-slate-700/50 rounded-full text-sm font-semibold text-slate-300 hover:bg-slate-600 disabled:opacity-50 transition-all">Unstake</button>
+                <div className="grid grid-cols-3 gap-2 mt-2">
+                    <button onClick={handleStake} disabled={!stakeAmount} className="px-2 py-1.5 bg-ai-violet/80 rounded-lg text-xs font-semibold text-white hover:bg-ai-violet disabled:opacity-50 transition-all">Stake</button>
+                    <button onClick={handleUnstake} disabled={!stakeAmount} className="px-2 py-1.5 bg-slate-700/50 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-600 disabled:opacity-50 transition-all">Unstake</button>
+                    <button onClick={handleClaimStakingRewards} className="px-2 py-1.5 bg-eco-green/80 rounded-lg text-xs font-semibold text-white hover:bg-eco-green transition-all">Claim</button>
                 </div>
             </div>
             
             <div className="flex justify-between items-center mb-2 px-1">
-                <h4 className="font-semibold text-white">Governance Proposals</h4>
-                <button onClick={onViewTos} className="flex items-center text-xs text-slate-400 hover:text-white transition-colors">
-                    <InfoIcon className="w-4 h-4 mr-1"/>
-                    <span>Model</span>
-                </button>
+                <h4 className="font-semibold text-white">Proposals</h4>
+                <div className="text-xs text-slate-400">Voting Power: <span className="text-white font-bold">{votingPower}</span></div>
             </div>
 
 
