@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 
 interface ScannerInterfaceProps {
@@ -9,6 +8,7 @@ interface ScannerInterfaceProps {
 
 export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction, progress, onCancel }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
     const [cameraError, setCameraError] = useState(false);
     const [parallax, setParallax] = useState({ x: 0, y: 0 });
 
@@ -33,7 +33,6 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
         const handleOrientation = (event: DeviceOrientationEvent) => {
             if (event.beta && event.gamma) {
                 // Beta: -180 to 180 (x), Gamma: -90 to 90 (y)
-                // Damping factor 0.5 for smoother feel
                 setParallax({
                     x: event.gamma * 0.5,
                     y: event.beta * 0.5
@@ -46,7 +45,6 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
         }
 
         return () => {
-            // Cleanup: stop all tracks when component unmounts
             if (videoRef.current && videoRef.current.srcObject) {
                 const stream = videoRef.current.srcObject as MediaStream;
                 stream.getTracks().forEach(track => track.stop());
@@ -55,6 +53,75 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
                 window.removeEventListener('deviceorientation', handleOrientation);
             }
         };
+    }, []);
+
+    // Visual SLAM Simulation Loop
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        let animationFrameId: number;
+        const points: {x: number, y: number, age: number}[] = [];
+
+        const render = () => {
+            if (canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
+                canvas.width = canvas.clientWidth;
+                canvas.height = canvas.clientHeight;
+            }
+
+            // Fade existing canvas
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Add new random points (simulating feature detection)
+            if (Math.random() > 0.5) {
+                for (let i = 0; i < 3; i++) {
+                    points.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        age: 0
+                    });
+                }
+            }
+
+            // Draw points
+            ctx.fillStyle = '#10B981'; // Eco-green
+            for (let i = points.length - 1; i >= 0; i--) {
+                const p = points[i];
+                p.age++;
+                
+                if (p.age > 30) {
+                    points.splice(i, 1);
+                    continue;
+                }
+                
+                const opacity = 1 - (p.age / 30);
+                ctx.globalAlpha = opacity;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1.0;
+
+            // Draw Scan Grid (Lidar effect)
+            const time = Date.now() / 1000;
+            const scanY = (time % 2) * canvas.height; // Sweep every 2 seconds
+            
+            ctx.strokeStyle = 'rgba(253, 179, 0, 0.3)'; // Pi Gold
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, scanY);
+            ctx.lineTo(canvas.width, scanY);
+            ctx.stroke();
+
+            animationFrameId = requestAnimationFrame(render);
+        };
+
+        render();
+
+        return () => cancelAnimationFrame(animationFrameId);
     }, []);
 
     const strokeWidth = 8;
@@ -71,7 +138,7 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
                     autoPlay 
                     playsInline 
                     muted 
-                    className="absolute inset-0 w-full h-full object-cover opacity-60"
+                    className="absolute inset-0 w-full h-full object-cover opacity-80"
                 />
             ) : (
                 <div className="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center p-8 text-center">
@@ -85,14 +152,17 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
                 </div>
             )}
 
-            {/* Parallax Grid Overlay */}
-            <div className="absolute inset-0 opacity-20" style={{
+            {/* Canvas Overlay for SLAM Visuals */}
+            <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-0" />
+
+            {/* Parallax Grid Overlay (Atmosphere) */}
+            <div className="absolute inset-0 opacity-20 pointer-events-none" style={{
                 transform: `translate(${parallax.x}px, ${parallax.y}px)`,
                 transition: 'transform 0.1s ease-out',
                 backgroundImage: 'linear-gradient(to right, #FDB300 1px, transparent 1px), linear-gradient(to bottom, #FDB300 1px, transparent 1px)',
                 backgroundSize: '40px 40px',
                 maskImage: 'radial-gradient(circle at center, transparent 30%, black 100%)',
-                width: '120%', // Larger to account for movement
+                width: '120%',
                 height: '120%',
                 left: '-10%',
                 top: '-10%'
@@ -128,13 +198,10 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
                         <div className="text-center">
                             <div className="text-4xl font-bold text-pi-gold drop-shadow-md">{Math.round(progress)}%</div>
                         </div>
-                        
-                        {/* Scanning Line Animation */}
-                        <div className="absolute w-full h-1 bg-pi-gold/50 blur-md animate-scan-line top-1/2 left-0"></div>
                     </div>
 
                     <div className="mt-8 p-4 bg-black/40 backdrop-blur-md rounded-xl border border-white/10 z-10 max-w-xs">
-                        <p className="text-lg text-center text-white font-medium">
+                        <p className="text-lg text-center text-white font-medium animate-pulse">
                             {instruction}
                         </p>
                     </div>
@@ -147,17 +214,6 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
             >
                 {cameraError ? 'Go Back' : 'Cancel Scan'}
             </button>
-
-            <style>{`
-                @keyframes scan-line {
-                    0% { transform: translateY(-80px); opacity: 0; }
-                    50% { opacity: 1; }
-                    100% { transform: translateY(80px); opacity: 0; }
-                }
-                .animate-scan-line {
-                    animation: scan-line 2s linear infinite;
-                }
-            `}</style>
         </div>
     );
 };

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, ProductEntity, CartItem } from '../core/schemas/entities';
 import * as api from '../core/api/contract';
@@ -251,13 +250,27 @@ export const useArchitex = () => {
   };
 
   // --- Scanning, Analysis & Payment ---
+  const playInstructionAudio = async (text: string) => {
+      const audioBuffer = await api.generateSpeech(text);
+      if (audioBuffer) {
+          const ctx = new (window.AudioContext || (window as any).webkitAudioContext)({sampleRate: 24000});
+          const source = ctx.createBufferSource();
+          source.buffer = audioBuffer;
+          source.connect(ctx.destination);
+          source.start();
+      }
+  };
+
   const startScan = () => { 
       setIsScanning(true); 
       setCurrentScanStep(0); 
       setScanProgress(0); 
       setScanAnalysis(null);
       
-      const totalDuration = 8000; 
+      // Initial Audio
+      playInstructionAudio(guidedScanInstructions[0]);
+      
+      const totalDuration = 12000; // Slightly longer for audio
       const stepDuration = totalDuration / guidedScanInstructions.length; 
       
       scanIntervalRef.current = window.setInterval(async () => { 
@@ -270,6 +283,8 @@ export const useArchitex = () => {
                   handleScanCompletion();
                   return prevStep; 
               } 
+              // Trigger audio for the next step
+              playInstructionAudio(guidedScanInstructions[nextStep]);
               return nextStep; 
           }); 
           setScanProgress(prev => prev + (100 / guidedScanInstructions.length)); 
@@ -344,6 +359,7 @@ export const useArchitex = () => {
 
   const confirmPayment = async () => {
       setIsProcessingPayment(true);
+      // Core MVP Monetization: 0.50 PiUSD
       const txid = await processPiPayment(0.50, "Architex 3D Model Generation", { forProjectId: `proj_scan_${Date.now()}` });
       
       if (txid) {

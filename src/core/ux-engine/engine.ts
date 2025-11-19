@@ -61,12 +61,13 @@ export const getUpsellPrompt = (): { title: string, body: string } => {
 
 /**
  * A sequence of instructions for the Guided Scanning feature.
+ * Optimized for audio duration.
  */
 export const guidedScanInstructions: string[] = [
-    "Initializing SLAM system...",
-    "Point your camera at the floor.",
-    "Slowly pan up towards the walls.",
-    "Scan the perimeter of the room.",
-    "Now, capture the ceiling details.",
-    "Scan complete. Analyzing point cloud data...",
+    "Initializing Scanner.",
+    "Scan floor area.",
+    "Pan up to walls.",
+    "Capture perimeter.",
+    "Scan ceiling now.",
+    "Processing Cloud.",
 ];
