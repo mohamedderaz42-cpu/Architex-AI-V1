@@ -72,7 +72,7 @@ const AppContent: React.FC = () => {
     showSubmitToChallengeModal, projectToSubmit, openSubmitToChallengeModal, closeSubmitToChallengeModal, handleSubmitProjectToChallenge,
     showCreateProjectModal, openCreateProjectModal, closeCreateProjectModal, handleCreateProject,
     // Cart & Vendor
-    cart, addToCart, removeFromCart, openShoppingCart, closeShoppingCart, showShoppingCartModal, handleCheckout,
+    cart, addToCart, removeFromCart, updateCartItem, openShoppingCart, closeShoppingCart, showShoppingCartModal, handleCheckout,
     openVendorProfile, showVendorProfileModal, selectedVendor, setShowVendorProfileModal,
     // DAO Discussion
     selectedProposal, showProposalDetailsModal, openProposalDetails, closeProposalDetails, handleSubmitComment,
@@ -240,7 +240,16 @@ const AppContent: React.FC = () => {
       {showSubmitToChallengeModal && projectToSubmit && <SubmitToChallengeModal project={projectToSubmit} challenges={designChallenges} onSubmit={handleSubmitProjectToChallenge} onCancel={closeSubmitToChallengeModal} />}
       
       {/* New Modals */}
-      {showShoppingCartModal && <ShoppingCartModal cart={cart} onRemove={removeFromCart} onCheckout={handleCheckout} onClose={closeShoppingCart} />}
+      {showShoppingCartModal && (
+        <ShoppingCartModal 
+            cart={cart} 
+            user={user}
+            onRemove={removeFromCart} 
+            onUpdateItem={updateCartItem}
+            onCheckout={handleCheckout} 
+            onClose={closeShoppingCart} 
+        />
+      )}
       {showVendorProfileModal && selectedVendor && <VendorProfileModal vendor={selectedVendor} onClose={() => setShowVendorProfileModal(false)} />}
       {showProposalDetailsModal && selectedProposal && <ProposalDetailsModal proposal={selectedProposal} onClose={closeProposalDetails} onComment={handleSubmitComment} />}
       

@@ -164,7 +164,7 @@ export interface StressTestResult {
 
 export interface SignedAgreement {
     id: string;
-    type: 'Bounty' | 'Service';
+    type: 'Bounty' | 'Service' | 'Purchase';
     referenceId: string; // BountyID or ServiceAgreementID
     parties: string[]; // User IDs
     timestamp: string;
@@ -236,6 +236,20 @@ export interface PromotionEntity {
     discountValue: number;
     targetId?: string;
     minSpend?: number;
+}
+
+export interface InventoryConflict {
+    productId: string;
+    available: number;
+    requested: number;
+    alternativeProductId?: string;
+}
+
+export interface CartOptimization {
+    originalProductId: string;
+    suggestedProductId: string;
+    reason: string;
+    savings: number;
 }
 
 // --- Service Provider Entities ---

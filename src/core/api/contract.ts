@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type, Modality } from "@google/genai";
-import { ProjectEntity, UserEntity, MaterialEntity, TokenEntity, LiquidityPoolEntity, BountyEntity, ArbitratorEntity, ProductEntity, ShippingZone, PromotionEntity, OrderEntity, OrderStatus, ServiceProviderProfile, ServiceAgreementEntity, ReputationEvent, ProposalEntity, ProofOfInstallationStatus, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, BillOfMaterialsEntry, ProposalComment, CartItem, MessageEntity, VestingSchedule, OracleData, FuzzTestResult, SignedAgreement, IntegrationTestResult, IntegrationTestStep, StressTestResult } from '../schemas/entities';
+import { ProjectEntity, UserEntity, MaterialEntity, TokenEntity, LiquidityPoolEntity, BountyEntity, ArbitratorEntity, ProductEntity, ShippingZone, PromotionEntity, OrderEntity, OrderStatus, ServiceProviderProfile, ServiceAgreementEntity, ReputationEvent, ProposalEntity, ProofOfInstallationStatus, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, BillOfMaterialsEntry, ProposalComment, CartItem, MessageEntity, VestingSchedule, OracleData, FuzzTestResult, SignedAgreement, IntegrationTestResult, IntegrationTestStep, StressTestResult, InventoryConflict, CartOptimization } from '../schemas/entities';
 import { PiCoinIcon } from '../../components/icons/PiCoinIcon';
 import { ArchitexLogo } from '../../components/icons/ArchitexLogo';
 
@@ -378,13 +378,13 @@ const generateAgreementHash = (content: string): string => {
     return '0x' + Math.abs(hash).toString(16) + Date.now().toString(16);
 };
 
-export const generateLegalAgreement = (type: 'Bounty' | 'Service', parties: string[], terms: any): string => {
+export const generateLegalAgreement = (type: 'Bounty' | 'Service' | 'Purchase', parties: string[], terms: any): string => {
     const date = new Date().toLocaleDateString();
     const connectorClause = `
     ARCHITEX TECHNOLOGY CONNECTOR PLATFORM TERMS
     --------------------------------------------
     1. STATUS. Architex is a technology connector platform, not a construction firm, design agency, or employer.
-    2. INDEMNIFICATION. Users hold Architex harmless from all liability regarding the quality, safety, or legality of services rendered.
+    2. INDEMNIFICATION. Users hold Architex harmless from all liability regarding the quality, safety, or legality of goods/services.
     `;
     
     const arbitrationClause = `
@@ -412,7 +412,7 @@ export const generateLegalAgreement = (type: 'Bounty' | 'Service', parties: stri
     
     ${arbitrationClause}
         `.trim();
-    } else {
+    } else if (type === 'Service') {
         return `
     SERVICE LEVEL AGREEMENT (SLA)
     Date: ${date}
@@ -429,10 +429,29 @@ export const generateLegalAgreement = (type: 'Bounty' | 'Service', parties: stri
     
     ${arbitrationClause}
         `.trim();
+    } else {
+        // Purchase
+        return `
+    DIGITAL GOODS SALE AGREEMENT
+    Date: ${date}
+    Buyer: ${parties[0]}
+    
+    ${connectorClause}
+    
+    Items:
+    ${terms.items.map((i: any) => `- Product ID ${i.productId} (x${i.quantity})`).join('\n')}
+    
+    Total: ${terms.total} PiUSD
+    
+    WARRANTY DISCLAIMER:
+    Goods are sold "AS IS". Architex facilitates the transaction but does not manufacture products.
+    
+    ${arbitrationClause}
+        `.trim();
     }
 };
 
-export const signAgreement = async (type: 'Bounty' | 'Service', referenceId: string, text: string): Promise<SignedAgreement> => {
+export const signAgreement = async (type: 'Bounty' | 'Service' | 'Purchase', referenceId: string, text: string): Promise<SignedAgreement> => {
     const hash = generateAgreementHash(text);
     const agreement: SignedAgreement = {
         id: `legal_${Date.now()}`,
@@ -451,6 +470,76 @@ export const signAgreement = async (type: 'Bounty' | 'Service', referenceId: str
 
 export const listSignedAgreements = async (): Promise<SignedAgreement[]> => {
     return mockSignedAgreements;
+};
+
+export const generatePurchaseAgreement = async (cart: {product: ProductEntity, quantity: number}[], total: number): Promise<string> => {
+    const items = cart.map(c => ({ productId: c.product.id, quantity: c.quantity }));
+    return generateLegalAgreement('Purchase', [mockUser.piUsername], { items, total });
+};
+
+
+// --- SMART CHECKOUT & INVENTORY LOGIC ---
+
+export const checkInventory = async (cart: {product: ProductEntity, quantity: number}[]): Promise<InventoryConflict[]> => {
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network latency
+    
+    const conflicts: InventoryConflict[] = [];
+    
+    // Mock Logic: "Recycled Steel Beams" (prod_02) always triggers a conflict if quantity > 10 for demo purposes.
+    // Or randomly trigger one for demonstration.
+    
+    cart.forEach(item => {
+        // Simulate conflict for Steel or random chance
+        if (item.product.id === 'prod_02' || (Math.random() > 0.85)) {
+             const available = Math.floor(item.quantity * 0.5); // Only 50% available
+             conflicts.push({
+                 productId: item.product.id,
+                 available,
+                 requested: item.quantity,
+                 alternativeProductId: item.product.id === 'prod_01' ? 'prod_04' : undefined // Mock alternative
+             });
+        }
+    });
+    
+    return conflicts;
+};
+
+export const getCartOptimizations = async (cart: {product: ProductEntity, quantity: number}[]): Promise<CartOptimization[]> => {
+    if (!apiKey) {
+        // Fallback Mock
+        await new Promise(resolve => setTimeout(resolve, 1200));
+        return [{
+            originalProductId: 'prod_01',
+            suggestedProductId: 'prod_05',
+            reason: "Hempcrete Blocks have a 20% lower carbon footprint and are currently 10% cheaper.",
+            savings: 15.50
+        }];
+    }
+    
+    try {
+        // Gemini Logic
+        const cartContext = cart.map(i => `${i.quantity}x ${i.product.name} (${i.product.price} PiUSD each)`).join(', ');
+        const prompt = `Review this shopping cart: ${cartContext}. Suggest 1 eco-friendly or cheaper alternative swap from our catalog (assume generic catalog). Return JSON: [{ "originalProductId": "...", "suggestedProductId": "...", "reason": "...", "savings": 5.0 }]`;
+        
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: { responseMimeType: 'application/json' }
+        });
+        
+        // For demo, we map suggestions to real mock IDs if possible, or just return mock data if Gemini hallucinates unknown IDs
+        const raw = JSON.parse(response.text || '[]');
+        // Map back to known IDs for safety or use mocked return
+        return raw.map((r: any) => ({
+            ...r,
+            suggestedProductId: 'prod_05', // Force a known product ID for the demo UI to work
+            savings: r.savings || 10
+        }));
+
+    } catch (e) {
+        console.error("AI Optimization Failed", e);
+        return [];
+    }
 };
 
 
@@ -1078,6 +1167,10 @@ export const createPromotion = async (promo: Omit<PromotionEntity, 'id'>): Promi
 export const listOrders = async (): Promise<OrderEntity[]> => { return [...mockOrders]; };
 
 export const createOrder = async (items: CartItem[], totalAmount: number): Promise<OrderEntity> => {
+    // REVENUE ROUTING: 100% of Payment is handled by PaymentModal/Pi SDK, which should route to a central wallet.
+    // Then, in a real system, it would be split to Vendor and Platform.
+    // Here we assume payment success and just create the record.
+    
     const newOrder: OrderEntity = {
         id: `ord_${Date.now()}`,
         userId: mockUser.id,
@@ -1087,6 +1180,10 @@ export const createOrder = async (items: CartItem[], totalAmount: number): Promi
         createdAt: new Date().toISOString(),
         proofOfInstallationStatus: 'none'
     };
+    
+    // We should also sign a Purchase Agreement
+    await signAgreement('Purchase', newOrder.id, await generateLegalAgreement('Purchase', [mockUser.piUsername], { items, total: totalAmount }));
+    
     mockOrders.unshift(newOrder);
     save('orders', mockOrders);
     return newOrder;

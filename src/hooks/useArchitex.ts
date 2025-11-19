@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, ProductEntity, CartItem, MessageEntity, OracleData, SignedAgreement } from '../core/schemas/entities';
+import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, ProductEntity, CartItem, MessageEntity, OracleData, SignedAgreement, InventoryConflict, CartOptimization } from '../core/schemas/entities';
 import * as api from '../core/api/contract';
 import * as ads from '../core/api/ads';
 import { getProactiveTip, guidedScanInstructions, UXContext, shouldTriggerDesignerUpsell } from '../core/ux-engine/engine';
@@ -315,6 +315,16 @@ export const useArchitex = () => {
       setCart(prev => prev.filter(item => item.product.id !== productId));
   };
 
+  const updateCartItem = (productId: string, newProductId: string) => {
+      setCart(prev => prev.map(item => {
+          if (item.product.id === productId) {
+              const newProduct = products.find(p => p.id === newProductId);
+              return newProduct ? { ...item, product: newProduct } : item;
+          }
+          return item;
+      }));
+  }
+
   const openShoppingCart = () => setShowShoppingCartModal(true);
   const closeShoppingCart = () => setShowShoppingCartModal(false);
 
@@ -328,7 +338,7 @@ export const useArchitex = () => {
           setShowShoppingCartModal(false);
           const newOrders = await api.listOrders();
           setOrders(newOrders);
-          addToast('Order Placed Successfully!', 'success');
+          addToast('Order Placed & Escrow Funded!', 'success');
       }
   };
 
@@ -734,8 +744,12 @@ export const useArchitex = () => {
     // Create Project
     showCreateProjectModal, openCreateProjectModal, closeCreateProjectModal, handleCreateProject,
     // Cart & Vendor
-    cart, addToCart, removeFromCart, openShoppingCart, closeShoppingCart, showShoppingCartModal, handleCheckout,
+    cart, addToCart, removeFromCart, updateCartItem, openShoppingCart, closeShoppingCart, showShoppingCartModal, handleCheckout,
     openVendorProfile, showVendorProfileModal, selectedVendor, setShowVendorProfileModal,
+    // Smart Checkout APIs exposed via wrapper
+    checkInventory: api.checkInventory,
+    getCartOptimizations: api.getCartOptimizations,
+    generatePurchaseAgreement: api.generatePurchaseAgreement,
     // Admin
     isAdminModalOpen, openAdminModal, closeAdminModal,
     // Chat
