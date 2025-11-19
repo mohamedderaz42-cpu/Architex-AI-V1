@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity, ScanAnalysis, ProductEntity, CartItem, MessageEntity, OracleData, SignedAgreement } from '../core/schemas/entities';
 import * as api from '../core/api/contract';
+import * as ads from '../core/api/ads';
 import { getProactiveTip, guidedScanInstructions, UXContext, shouldTriggerDesignerUpsell } from '../core/ux-engine/engine';
 import { useToast } from '../components/Toast';
 
@@ -19,7 +20,7 @@ export type Phase = 'intro' | 'onboarding' | 'dashboard';
 export type ActiveTab = 'scan' | 'design' | 'market' | 'challenges' | 'explore';
 
 export const useArchitex = () => {
-  const { addToast } = useToast(); // Hook for notifications
+  const { addToast } = useToast(); 
 
   const [phase, setPhase] = useState<Phase>('intro');
   const [activeTab, setActiveTab] = useState<ActiveTab>('design');
@@ -209,6 +210,15 @@ export const useArchitex = () => {
       localStorage.setItem('architex_onboarding_complete', 'true');
       setPhase('dashboard');
   };
+  
+  // --- Tab Navigation with Ad Interstitial ---
+  const navigateToTab = async (tab: ActiveTab) => {
+      // Show Ad if Free Tier and Cooldown satisfied
+      if (user && user.subscriptionTier !== 'Accelerator' && ads.isAdReady()) {
+          await ads.showInterstitial();
+      }
+      setActiveTab(tab);
+  }
 
   const toggleProfile = () => setIsProfileVisible(prev => !prev);
   const handleProjectInteraction = async (project: ProjectEntity) => { setSelectedProject(project); setShowProjectDetailsModal(true); };
@@ -229,8 +239,16 @@ export const useArchitex = () => {
   // --- Chat Logic ---
   const openChat = async (contextId: string) => {
       setChatContextId(contextId);
-      const msgs = await api.getMessages(contextId);
-      setMessages(msgs);
+      
+      // If Support Chat, initialize with greeting if empty
+      if (contextId === 'support_archie') {
+           setMessages([
+               { id: 'sys_init', contextId, senderId: 'archie_ai', senderName: 'ArchieBot', text: "Hi! I'm Archie. Ask me anything about your designs or the marketplace.", timestamp: new Date().toISOString() }
+           ]);
+      } else {
+          const msgs = await api.getMessages(contextId);
+          setMessages(msgs);
+      }
       setIsChatOpen(true);
   };
   
@@ -241,8 +259,36 @@ export const useArchitex = () => {
   
   const handleSendMessage = async (text: string) => {
       if (!chatContextId) return;
-      const newMsg = await api.sendMessage(chatContextId, text);
-      setMessages(prev => [...prev, newMsg]);
+      
+      // Optimistic UI Update
+      const userMsg: MessageEntity = {
+          id: `temp_${Date.now()}`,
+          contextId: chatContextId,
+          senderId: user!.id,
+          senderName: user!.piUsername,
+          text,
+          timestamp: new Date().toISOString()
+      };
+      setMessages(prev => [...prev, userMsg]);
+      
+      if (chatContextId === 'support_archie') {
+          // Archie AI Logic
+          const responseText = await api.askArchie(text);
+          const botMsg: MessageEntity = {
+              id: `bot_${Date.now()}`,
+              contextId: chatContextId,
+              senderId: 'archie_ai',
+              senderName: 'ArchieBot',
+              text: responseText,
+              timestamp: new Date().toISOString()
+          };
+           setMessages(prev => [...prev, botMsg]);
+      } else {
+           // Standard Message
+           await api.sendMessage(chatContextId, text);
+           // In a real socket app, we wouldn't need to refetch, but here we just push the optimistic one.
+           // The backend mock 'sendMessage' actually saves it.
+      }
   };
 
   // --- Admin Logic ---
@@ -662,7 +708,7 @@ export const useArchitex = () => {
 
   return {
     phase, isMounted, activeTab, projects, publicProjects, bounties, arbitrators, availableArbitrators, user, isLoading, uxTip, orders, serviceProviders, serviceAgreements, proposals, designChallenges, products,
-    initialize, setActiveTab, toggleProfile, isProfileVisible, completeOnboarding,
+    initialize, setActiveTab: navigateToTab, toggleProfile, isProfileVisible, completeOnboarding,
     isScanning, scanProgress, currentScanInstruction, startScan, cancelScan, 
     showPaymentModal, confirmPayment, cancelPayment, isProcessingPayment, paymentError, scanAnalysis,
     handleProjectInteraction, handleModifyProject, showUpsellModal, closeUpsellModal, showProjectDetailsModal, selectedProject, setShowProjectDetailsModal, handleGetQuotes,

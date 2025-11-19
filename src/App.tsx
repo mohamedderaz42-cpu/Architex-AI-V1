@@ -45,6 +45,7 @@ import { AdminPortal } from './components/AdminPortal';
 import { ChatInterface } from './components/ChatInterface';
 import { PublicGallery } from './components/PublicGallery';
 import { SearchIcon } from './components/icons/SearchIcon';
+import { ArchieBotWidget } from './components/ArchieBotWidget';
 
 const AppContent: React.FC = () => {
   const {
@@ -201,6 +202,14 @@ const AppContent: React.FC = () => {
         </div>
       )}
 
+      {/* Global ArchieBot Widget */}
+      {phase === 'dashboard' && !isProfileVisible && !isAdminModalOpen && !isChatOpen && (
+          <ArchieBotWidget 
+            tip={uxTip} 
+            onClick={() => openChat('support_archie')} 
+          />
+      )}
+
       {showUpsellModal && <UpsellModal onConfirm={() => { setActiveTab('market'); closeUpsellModal(); }} onCancel={closeUpsellModal}/>}
       {showCreateBountyModal && <CreateBountyModal user={user} onConfirm={handleCreateBounty} onCancel={closeCreateBountyModal}/>}
       {showMintNftModal && projectToMint && <MintNftModal project={projectToMint} onConfirm={() => handleMintNft(projectToMint.id)} onCancel={closeMintNftModal}/>}
@@ -239,7 +248,7 @@ const AppContent: React.FC = () => {
       {isChatOpen && chatContextId && user && (
           <ChatInterface 
             contextId={chatContextId} 
-            title="Project Discussion" 
+            title={chatContextId === 'support_archie' ? "Archie Support" : "Project Discussion"} 
             messages={messages} 
             currentUserId={user.id} 
             onSendMessage={handleSendMessage} 

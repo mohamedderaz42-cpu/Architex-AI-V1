@@ -709,6 +709,28 @@ export const sendMessage = async (contextId: string, text: string): Promise<Mess
     return newMessage;
 };
 
+export const askArchie = async (query: string): Promise<string> => {
+    if (!apiKey) {
+        return "I'm currently offline (No API Key). Please check my connection settings.";
+    }
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: query,
+            config: {
+                systemInstruction: "You are Archie, an intelligent design assistant for the Architex app on Pi Network. You are helpful, concise, and eco-conscious. You help users navigate the app, find sustainable materials, and solve design challenges.",
+                temperature: 0.7,
+            },
+        });
+        return response.text || "I'm not sure how to answer that right now.";
+    } catch (e) {
+        console.error("ArchieBot Error:", e);
+        return "I'm having trouble connecting to my knowledge base.";
+    }
+};
+
+
 // --- ADMIN PANEL ---
 export const requestAdminMfa = async (password: string): Promise<boolean> => {
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -912,17 +934,6 @@ export const createBounty = async (bounty: Omit<BountyEntity, 'id' | 'createdAt'
     save('treasuryBalance', treasuryBalance);
 
     // 2. Hold Reward (Simulated here, typically in Escrow Contract)
-    // For simplicity in this mock, we hold the reward locally until funded properly or released
-    // But to match the fee deduction flow, we effectively 'burned' the fee to treasury
-    // and reserved the reward.
-    
-    // Refund reward logic from previous step (simulating escrow separation)
-    // In a real contract, createBounty might just list it, and fundEscrow takes the tokens.
-    // But here we deducted totalCost upfront. To align with 'fundEscrow' taking tokens later:
-    // We should only take the FEE now? Or take both?
-    // Previous logic took both. But 'fundEscrow' also checks balance.
-    // Let's stick to the previous pattern: `createBounty` just LISTS and maybe takes a small fee?
-    // The previous code deducted totalCost. Let's revert the REWARD deduction so `fundEscrow` can take it later.
     
     mockUserTokens[idx].balance += bounty.reward; 
     updateTokens([...mockUserTokens]); 
