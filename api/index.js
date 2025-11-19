@@ -1,6 +1,7 @@
 
 require('dotenv').config();
 const express = require('express');
+const serverless = require('serverless-http');
 const cors = require('cors');
 const axios = require('axios');
 const app = express();
@@ -23,10 +24,10 @@ router.post('/approve_payment', async (req, res) => {
     return res.status(400).json({ error: 'paymentId is required' });
   }
 
-  console.log(`[VERCEL API] Processing approval for paymentId: ${paymentId}`);
+  console.log(`[API] Processing approval for paymentId: ${paymentId}`);
 
   if (!PI_API_KEY) {
-    console.warn('[VERCEL API] PI_API_KEY is missing. Requests to Pi Network will fail.');
+    console.warn('[API] PI_API_KEY is missing. Requests to Pi Network will fail.');
     return res.status(500).json({ error: 'Server configuration error: Missing PI_API_KEY' });
   }
 
@@ -43,11 +44,11 @@ router.post('/approve_payment', async (req, res) => {
       }
     );
 
-    console.log(`[VERCEL API] Payment ${paymentId} approved successfully.`);
+    console.log(`[API] Payment ${paymentId} approved successfully.`);
     res.json({ success: true, message: 'Payment approved for processing.' });
 
   } catch (error) {
-    console.error('[VERCEL API] Failed to approve payment:', error.response?.data || error.message);
+    console.error('[API] Failed to approve payment:', error.response?.data || error.message);
     res.status(500).json({ 
       error: 'Failed to approve payment on Pi Network',
       details: error.response?.data 
@@ -64,7 +65,7 @@ router.post('/complete_payment', async (req, res) => {
     return res.status(400).json({ error: 'paymentId and txid are required' });
   }
   
-  console.log(`[VERCEL API] Completing paymentId: ${paymentId} with txid: ${txid}`);
+  console.log(`[API] Completing paymentId: ${paymentId} with txid: ${txid}`);
 
   if (!PI_API_KEY) {
      return res.status(500).json({ error: 'Server configuration error: Missing PI_API_KEY' });
@@ -83,12 +84,12 @@ router.post('/complete_payment', async (req, res) => {
       }
     );
 
-    console.log(`[VERCEL API] Payment ${paymentId} completed and verified on blockchain.`);
+    console.log(`[API] Payment ${paymentId} completed and verified on blockchain.`);
     
     res.json({ success: true, message: 'Payment completed and product delivered.' });
 
   } catch (error) {
-    console.error('[VERCEL API] Failed to complete payment:', error.response?.data || error.message);
+    console.error('[API] Failed to complete payment:', error.response?.data || error.message);
     res.status(500).json({ 
       error: 'Failed to complete payment on Pi Network',
       details: error.response?.data 
@@ -96,10 +97,9 @@ router.post('/complete_payment', async (req, res) => {
   }
 });
 
-// Mount the router at /api to match the frontend requests and vercel.json rewrite
+// Mount the router to handle both /api prefix (from frontend) and root (from redirects)
 app.use('/api', router);
-
-// Fallback for direct matches if Vercel strips prefix (defensive coding)
 app.use('/', router);
 
-module.exports = app;
+// Export the handler for Netlify Functions
+module.exports.handler = serverless(app);
