@@ -147,7 +147,15 @@ let mockOrders: OrderEntity[] = [
     { id: 'ord_03', userId: 'user_01', items: [{productId: 'prod_02', quantity: 10}], total: 1250, status: 'Delivered', createdAt: new Date(Date.now() - 86400000 * 5).toISOString(), proofOfInstallationStatus: 'none' },
 ];
 
-const mockShippingZones: ShippingZone[] = [{ id: 'zone_na', name: 'North America', active: true },{ id: 'zone_eu', name: 'European Union', active: true },{ id: 'zone_asia', name: 'Asia-Pacific', active: false }];
+const mockShippingZones: ShippingZone[] = [
+    { id: 'zone_na', name: 'North America', active: true },
+    { id: 'zone_eu', name: 'European Union', active: true },
+    { id: 'zone_asia', name: 'Asia-Pacific', active: false },
+    { id: 'zone_sa', name: 'South America', active: false },
+    { id: 'zone_af', name: 'Africa', active: false },
+    { id: 'zone_me', name: 'Middle East', active: false },
+    { id: 'zone_global', name: 'Rest of World', active: false }
+];
 const mockPromotions: PromotionEntity[] = [{ id: 'promo_01', type: 'item', description: '15% off Eco-Timber', discountValue: 15, targetId: 'prod_01' },{ id: 'promo_02', type: 'invoice', description: '10% off orders over 200 PiUSD', discountValue: 10, minSpend: 200 }];
 
 const mockServiceProviders: Omit<UserEntity, 'role'>[] = [

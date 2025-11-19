@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { ShippingZone } from '../core/schemas/entities';
+import { GlobeIcon } from './icons/GlobeIcon';
 
 interface ShippingZonesProps {
     zones: ShippingZone[];
@@ -14,15 +15,29 @@ const ToggleSwitch: React.FC<{ checked: boolean; onChange: () => void }> = ({ ch
     </label>
 );
 
-
 export const ShippingZones: React.FC<ShippingZonesProps> = ({ zones, onZoneUpdate }) => {
     return (
-        <div className="p-4">
-            <h4 className="font-semibold text-lg text-white mb-4 text-center">Manage Shipping Zones</h4>
-            <div className="space-y-3">
+        <div className="p-4 h-full flex flex-col">
+            <div className="text-center mb-6 flex-shrink-0">
+                <GlobeIcon className="w-12 h-12 mx-auto text-ai-violet mb-2" />
+                <h4 className="font-semibold text-lg text-white">Global Shipping Network</h4>
+                <p className="text-xs text-slate-400">Configure regional availability for your products.</p>
+            </div>
+            
+            <div className="flex-grow overflow-y-auto space-y-3 pr-1 pb-2">
                 {zones.map(zone => (
-                    <div key={zone.id} className="bg-slate-900/50 p-3 rounded-xl border border-white/10 flex justify-between items-center">
-                        <span className="font-medium text-slate-200">{zone.name}</span>
+                    <div 
+                        key={zone.id} 
+                        className={`p-3 rounded-xl border flex justify-between items-center transition-all duration-300 ${
+                            zone.active 
+                                ? 'bg-slate-800/80 border-eco-green/50 shadow-[0_0_10px_rgba(16,185,129,0.1)]' 
+                                : 'bg-slate-900/50 border-white/10 opacity-80 hover:opacity-100'
+                        }`}
+                    >
+                        <div className="flex items-center">
+                             <div className={`w-2 h-2 rounded-full mr-3 transition-colors duration-300 ${zone.active ? 'bg-eco-green animate-pulse' : 'bg-slate-600'}`}></div>
+                             <span className={`font-medium transition-colors duration-300 ${zone.active ? 'text-white' : 'text-slate-400'}`}>{zone.name}</span>
+                        </div>
                         <ToggleSwitch 
                             checked={zone.active} 
                             onChange={() => onZoneUpdate(zone.id, !zone.active)}
@@ -30,8 +45,8 @@ export const ShippingZones: React.FC<ShippingZonesProps> = ({ zones, onZoneUpdat
                     </div>
                 ))}
             </div>
-             <p className="text-xs text-slate-500 mt-6 text-center">
-                Enable zones where you can ship your products. This will affect who can purchase your items on the marketplace.
+             <p className="text-[10px] text-slate-500 mt-4 text-center flex-shrink-0">
+                Changes to shipping zones take effect immediately across the marketplace.
             </p>
         </div>
     );

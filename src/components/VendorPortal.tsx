@@ -110,20 +110,21 @@ export const VendorPortal: React.FC = () => {
 
     return (
         <div className="flex flex-col h-full">
-            <div className="flex-shrink-0 flex items-center justify-around p-1 bg-slate-900/50 rounded-full mb-2 overflow-x-auto no-scrollbar">
-                <button onClick={() => setActiveTab('orders')} className={`flex items-center space-x-2 px-3 py-1.5 rounded-full font-semibold text-xs transition-colors duration-300 whitespace-nowrap ${activeTab === 'orders' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
+            {/* Use justify-start and gap-2 to prevent tabs from being squashed and enable scrolling */}
+            <div className="flex-shrink-0 flex items-center justify-start gap-2 p-1 bg-slate-900/50 rounded-full mb-2 overflow-x-auto no-scrollbar px-2">
+                <button onClick={() => setActiveTab('orders')} className={`flex-shrink-0 flex items-center space-x-2 px-3 py-1.5 rounded-full font-semibold text-xs transition-colors duration-300 whitespace-nowrap ${activeTab === 'orders' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
                     <BoxIcon className="w-4 h-4" /> <span>Orders</span>
                 </button>
-                <button onClick={() => setActiveTab('products')} className={`flex items-center space-x-2 px-3 py-1.5 rounded-full font-semibold text-xs transition-colors duration-300 whitespace-nowrap ${activeTab === 'products' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
+                <button onClick={() => setActiveTab('products')} className={`flex-shrink-0 flex items-center space-x-2 px-3 py-1.5 rounded-full font-semibold text-xs transition-colors duration-300 whitespace-nowrap ${activeTab === 'products' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
                     <PackageIcon className="w-4 h-4" /> <span>Products</span>
                 </button>
-                <button onClick={() => setActiveTab('shipping')} className={`flex items-center space-x-2 px-3 py-1.5 rounded-full font-semibold text-xs transition-colors duration-300 whitespace-nowrap ${activeTab === 'shipping' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
+                <button onClick={() => setActiveTab('shipping')} className={`flex-shrink-0 flex items-center space-x-2 px-3 py-1.5 rounded-full font-semibold text-xs transition-colors duration-300 whitespace-nowrap ${activeTab === 'shipping' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
                     <TruckIcon className="w-4 h-4" /> <span>Shipping</span>
                 </button>
-                <button onClick={() => setActiveTab('promotions')} className={`flex items-center space-x-2 px-3 py-1.5 rounded-full font-semibold text-xs transition-colors duration-300 whitespace-nowrap ${activeTab === 'promotions' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
+                <button onClick={() => setActiveTab('promotions')} className={`flex-shrink-0 flex items-center space-x-2 px-3 py-1.5 rounded-full font-semibold text-xs transition-colors duration-300 whitespace-nowrap ${activeTab === 'promotions' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
                     <PercentIcon className="w-4 h-4" /> <span>Promos</span>
                 </button>
-                 <button onClick={() => setActiveTab('api')} className={`flex items-center space-x-2 px-3 py-1.5 rounded-full font-semibold text-xs transition-colors duration-300 whitespace-nowrap ${activeTab === 'api' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
+                 <button onClick={() => setActiveTab('api')} className={`flex-shrink-0 flex items-center space-x-2 px-3 py-1.5 rounded-full font-semibold text-xs transition-colors duration-300 whitespace-nowrap ${activeTab === 'api' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
                     <DatabaseIcon className="w-4 h-4" /> <span>API</span>
                 </button>
             </div>
