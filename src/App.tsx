@@ -10,7 +10,8 @@ import { ChevronRightIcon } from './components/icons/ChevronRightIcon';
 import { ProjectCard } from './components/ProjectCard';
 import { useArchitex } from './hooks/useArchitex';
 import { PlusCircleIcon } from './components/icons/PlusCircleIcon';
-import { AmbientBackground } from './components/AmbientBackground'; // NEW IMPORT
+import { AmbientBackground } from './components/AmbientBackground';
+import { CommandPalette } from './components/CommandPalette'; // NEW
 
 // Heavy components loaded via Lazy
 const ScannerInterface = React.lazy(() => import('./components/ScannerInterface').then(module => ({ default: module.ScannerInterface })));
@@ -90,7 +91,8 @@ const AppContent: React.FC = () => {
     showProviderOnboarding, setShowProviderOnboarding, handleProviderRegistration,
     showArbitratorOnboarding, setShowArbitratorOnboarding, handleArbitratorRegistration,
     handleClaimStakingRewards, votingPower,
-    showEnterprisePortal, openEnterprisePortal, closeEnterprisePortal
+    showEnterprisePortal, openEnterprisePortal, closeEnterprisePortal,
+    isCommandPaletteOpen, toggleCommandPalette, setIsCommandPaletteOpen
   } = useArchitex();
 
   // --- Content Rendering Logic with Grid Support ---
@@ -107,7 +109,7 @@ const AppContent: React.FC = () => {
                  <div className="absolute inset-0 bg-pi-gold/20 rounded-full blur-3xl animate-pulse"></div>
                  <ScanIcon className="w-full h-full text-pi-gold relative z-10 drop-shadow-[0_0_30px_rgba(253,179,0,0.5)]" />
             </motion.div>
-            <h2 className="text-4xl font-bold text-white mb-2 tracking-tight">Reality Scanner</h2>
+            <h2 className="text-4xl font-bold text-white mb-2 tracking-tight font-sans">Reality Scanner</h2>
             <p className="text-slate-400 max-w-xs mb-8 text-lg font-light">Utilize LIDAR simulation to capture your physical space in seconds.</p>
             
             <motion.button 
@@ -125,12 +127,17 @@ const AppContent: React.FC = () => {
           <div className="w-full h-full flex flex-col">
             <div className="flex justify-between items-center mb-6 px-2">
                 <div>
-                    <h2 className="text-3xl font-bold text-white tracking-tight">Design Studio</h2>
+                    <h2 className="text-3xl font-bold text-white tracking-tight font-sans">Design Studio</h2>
                     <p className="text-sm text-slate-400 font-mono mt-1">WORKSPACE // {user?.piUsername.toUpperCase()}</p>
                 </div>
                 <div className="flex space-x-3">
-                    <motion.button whileHover={{scale: 1.05}} onClick={() => setActiveTab('explore')} className="p-3 bg-white/5 backdrop-blur-md rounded-full text-slate-300 hover:text-white hover:bg-white/10 border border-white/5 transition-all shadow-lg" title="Explore Community">
-                        <SearchIcon className="w-5 h-5" />
+                    <motion.button 
+                        whileHover={{scale: 1.05}} 
+                        onClick={toggleCommandPalette} 
+                        className="p-3 bg-white/5 backdrop-blur-md rounded-full text-slate-300 hover:text-white hover:bg-white/10 border border-white/5 transition-all shadow-lg group" 
+                        title="Command Palette (Cmd+K)"
+                    >
+                        <SearchIcon className="w-5 h-5 group-hover:text-ai-violet transition-colors" />
                     </motion.button>
                     <motion.button whileHover={{scale: 1.05}} onClick={openCreateProjectModal} className="flex items-center px-5 py-2 bg-gradient-to-r from-ai-violet to-purple-600 text-white rounded-full font-bold shadow-glow-violet hover:shadow-lg transition-all border border-white/10">
                         <PlusCircleIcon className="w-5 h-5 mr-2" /> New Project
@@ -202,19 +209,27 @@ const AppContent: React.FC = () => {
       <AmbientBackground />
 
       {/* Sandbox Indicator */}
-      <div className="fixed top-0 left-0 w-full bg-pi-gold/90 text-brand-dark text-[10px] font-bold text-center py-1 z-[110] backdrop-blur-md tracking-widest uppercase pointer-events-none">
+      <div className="fixed top-0 left-0 w-full bg-pi-gold/90 text-brand-dark text-[10px] font-bold text-center py-1 z-[110] backdrop-blur-md tracking-widest uppercase pointer-events-none font-mono">
           Testnet Sandbox Mode • v2.5.0
       </div>
+
+      <CommandPalette 
+        isOpen={isCommandPaletteOpen} 
+        onClose={() => setIsCommandPaletteOpen(false)} 
+        onNavigate={setActiveTab}
+        onCreateProject={openCreateProjectModal}
+        onCreateBounty={openCreateBountyModal}
+      />
 
       {phase === 'onboarding' && <OnboardingTour onComplete={completeOnboarding} />}
 
       {/* Intro Screen */}
-      <div className={`absolute inset-0 z-50 flex flex-col items-center justify-center transition-opacity duration-1000 ${phase === 'intro' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+      <div className={`absolute inset-0 z-[60] flex flex-col items-center justify-center transition-opacity duration-1000 ${phase === 'intro' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         <div className={`transition-all duration-1000 ease-out ${isMounted ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-10 scale-95'}`}>
           <GlassPanel className="p-12 text-center border-ai-violet/20 shadow-[0_0_100px_rgba(139,92,246,0.15)] bg-black/40">
               <ArchitexLogo className="w-32 h-32 mx-auto mb-8 animate-float drop-shadow-[0_0_25px_rgba(139,92,246,0.6)]" />
-              <h1 className="text-6xl font-bold text-white tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-400">Architex</h1>
-              <p className="text-slate-400 text-lg font-light tracking-wide">The Future of Design, Decentralized.</p>
+              <h1 className="text-6xl font-bold text-white tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-400 font-sans">Architex</h1>
+              <p className="text-slate-400 text-lg font-light tracking-wide font-sans">The Future of Design, Decentralized.</p>
           </GlassPanel>
         </div>
         <motion.button 
@@ -234,7 +249,7 @@ const AppContent: React.FC = () => {
         <nav className="hidden md:flex flex-col w-72 bg-slate-900/40 backdrop-blur-2xl border-r border-white/5 p-6 pt-8 z-40 h-full">
             <div className="flex items-center mb-12 px-2">
                 <ArchitexLogo className="w-10 h-10 mr-3 text-ai-violet filter drop-shadow-lg" />
-                <h1 className="text-2xl font-bold text-white tracking-wide">Architex</h1>
+                <h1 className="text-2xl font-bold text-white tracking-wide font-sans">Architex</h1>
             </div>
             
             <div className="space-y-3 flex-grow">
@@ -253,7 +268,7 @@ const AppContent: React.FC = () => {
                          <UserIcon className="w-5 h-5 text-slate-300" />
                     </div>
                     <div>
-                        <div className="text-sm font-bold text-white">{user?.piUsername || 'User'}</div>
+                        <div className="text-sm font-bold text-white font-sans">{user?.piUsername || 'User'}</div>
                         <div className="text-[10px] text-eco-green font-mono tracking-wide">ONLINE • TRUST {user?.trustScore || 0}</div>
                     </div>
                 </div>
@@ -264,11 +279,16 @@ const AppContent: React.FC = () => {
         <header className="md:hidden fixed top-0 left-0 right-0 h-16 bg-brand-dark/60 backdrop-blur-xl z-40 flex items-center justify-between px-4 border-b border-white/5 transition-all duration-300">
              <div className="flex items-center">
                 <ArchitexLogo className="w-8 h-8 mr-3 text-ai-violet drop-shadow-md"/>
-                <h1 className="text-xl font-bold text-slate-100 tracking-tight">Design HUD</h1>
+                <h1 className="text-xl font-bold text-slate-100 tracking-tight font-sans">Design HUD</h1>
             </div>
-            <button onClick={toggleProfile} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-all">
-                <UserIcon className="w-5 h-5" />
-            </button>
+            <div className="flex items-center space-x-3">
+                <button onClick={toggleCommandPalette} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-all">
+                    <SearchIcon className="w-5 h-5" />
+                </button>
+                <button onClick={toggleProfile} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-all">
+                    <UserIcon className="w-5 h-5" />
+                </button>
+            </div>
         </header>
 
         {/* MAIN CONTENT AREA */}

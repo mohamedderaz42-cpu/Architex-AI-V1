@@ -16,13 +16,26 @@ export const useCore = (addToast: (msg: string, type?: 'success' | 'error' | 'in
   // Access Global State
   const { user, setUser, userTokens } = useAppStore();
 
-  // Admin & Chat State
+  // Admin & UI State
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [showProviderOnboarding, setShowProviderOnboarding] = useState(false);
   const [showArbitratorOnboarding, setShowArbitratorOnboarding] = useState(false);
   const [showEnterprisePortal, setShowEnterprisePortal] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
   useEffect(() => { setIsMounted(true); }, []);
+
+  // Keyboard shortcut for Command Palette
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+            e.preventDefault();
+            setIsCommandPaletteOpen(prev => !prev);
+        }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const initialize = async () => {
     setPhase('onboarding');
@@ -34,6 +47,7 @@ export const useCore = (addToast: (msg: string, type?: 'success' | 'error' | 'in
 
   const completeOnboarding = () => setPhase('dashboard');
   const toggleProfile = () => setIsProfileVisible(prev => !prev);
+  const toggleCommandPalette = () => setIsCommandPaletteOpen(prev => !prev);
 
   // Wallet & Subscription
   const handleClaimVestedTokens = async () => {
@@ -84,6 +98,7 @@ export const useCore = (addToast: (msg: string, type?: 'success' | 'error' | 'in
     showProviderOnboarding, setShowProviderOnboarding, handleProviderRegistration,
     showArbitratorOnboarding, setShowArbitratorOnboarding, handleArbitratorRegistration,
     isAdminModalOpen, openAdminModal, closeAdminModal,
-    showEnterprisePortal, openEnterprisePortal, closeEnterprisePortal
+    showEnterprisePortal, openEnterprisePortal, closeEnterprisePortal,
+    isCommandPaletteOpen, toggleCommandPalette, setIsCommandPaletteOpen
   };
 };

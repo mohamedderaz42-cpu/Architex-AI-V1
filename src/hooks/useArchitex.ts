@@ -63,6 +63,9 @@ export const useArchitex = () => {
     toggleProfile: core.toggleProfile,
     isProfileVisible: core.isProfileVisible,
     completeOnboarding: core.completeOnboarding,
+    isCommandPaletteOpen: core.isCommandPaletteOpen,
+    toggleCommandPalette: core.toggleCommandPalette,
+    setIsCommandPaletteOpen: core.setIsCommandPaletteOpen,
     
     // Design & Projects
     projects: design.projects,

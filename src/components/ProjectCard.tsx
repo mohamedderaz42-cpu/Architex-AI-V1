@@ -41,9 +41,9 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onCardClick, 
       <div className="flex-grow" onClick={onCardClick}>
         <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-                <h3 className="font-bold text-white text-lg tracking-tight group-hover:text-ai-violet transition-colors">{project.name}</h3>
+                <h3 className="font-bold text-white text-lg tracking-tight font-sans group-hover:text-ai-violet transition-colors">{project.name}</h3>
                 {project.isNft && (
-                    <div className="flex items-center px-2 py-0.5 rounded-full bg-ai-violet/20 border border-ai-violet/30 text-ai-violet text-[10px] font-bold tracking-wider uppercase">
+                    <div className="flex items-center px-2 py-0.5 rounded-full bg-ai-violet/20 border border-ai-violet/30 text-ai-violet text-[10px] font-bold tracking-wider uppercase font-mono">
                         NFT
                     </div>
                 )}
@@ -67,7 +67,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onCardClick, 
             {project.unreadMessages && project.unreadMessages > 0 && (
               <div className="relative">
                 <MessageSquareIcon className="w-5 h-5 text-slate-400" />
-                <span className="absolute -top-1 -right-1 flex items-center justify-center w-3 h-3 text-[8px] font-bold text-white bg-red-500 rounded-full">
+                <span className="absolute -top-1 -right-1 flex items-center justify-center w-3 h-3 text-[8px] font-bold text-white bg-red-500 rounded-full font-mono">
                   {project.unreadMessages}
                 </span>
               </div>
@@ -79,7 +79,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onCardClick, 
                     e.stopPropagation();
                     onMintClick();
                 }}
-                className="flex items-center px-3 py-1 bg-white/5 border border-white/10 hover:border-ai-violet/50 hover:bg-ai-violet/10 rounded-full text-[10px] font-bold text-slate-300 hover:text-white backdrop-blur-sm transition-all"
+                className="flex items-center px-3 py-1 bg-white/5 border border-white/10 hover:border-ai-violet/50 hover:bg-ai-violet/10 rounded-full text-[10px] font-bold text-slate-300 hover:text-white backdrop-blur-sm transition-all font-mono"
             >
                 <NftIcon className="w-3 h-3 mr-1" />
                 MINT
