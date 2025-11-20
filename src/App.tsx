@@ -42,6 +42,7 @@ import { LanguageSelectorModal } from './components/LanguageSelectorModal';
 import { GlobeIcon } from './components/icons/GlobeIcon';
 import { useLanguage } from './core/i18n/LanguageContext';
 import { PiBrowserGate } from './components/PiBrowserGate';
+import { OfflineNotice } from './components/OfflineNotice';
 
 // Lazy Loaded Heavy Components
 const ScannerInterface = React.lazy(() => import('./components/ScannerInterface').then(module => ({ default: module.ScannerInterface })));
@@ -163,6 +164,7 @@ const App: React.FC = () => {
 
   return (
     <PiBrowserGate>
+        <OfflineNotice />
         <div dir={dir} className="min-h-screen w-full bg-brand-dark text-slate-100 flex flex-col items-center overflow-hidden antialiased relative">
         <AmbientBackground />
         <CommandPalette isOpen={isCommandPaletteOpen} onClose={toggleCommandPalette} onNavigate={(tab) => setActiveTab(tab as any)} onOpenWhitePaper={openWhitePaper} />
