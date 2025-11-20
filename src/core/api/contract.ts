@@ -4,13 +4,10 @@ import { PiCoinIcon } from '../../components/icons/PiCoinIcon';
 import { ArchitexLogo } from '../../components/icons/ArchitexLogo';
 
 // --- MOCK DATA ---
-// ... [Previous mock data remains mostly the same, extended below] ...
-
-const mockProjects: ProjectEntity[] = [
+let mockProjects: ProjectEntity[] = [
   {
     id: 'proj_01',
     ownerId: 'user_01',
-    ownerName: 'ArchieBot',
     name: 'Living Room Remodel',
     status: 'Designing',
     billOfMaterials: [{ materialId: 'mat_01', quantity: 20, status: 'Pending', name: 'Oak Flooring', estimatedCost: 450, isSustainable: true }],
@@ -21,12 +18,10 @@ const mockProjects: ProjectEntity[] = [
     unreadMessages: 2,
     modificationCount: 1,
     isNft: false,
-    likes: 42,
   },
   {
     id: 'proj_02',
     ownerId: 'user_01',
-    ownerName: 'ArchieBot',
     name: 'Kitchen Modernization',
     status: 'Sourcing',
     billOfMaterials: [],
@@ -37,12 +32,10 @@ const mockProjects: ProjectEntity[] = [
     unreadMessages: 0,
     modificationCount: 0,
     isNft: false,
-    likes: 15,
   },
   {
     id: 'proj_03',
     ownerId: 'user_01',
-    ownerName: 'ArchieBot',
     name: 'Bedroom Oasis (NFT)',
     status: 'Complete',
     billOfMaterials: [],
@@ -52,17 +45,15 @@ const mockProjects: ProjectEntity[] = [
     thumbnailUrl: 'https://placehold.co/400x300/FDB300/FFFFFF/png?text=Bedroom',
     modificationCount: 5,
     isNft: true,
-    likes: 120,
   },
 ];
 
 // Mock Public Projects
-const mockPublicProjects: ProjectEntity[] = [
+let mockPublicProjects: ProjectEntity[] = [
     ...mockProjects,
     {
         id: 'proj_pub_01',
         ownerId: 'user_99',
-        ownerName: 'DesignGuru',
         name: 'Zen Garden Loft',
         status: 'Complete',
         billOfMaterials: [],
@@ -70,22 +61,7 @@ const mockPublicProjects: ProjectEntity[] = [
         updatedAt: new Date().toISOString(),
         isPublic: true,
         thumbnailUrl: 'https://placehold.co/400x300/334155/FFFFFF/png?text=Zen+Loft',
-        likes: 350,
         isNft: true
-    },
-    {
-        id: 'proj_pub_02',
-        ownerId: 'user_88',
-        ownerName: 'EcoBuilder',
-        name: 'Sustainable Tiny Home',
-        status: 'Designing',
-        billOfMaterials: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        isPublic: true,
-        thumbnailUrl: 'https://placehold.co/400x300/10B981/FFFFFF/png?text=Tiny+Home',
-        likes: 89,
-        isNft: false
     }
 ];
 
@@ -139,7 +115,7 @@ let mockBounties: BountyEntity[] = [
     }
 ];
 
-const mockArbitrators: ArbitratorEntity[] = [
+let mockArbitrators: ArbitratorEntity[] = [
     {
         id: 'arb_01',
         name: 'Judge Pi',
@@ -161,7 +137,7 @@ const mockArbitrators: ArbitratorEntity[] = [
     }
 ];
 
-const mockProducts: ProductEntity[] = [
+let mockProducts: ProductEntity[] = [
     { 
         id: 'prod_01', 
         vendorId: 'vendor_01', 
@@ -203,16 +179,16 @@ let mockOrders: OrderEntity[] = [
     { id: 'ord_02', userId: 'user_01', items: [{productId: 'prod_03', quantity: 5}], total: 225, status: 'Processing', createdAt: new Date().toISOString(), proofOfInstallationStatus: 'none' },
 ];
 
-const mockShippingZones: ShippingZone[] = [{ id: 'zone_na', name: 'North America', active: true },{ id: 'zone_eu', name: 'European Union', active: true },{ id: 'zone_asia', name: 'Asia-Pacific', active: false }];
-const mockPromotions: PromotionEntity[] = [{ id: 'promo_01', type: 'item', description: '15% off Eco-Timber', discountValue: 15, targetId: 'prod_01' },{ id: 'promo_02', type: 'invoice', description: '10% off orders over 200 PiUSD', discountValue: 10, minSpend: 200 }];
+let mockShippingZones: ShippingZone[] = [{ id: 'zone_na', name: 'North America', active: true },{ id: 'zone_eu', name: 'European Union', active: true },{ id: 'zone_asia', name: 'Asia-Pacific', active: false }];
+let mockPromotions: PromotionEntity[] = [{ id: 'promo_01', type: 'item', description: '15% off Eco-Timber', discountValue: 15, targetId: 'prod_01' },{ id: 'promo_02', type: 'invoice', description: '10% off orders over 200 PiUSD', discountValue: 10, minSpend: 200 }];
 
-const mockServiceProviders: Omit<UserEntity, 'role'>[] = [
-    { id: 'sp_01', piUsername: 'InstallPro', walletAddress: 'GC...P1', trustScore: 98, avatarUrl: 'https://placehold.co/100x100/10B981/FFFFFF/png?text=IP', subscriptionTier: 'Accelerator', serviceProviderProfile: { specialty: 'General Construction', portfolioUrl: '#', serviceZones: ['USA-CA'], hasLiabilityInsurance: true } },
-    { id: 'sp_02', piUsername: 'ElecTech', walletAddress: 'GC...P2', trustScore: 95, avatarUrl: 'https://placehold.co/100x100/FDB300/FFFFFF/png?text=ET', subscriptionTier: 'Accelerator', serviceProviderProfile: { specialty: 'Electrical & Automation', portfolioUrl: '#', serviceZones: ['USA-CA', 'USA-NV'], hasLiabilityInsurance: true } },
+let mockServiceProviders: UserEntity[] = [
+    { id: 'sp_01', piUsername: 'InstallPro', walletAddress: 'GC...P1', trustScore: 98, avatarUrl: 'https://placehold.co/100x100/10B981/FFFFFF/png?text=IP', subscriptionTier: 'Accelerator', role: 'service-provider', serviceProviderProfile: { specialty: 'General Construction', portfolioUrl: '#', serviceZones: ['USA-CA'], hasLiabilityInsurance: true } },
+    { id: 'sp_02', piUsername: 'ElecTech', walletAddress: 'GC...P2', trustScore: 95, avatarUrl: 'https://placehold.co/100x100/FDB300/FFFFFF/png?text=ET', subscriptionTier: 'Accelerator', role: 'service-provider', serviceProviderProfile: { specialty: 'Electrical & Automation', portfolioUrl: '#', serviceZones: ['USA-CA', 'USA-NV'], hasLiabilityInsurance: true } },
 ];
 
 // Mock Gig Workers
-const mockGigWorkers: UserEntity[] = [
+let mockGigWorkers: UserEntity[] = [
     {
         id: 'gig_01',
         piUsername: 'MarioPlumb',
@@ -233,11 +209,10 @@ const mockGigWorkers: UserEntity[] = [
             distance: '0.8 km'
         }
     },
-    // ... other gig workers
 ];
 
 
-const mockServiceAgreements: ServiceAgreementEntity[] = [
+let mockServiceAgreements: ServiceAgreementEntity[] = [
     { id: 'sa_01', clientId: 'user_01', providerId: 'sp_01', projectId: 'proj_01', scope: 'Installation of all materials for Living Room Remodel', price: 1500, status: 'funded', createdAt: new Date(Date.now() - 86400000 * 3).toISOString() }
 ];
 
@@ -250,7 +225,6 @@ let mockProposals: ProposalEntity[] = [
     { id: 'prop_02', title: 'Fund a new Eco-Grant Program', description: 'Allocate 1M ARCHI from the treasury to fund projects using sustainable materials.', proposerId: 'designer_01', status: 'Passed', forVotes: 550000, againstVotes: 100000, createdAt: new Date(Date.now() - 86400000 * 10).toISOString(), endsAt: new Date(Date.now() - 86400000 * 3).toISOString(), quorum: 0.20, turnout: 0.65 },
 ];
 
-// Mock User with Affiliate and Dropship profiles initiated as undefined
 let mockUser: UserEntity = { 
     id: 'user_01', 
     piUsername: 'ArchieBot', 
@@ -318,7 +292,7 @@ export const createPromotion = async (promo: Omit<PromotionEntity, 'id'>): Promi
 export const listOrders = async (): Promise<OrderEntity[]> => { return [...mockOrders]; };
 export const updateOrderStatus = async (orderId: string, status: OrderStatus): Promise<OrderEntity> => { const idx = mockOrders.findIndex(o => o.id === orderId); if (idx === -1) throw new Error('Order not found'); mockOrders[idx].status = status; const order = mockOrders[idx]; const orderContainsInstallableItems = order.items.some(item => mockProducts.find(p => p.id === item.productId)?.tags?.includes('requires-installation')); if (status === 'Delivered' && orderContainsInstallableItems) { mockOrders[idx].proofOfInstallationStatus = 'pending'; } return { ...mockOrders[idx] }; };
 export const getInstallationQuote = async (orderId: string): Promise<{ quote: number, providerId: string }> => { await new Promise(res => setTimeout(res, 800)); return { quote: 250, providerId: 'sp_01' }; };
-export const listServiceProviders = async (): Promise<UserEntity[]> => { return mockServiceProviders.map(sp => ({ ...sp, role: 'service-provider' })); };
+export const listServiceProviders = async (): Promise<UserEntity[]> => { return mockServiceProviders; };
 export const listGigWorkers = async (): Promise<UserEntity[]> => { return [...mockGigWorkers]; }; 
 export const getProjectDetails = async (projectId: string): Promise<ProjectEntity | undefined> => { return mockProjects.find(p => p.id === projectId); };
 export const createServiceAgreement = async (clientId: string, providerId: string, projectId: string, price: number): Promise<ServiceAgreementEntity> => { const newAgreement: ServiceAgreementEntity = { id: `sa_${Date.now()}`, clientId, providerId, projectId, price, scope: `Installation services for project ${projectId}`, status: 'pending', createdAt: new Date().toISOString() }; mockServiceAgreements.push(newAgreement); return newAgreement; };
@@ -435,9 +409,47 @@ export const forwardOrderToVendor = async (orderId: string): Promise<void> => {
     const order = mockOrders.find(o => o.id === orderId);
     if (order) {
         order.status = 'Forwarded to Vendor';
-        // In real contract, this triggers payment split:
-        // Vendor gets wholesale price
-        // Platform gets fee
-        // Dropshipper keeps margin (already held since they sold it)
+    }
+};
+
+// --- NEW: System Backup & Recovery ---
+
+export const exportSystemState = async (): Promise<string> => {
+    await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate encryption delay
+    const backup = {
+        timestamp: new Date().toISOString(),
+        version: "1.1.0",
+        environment: "Testnet",
+        data: {
+            users: [mockUser, ...mockServiceProviders, ...mockGigWorkers],
+            projects: [...mockProjects, ...mockPublicProjects],
+            orders: mockOrders,
+            bounties: mockBounties,
+            proposals: mockProposals,
+            products: mockProducts,
+            challenges: mockDesignChallenges,
+            treasury: treasuryBalance,
+            tokens: mockUserTokens
+        }
+    };
+    return JSON.stringify(backup, null, 2);
+};
+
+export const restoreSystemState = async (jsonString: string): Promise<boolean> => {
+    await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate decryption & validation
+    try {
+        const parsed = JSON.parse(jsonString);
+        if (!parsed.data || !parsed.timestamp) throw new Error("Invalid backup format");
+        
+        // In a real backend, this would overwrite DB tables.
+        // Here we can update our in-memory mocks.
+        if(parsed.data.projects) mockProjects = parsed.data.projects;
+        if(parsed.data.orders) mockOrders = parsed.data.orders;
+        
+        console.log(`[System] Restored state from backup generated at ${parsed.timestamp}`);
+        return true;
+    } catch (e) {
+        console.error("Restore failed:", e);
+        throw e;
     }
 };

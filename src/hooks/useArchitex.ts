@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity, ProductEntity } from '../core/schemas/entities';
 import * as api from '../core/api/contract';
-import { getProactiveTip, guidedScanInstructions } from '../core/ux-engine/engine';
+import { getProactiveTip, guidedScanInstructions, UXContext } from '../core/ux-engine/engine';
 import { useAppStore } from '../store/useAppStore';
 
 export type Phase = 'intro' | 'dashboard';
@@ -204,7 +204,18 @@ export const useArchitex = () => {
   
   const votingPower = user ? { total: (user.stakedArchi || 0) + user.trustScore * 50, fromTokens: user.stakedArchi || 0, fromTrust: user.trustScore * 50 } : { total: 0, fromTokens: 0, fromTrust: 0 };
 
-  const uxTip = useMemo(() => getProactiveTip(activeTab), [activeTab]);
+  const uxTip = useMemo(() => {
+    const context: UXContext = {
+      activeTab,
+      user,
+      projectCount: projects.length,
+      hasPendingOrders: orders.some(o => o.status === 'Processing' || o.status === 'Shipped'),
+      currentProjectModificationCount: selectedProject?.modificationCount,
+      pendingReviews: orders.filter(o => o.status === 'Delivered').length,
+      hasUnverifiedInstallation: orders.some(o => o.status === 'Delivered' && o.proofOfInstallationStatus === 'pending')
+    };
+    return getProactiveTip(context);
+  }, [activeTab, user, projects, orders, selectedProject]);
   const currentScanInstruction = guidedScanInstructions[currentScanStep];
 
   return {
@@ -238,3 +249,4 @@ export const useArchitex = () => {
     showLegalModal, openLegalModal, closeLegalModal, legalActiveTab
   };
 };
+    

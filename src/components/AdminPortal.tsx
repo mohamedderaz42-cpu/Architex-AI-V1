@@ -9,9 +9,11 @@ import { CheckCircleIcon } from './icons/CheckCircleIcon';
 import { XCircleIcon } from './icons/XCircleIcon';
 import { LoaderIcon } from './icons/LoaderIcon';
 import { ServerIcon } from './icons/ServerIcon';
+import { DatabaseIcon } from './icons/DatabaseIcon'; // Import DB Icon
 import * as api from '../core/api/contract';
 import { useToast } from './Toast';
 import { SecurityTerminal } from './SecurityTerminal';
+import { BackupManager } from './BackupManager'; // Import BackupManager
 import { IntegrationTestResult, StressTestResult } from '../core/schemas/entities';
 
 interface AdminPortalProps {
@@ -19,7 +21,7 @@ interface AdminPortalProps {
 }
 
 type AuthStep = 'login' | 'mfa' | 'dashboard';
-type AdminTab = 'overview' | 'stress';
+type AdminTab = 'overview' | 'stress' | 'backup'; // Added 'backup' tab
 
 export const AdminPortal: React.FC<AdminPortalProps> = ({ onClose }) => {
     const [step, setStep] = useState<AuthStep>('login');
@@ -353,22 +355,30 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onClose }) => {
                 <button onClick={onClose} className="text-slate-500 hover:text-white">Close</button>
             </div>
             
-            <div className="flex space-x-2 mb-4">
+            <div className="flex space-x-2 mb-4 overflow-x-auto">
                 <button 
                     onClick={() => setActiveTab('overview')}
-                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-colors ${activeTab === 'overview' ? 'bg-white text-black' : 'bg-slate-800 text-slate-400 hover:text-white'}`}
+                    className={`flex-shrink-0 px-4 py-2 rounded-lg text-xs font-bold transition-colors ${activeTab === 'overview' ? 'bg-white text-black' : 'bg-slate-800 text-slate-400 hover:text-white'}`}
                 >
                     System Overview
                 </button>
                 <button 
                     onClick={() => setActiveTab('stress')}
-                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-colors ${activeTab === 'stress' ? 'bg-red-500 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}`}
+                    className={`flex-shrink-0 px-4 py-2 rounded-lg text-xs font-bold transition-colors ${activeTab === 'stress' ? 'bg-red-500 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}`}
                 >
                     Stress Testing
                 </button>
+                 <button 
+                    onClick={() => setActiveTab('backup')}
+                    className={`flex-shrink-0 px-4 py-2 rounded-lg text-xs font-bold transition-colors flex items-center ${activeTab === 'backup' ? 'bg-ai-violet text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}`}
+                >
+                    <DatabaseIcon className="w-3 h-3 mr-1" /> Backup & Recovery
+                </button>
             </div>
 
-            {activeTab === 'overview' ? renderOverviewTab() : renderStressTab()}
+            {activeTab === 'overview' && renderOverviewTab()}
+            {activeTab === 'stress' && renderStressTab()}
+            {activeTab === 'backup' && <BackupManager />}
         </div>
     );
 
