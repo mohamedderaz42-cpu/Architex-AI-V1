@@ -7,6 +7,7 @@ import { LayersIcon } from './icons/LayersIcon';
 import { ChartBarIcon } from './icons/ChartBarIcon';
 import { GlobeIcon } from './icons/GlobeIcon';
 import { ShieldCheckIcon } from './icons/ShieldCheckIcon';
+import { WHITEPAPER_CONTENT } from '../core/content/whitepaper';
 
 interface WhitePaperModalProps {
     onClose: () => void;
@@ -16,6 +17,7 @@ type Section = 'intro' | 'tokenomics' | 'tech' | 'roadmap';
 
 export const WhitePaperModal: React.FC<WhitePaperModalProps> = ({ onClose }) => {
     const [activeSection, setActiveSection] = useState<Section>('intro');
+    const { intro, tokenomics, tech, roadmap, version } = WHITEPAPER_CONTENT;
 
     const renderContent = () => {
         switch (activeSection) {
@@ -23,19 +25,19 @@ export const WhitePaperModal: React.FC<WhitePaperModalProps> = ({ onClose }) => 
                 return (
                     <div className="space-y-6 animate-fade-in">
                         <div className="bg-slate-900/50 p-6 rounded-2xl border border-white/10">
-                            <h3 className="text-lg font-bold text-white mb-2">Abstract</h3>
+                            <h3 className="text-lg font-bold text-white mb-2">{intro.title}</h3>
                             <p className="text-sm text-slate-300 leading-relaxed">
-                                Architex is a decentralized protocol designed to democratize interior design and architectural visualization. By leveraging the Pi Network for identity and payments, and combining it with local-first Artificial Intelligence (AI) and SLAM (Simultaneous Localization and Mapping) technology, Architex removes the barriers between imagination and realization.
+                                {intro.body}
                             </p>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="bg-slate-900/30 p-4 rounded-xl border border-white/5">
                                 <h4 className="text-ai-violet font-bold text-sm mb-1">Problem</h4>
-                                <p className="text-xs text-slate-400">Professional design is expensive, centralized, and lacks privacy. Users surrender data to cloud providers without compensation.</p>
+                                <p className="text-xs text-slate-400">{intro.problem}</p>
                             </div>
                             <div className="bg-slate-900/30 p-4 rounded-xl border border-white/5">
                                 <h4 className="text-eco-green font-bold text-sm mb-1">Solution</h4>
-                                <p className="text-xs text-slate-400">A P2P marketplace governed by a DAO, powered by privacy-preserving AI, and fueled by the ARCHI utility token.</p>
+                                <p className="text-xs text-slate-400">{intro.solution}</p>
                             </div>
                         </div>
                     </div>
@@ -45,11 +47,11 @@ export const WhitePaperModal: React.FC<WhitePaperModalProps> = ({ onClose }) => 
                     <div className="space-y-6 animate-fade-in">
                         <div className="flex items-center justify-between bg-gradient-to-r from-slate-900 to-slate-800 p-6 rounded-2xl border border-pi-gold/20">
                             <div>
-                                <h3 className="text-lg font-bold text-white">The ARCHI Token</h3>
-                                <p className="text-xs text-slate-400">Utility & Governance Token on Pi Network</p>
+                                <h3 className="text-lg font-bold text-white">{tokenomics.title}</h3>
+                                <p className="text-xs text-slate-400">{tokenomics.subtitle}</p>
                             </div>
                             <div className="text-right">
-                                <div className="text-2xl font-bold text-pi-gold">1,000,000,000</div>
+                                <div className="text-2xl font-bold text-pi-gold">{tokenomics.supply}</div>
                                 <div className="text-[10px] uppercase tracking-widest text-slate-500">Total Supply</div>
                             </div>
                         </div>
@@ -57,26 +59,13 @@ export const WhitePaperModal: React.FC<WhitePaperModalProps> = ({ onClose }) => 
                         <div className="space-y-3">
                             <h4 className="text-sm font-bold text-white uppercase tracking-wider">Revenue Model & Fees</h4>
                             <div className="grid grid-cols-2 gap-3">
-                                <div className="bg-slate-900/50 p-3 rounded-xl border border-white/5">
-                                    <span className="block text-xs text-slate-400">Dropshipping Fee</span>
-                                    <span className="text-lg font-bold text-white">2.0%</span>
-                                    <p className="text-[10px] text-slate-500 mt-1">Paid by Merchant per transaction</p>
-                                </div>
-                                <div className="bg-slate-900/50 p-3 rounded-xl border border-white/5">
-                                    <span className="block text-xs text-slate-400">Affiliate Commission</span>
-                                    <span className="text-lg font-bold text-white">1.5%</span>
-                                    <p className="text-[10px] text-slate-500 mt-1">Paid to Affiliate from Platform Fee</p>
-                                </div>
-                                <div className="bg-slate-900/50 p-3 rounded-xl border border-white/5">
-                                    <span className="block text-xs text-slate-400">Service Bounty Fee</span>
-                                    <span className="text-lg font-bold text-white">10%</span>
-                                    <p className="text-[10px] text-slate-500 mt-1">Waived for Founder Members</p>
-                                </div>
-                                <div className="bg-slate-900/50 p-3 rounded-xl border border-white/5">
-                                    <span className="block text-xs text-slate-400">Staking APY</span>
-                                    <span className="text-lg font-bold text-eco-green">8-15%</span>
-                                    <p className="text-[10px] text-slate-500 mt-1">Variable based on DAO revenue</p>
-                                </div>
+                                {tokenomics.revenueModel.map((item, idx) => (
+                                    <div key={idx} className="bg-slate-900/50 p-3 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
+                                        <span className="block text-xs text-slate-400">{item.title}</span>
+                                        <span className={`text-lg font-bold ${idx % 2 === 0 ? 'text-white' : 'text-eco-green'}`}>{item.value}</span>
+                                        <p className="text-[10px] text-slate-500 mt-1">{item.desc}</p>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>
@@ -84,24 +73,17 @@ export const WhitePaperModal: React.FC<WhitePaperModalProps> = ({ onClose }) => 
             case 'tech':
                 return (
                     <div className="space-y-5 animate-fade-in">
-                        <div className="bg-slate-900/50 p-4 rounded-xl border border-white/10">
-                            <div className="flex items-center mb-2">
-                                <GlobeIcon className="w-5 h-5 text-ai-violet mr-2" />
-                                <h4 className="font-bold text-white">Privacy-First AI</h4>
+                        {tech.map((item, idx) => (
+                            <div key={idx} className="bg-slate-900/50 p-4 rounded-xl border border-white/10">
+                                <div className="flex items-center mb-2">
+                                    <item.icon className={`w-5 h-5 ${item.color} mr-2`} />
+                                    <h4 className="font-bold text-white">{item.title}</h4>
+                                </div>
+                                <p className="text-xs text-slate-300 leading-relaxed">
+                                    {item.desc}
+                                </p>
                             </div>
-                            <p className="text-xs text-slate-300 leading-relaxed">
-                                Architex utilizes a Federated Learning approach (via OpenMined/PySyft concepts). Room scans and raw images are processed locally on the user's device or a secure edge node. Only encrypted gradients are shared to improve the global model, ensuring user privacy is never compromised.
-                            </p>
-                        </div>
-                        <div className="bg-slate-900/50 p-4 rounded-xl border border-white/10">
-                            <div className="flex items-center mb-2">
-                                <LayersIcon className="w-5 h-5 text-pi-gold mr-2" />
-                                <h4 className="font-bold text-white">Smart Contract Escrow</h4>
-                            </div>
-                            <p className="text-xs text-slate-300 leading-relaxed">
-                                All high-value transactions (Service Agreements, Bounties, Dropshipping) are secured by multi-signature smart contracts. Funds are locked in escrow and only released upon cryptographic proof of delivery or mutual sign-off.
-                            </p>
-                        </div>
+                        ))}
                     </div>
                 );
             case 'roadmap':
@@ -109,11 +91,7 @@ export const WhitePaperModal: React.FC<WhitePaperModalProps> = ({ onClose }) => 
                     <div className="space-y-4 animate-fade-in relative">
                         <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-white/10"></div>
                         
-                        {[
-                            { phase: 'Phase 1', title: 'Genesis (Current)', desc: 'Room Scanner, Basic AI, Wallet Integration.', active: true },
-                            { phase: 'Phase 2', title: 'Marketplace & DAO', desc: 'Dropshipping, Affiliate System, Governance Launch.', active: false },
-                            { phase: 'Phase 3', title: 'The Metaverse Bridge', desc: 'Export 3D models to VR/AR worlds. Enterprise API.', active: false }
-                        ].map((item, idx) => (
+                        {roadmap.map((item, idx) => (
                             <div key={idx} className="relative pl-10">
                                 <div className={`absolute left-2.5 top-1.5 w-3 h-3 rounded-full border-2 ${item.active ? 'bg-pi-gold border-pi-gold shadow-glow-gold' : 'bg-brand-dark border-slate-600'} transform -translate-x-1/2`}></div>
                                 <h4 className={`text-sm font-bold ${item.active ? 'text-white' : 'text-slate-500'}`}>{item.phase}: {item.title}</h4>
@@ -137,7 +115,7 @@ export const WhitePaperModal: React.FC<WhitePaperModalProps> = ({ onClose }) => 
                         </div>
                         <div>
                             <h2 className="text-2xl font-bold text-white tracking-tight">Architex Protocol</h2>
-                            <p className="text-xs text-pi-gold font-mono uppercase tracking-widest">White Paper v1.0</p>
+                            <p className="text-xs text-pi-gold font-mono uppercase tracking-widest">White Paper v{version}</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
