@@ -59,25 +59,14 @@ export const PiBrowserGate: React.FC<{ children: React.ReactNode }> = ({ childre
         
         <h1 className="text-2xl font-bold text-white mb-2">Welcome to Architex</h1>
         <p className="text-slate-400 mb-8">
-            To access the decentralized features, wallet, and secure marketplace, this application is designed to run within the <span className="text-pi-gold font-bold">Pi Browser</span>.
+            To access decentralized features, this app is optimized for the <span className="text-pi-gold font-bold">Pi Browser</span>.
         </p>
 
-        <div className="bg-slate-900/60 p-4 rounded-xl border border-white/10 mb-6 text-left flex items-start">
-            <WarningIcon className="w-6 h-6 text-pi-gold mr-3 flex-shrink-0" />
-            <div>
-                <h3 className="text-sm font-bold text-white">Environment Check</h3>
-                <p className="text-xs text-slate-400 mt-1">
-                    Pi Network SDK not detected. If you are a user, please open this page in the Pi Browser.
-                </p>
-            </div>
-        </div>
-
-        <div className="space-y-3">
+        <div className="space-y-4">
             <div className="relative group">
                 <div className="absolute -inset-1 bg-gradient-to-r from-pi-gold to-orange-600 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
                 <button 
                     onClick={() => {
-                        // Try to open deep link, fallback to copy
                         window.location.href = "pi://architex.app"; 
                         navigator.clipboard.writeText("pi://architex.app");
                         alert("Deep link copied! Paste it in Pi Browser.");
@@ -89,14 +78,26 @@ export const PiBrowserGate: React.FC<{ children: React.ReactNode }> = ({ childre
                 </button>
             </div>
             
+            <div className="relative">
+                 <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-white/10"></div>
+                 </div>
+                 <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-slate-900 text-slate-500">For Testing</span>
+                 </div>
+            </div>
+            
             {/* Enhanced Developer Bypass Button */}
             <button 
                 onClick={() => setBypass(true)}
-                className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg flex items-center justify-center space-x-2 text-slate-300 transition-colors"
+                className="w-full py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg flex items-center justify-center space-x-2 text-white transition-colors shadow-lg"
             >
-                <WrenchIcon className="w-4 h-4" />
-                <span className="text-xs font-bold">Developer Mode: Continue in Standard Browser</span>
+                <WrenchIcon className="w-4 h-4 text-slate-300" />
+                <span className="text-sm font-bold">Developer Mode (Browser)</span>
             </button>
+            <p className="text-[10px] text-slate-500 mt-2">
+                Simulates Pi Network environment for development purposes.
+            </p>
         </div>
         
       </GlassPanel>
