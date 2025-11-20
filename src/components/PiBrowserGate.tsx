@@ -78,26 +78,23 @@ export const PiBrowserGate: React.FC<{ children: React.ReactNode }> = ({ childre
                 </button>
             </div>
             
-            <div className="relative">
+            <div className="relative py-2">
                  <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-white/10"></div>
                  </div>
                  <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-slate-900 text-slate-500">For Testing</span>
+                    <span className="px-2 bg-slate-900 text-slate-500">Development</span>
                  </div>
             </div>
             
             {/* Enhanced Developer Bypass Button */}
             <button 
                 onClick={() => setBypass(true)}
-                className="w-full py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg flex items-center justify-center space-x-2 text-white transition-colors shadow-lg"
+                className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg flex items-center justify-center space-x-2 text-slate-300 hover:text-white transition-colors"
             >
-                <WrenchIcon className="w-4 h-4 text-slate-300" />
-                <span className="text-sm font-bold">Developer Mode (Browser)</span>
+                <WrenchIcon className="w-4 h-4" />
+                <span className="text-sm font-medium">Launch Developer Mode</span>
             </button>
-            <p className="text-[10px] text-slate-500 mt-2">
-                Simulates Pi Network environment for development purposes.
-            </p>
         </div>
         
       </GlassPanel>

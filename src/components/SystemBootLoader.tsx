@@ -19,9 +19,6 @@ interface SystemBootLoaderProps {
 export const SystemBootLoader: React.FC<SystemBootLoaderProps> = ({ steps, onRetry }) => {
     const hasError = steps.some(s => s.status === 'error');
 
-    // Optional: You could add internal timeout logic here if the parent doesn't control it fully
-    // But currently useArchitex.ts controls the flow.
-
     return (
         <div className="w-full max-w-md animate-fade-in p-4">
             <GlassPanel className="p-6 border-ai-violet/30">
@@ -66,7 +63,7 @@ export const SystemBootLoader: React.FC<SystemBootLoaderProps> = ({ steps, onRet
             </GlassPanel>
             
             <div className="mt-4 text-center text-[10px] text-slate-600 font-mono">
-                ESTABLISHING SECURE UPLINK v2.4.0
+                ESTABLISHING SECURE UPLINK v2.4.1
             </div>
         </div>
     );

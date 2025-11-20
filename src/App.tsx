@@ -191,7 +191,7 @@ const App: React.FC = () => {
 
         {/* Dashboard Container */}
         <div className={`w-full max-w-md h-full flex flex-col transition-opacity duration-1000 z-10 ${phase === 'dashboard' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-            <header className="relative flex-shrink-0 pt-6 pb-2 px-4 flex justify-between items-center">
+            <header className="relative flex-shrink-0 pt-safe pb-2 px-4 flex justify-between items-center mt-2">
                 <div className="flex items-center">
                     <ArchitexLogo className="w-8 h-8 mr-2 text-ai-violet"/>
                     <span className="font-bold text-lg tracking-tight">{t('app.title')}</span>
