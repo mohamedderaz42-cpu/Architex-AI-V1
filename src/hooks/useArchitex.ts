@@ -24,7 +24,11 @@ export const useArchitex = () => {
   const [isProfileVisible, setIsProfileVisible] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [showWhitePaper, setShowWhitePaper] = useState(false); 
-  const [showAboutModal, setShowAboutModal] = useState(false); // New State
+  const [showAboutModal, setShowAboutModal] = useState(false);
+  
+  // Legal Modal State
+  const [showLegalModal, setShowLegalModal] = useState(false);
+  const [legalActiveTab, setLegalActiveTab] = useState<'privacy' | 'terms'>('terms');
   
   // Shop State
   const [products, setProducts] = useState<ProductEntity[]>([]);
@@ -133,6 +137,13 @@ export const useArchitex = () => {
   const openAboutModal = () => setShowAboutModal(true);
   const closeAboutModal = () => setShowAboutModal(false);
 
+  // Legal Handlers
+  const openLegalModal = (tab: 'privacy' | 'terms' = 'terms') => {
+    setLegalActiveTab(tab);
+    setShowLegalModal(true);
+  };
+  const closeLegalModal = () => setShowLegalModal(false);
+
   const handleProjectInteraction = async (project: ProjectEntity) => { setSelectedProject(project); setShowProjectDetailsModal(true); };
   const closeUpsellModal = () => setShowUpsellModal(false);
 
@@ -221,8 +232,9 @@ export const useArchitex = () => {
     // Added for App.tsx compatibility
     products, cart, addToCart, openShoppingCart, openVendorProfile, 
     votingPower, handleClaimStakingRewards, openCreateChallengeModal, handleJoinFounderProgram,
-    // White Paper & About
+    // White Paper, About, Legal
     showWhitePaper, openWhitePaper, closeWhitePaper,
-    showAboutModal, openAboutModal, closeAboutModal
+    showAboutModal, openAboutModal, closeAboutModal,
+    showLegalModal, openLegalModal, closeLegalModal, legalActiveTab
   };
 };

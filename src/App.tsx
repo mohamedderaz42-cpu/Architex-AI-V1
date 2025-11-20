@@ -37,6 +37,7 @@ import { Loader } from './components/Loader';
 import { useAppStore } from './store/useAppStore';
 import { WhitePaperModal } from './components/WhitePaperModal';
 import { AboutModal } from './components/AboutModal';
+import { LegalModal } from './components/LegalModal';
 
 // Lazy Loaded Heavy Components
 const ScannerInterface = React.lazy(() => import('./components/ScannerInterface').then(module => ({ default: module.ScannerInterface })));
@@ -74,7 +75,8 @@ const App: React.FC = () => {
     products, cart, addToCart, openShoppingCart, openVendorProfile, 
     votingPower, handleClaimStakingRewards, openCreateChallengeModal, handleJoinFounderProgram,
     showWhitePaper, openWhitePaper, closeWhitePaper,
-    showAboutModal, openAboutModal, closeAboutModal
+    showAboutModal, openAboutModal, closeAboutModal,
+    showLegalModal, openLegalModal, closeLegalModal, legalActiveTab
   } = useArchitex();
 
   const renderDashboardContent = () => {
@@ -198,7 +200,7 @@ const App: React.FC = () => {
 
       {/* Modals */}
       {showPaymentModal && <PaymentModal onConfirm={confirmPayment} onCancel={cancelPayment} isProcessing={isProcessingPayment} />}
-      {isProfileVisible && user && <ProfileScreen user={user} projects={projects} orders={orders} serviceAgreements={serviceAgreements} onConfirmDelivery={handleConfirmDelivery} onRequestReturn={handleRequestReturn} onConfirmServiceCompletion={handleConfirmServiceCompletion} onClose={toggleProfile} userTokens={[]} onClaimVestedTokens={async () => {}} onSubscribe={() => {}} onBecomeProvider={() => {}} onBecomeArbitrator={() => {}} onOpenEnterprise={() => {}} onOpenWhitePaper={openWhitePaper} onOpenAbout={openAboutModal} />}
+      {isProfileVisible && user && <ProfileScreen user={user} projects={projects} orders={orders} serviceAgreements={serviceAgreements} userTokens={[]} onConfirmDelivery={handleConfirmDelivery} onRequestReturn={handleRequestReturn} onConfirmServiceCompletion={handleConfirmServiceCompletion} onClaimVestedTokens={async () => {}} onSubscribe={() => {}} onClose={toggleProfile} onBecomeProvider={() => {}} onBecomeArbitrator={() => {}} onOpenEnterprise={() => {}} onOpenWhitePaper={openWhitePaper} onOpenAbout={openAboutModal} onOpenLegal={openLegalModal} />}
       {showUpsellModal && <UpsellModal onConfirm={() => { setActiveTab('market'); closeUpsellModal(); }} onCancel={closeUpsellModal}/>}
       {showCreateBountyModal && <CreateBountyModal user={user} onConfirm={handleCreateBounty} onCancel={closeCreateBountyModal}/>}
       {showMintNftModal && projectToMint && <MintNftModal project={projectToMint} onConfirm={() => handleMintNft(projectToMint.id)} onCancel={closeMintNftModal}/>}
@@ -216,6 +218,7 @@ const App: React.FC = () => {
       {showSubmitToChallengeModal && projectToSubmit && <SubmitToChallengeModal project={projectToSubmit} challenges={designChallenges} onSubmit={handleSubmitProjectToChallenge} onCancel={closeSubmitToChallengeModal} />}
       {showWhitePaper && <WhitePaperModal onClose={closeWhitePaper} />}
       {showAboutModal && <AboutModal onClose={closeAboutModal} />}
+      {showLegalModal && <LegalModal initialTab={legalActiveTab} onClose={closeLegalModal} />}
     </div>
   );
 };
