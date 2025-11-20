@@ -6,7 +6,7 @@ export type MaterialStatus = 'Pending' | 'Ordered' | 'Delivered';
 export type BountyStatus = 'Open' | 'In Progress' | 'In Dispute' | 'Arbitration' | 'Complete';
 export type EscrowState = 'Unfunded' | 'Funded' | 'Released' | 'Refunded';
 export type PromotionType = 'item' | 'invoice';
-export type OrderStatus = 'Processing' | 'Shipped' | 'Delivered' | 'Returned' | 'Return Requested' | 'Refunded' | 'In Dispute';
+export type OrderStatus = 'Processing' | 'Shipped' | 'Delivered' | 'Returned' | 'Return Requested' | 'Refunded' | 'In Dispute' | 'Forwarded to Vendor';
 export type ProofOfInstallationStatus = 'none' | 'pending' | 'submitted' | 'verified' | 'rejected';
 export type ProposalStatus = 'Voting' | 'Passed' | 'Failed' | 'Executing' | 'Executed';
 export type ReputationEventType = 'BountyCompleted' | 'DisputeWon' | 'RatingReceived' | 'ProofOfInstallation';
@@ -44,6 +44,35 @@ export interface ArbitratorProfile {
     resolutionRate: number;
 }
 
+// --- Affiliate Entities ---
+export interface AffiliateProfile {
+    referralCode: string;
+    totalReferrals: number;
+    totalEarnings: number; // In ARCHI
+    pendingEarnings: number;
+    tier: 'Scout' | 'Ambassador';
+    campaigns: { id: string; name: string; clicks: number; conversions: number }[];
+}
+
+// --- Dropshipping Entities ---
+export interface DropshipProfile {
+    storeName: string;
+    isActive: boolean;
+    liabilityAgreed: boolean;
+    totalSales: number;
+    reputationScore: number;
+}
+
+export interface DropshipListing {
+    id: string;
+    originalProductId: string; // Link to manufacturer
+    vendorId: string; // The dropshipper ID
+    markupPrice: number;
+    originalPrice: number;
+    margin: number;
+    active: boolean;
+}
+
 export interface UserEntity {
   id: string;
   piUsername: string;
@@ -54,6 +83,8 @@ export interface UserEntity {
   vendorProfile?: VendorProfile;
   serviceProviderProfile?: ServiceProviderProfile;
   arbitratorProfile?: ArbitratorProfile;
+  affiliateProfile?: AffiliateProfile; // New
+  dropshipProfile?: DropshipProfile; // New
   role: 'user' | 'vendor' | 'service-provider' | 'arbitrator';
   stakedArchi?: number;
   isFounder?: boolean;
@@ -149,6 +180,10 @@ export interface ProductEntity {
     tags?: string[];
     isEcoFriendly?: boolean;
     sustainabilityCertifications?: string[];
+    // Dropshipping Support
+    allowDropshipping?: boolean;
+    wholesalePrice?: number;
+    dropshipListings?: DropshipListing[]; 
 }
 
 export interface CartItem {
@@ -164,6 +199,8 @@ export interface OrderEntity {
     status: OrderStatus;
     createdAt: string;
     proofOfInstallationStatus: ProofOfInstallationStatus;
+    isDropshipOrder?: boolean;
+    dropshipperId?: string;
 }
 
 export interface ShippingZone {

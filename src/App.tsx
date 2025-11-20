@@ -34,6 +34,7 @@ import { AmbientBackground } from './components/AmbientBackground';
 import { CommandPalette } from './components/CommandPalette';
 import { ProjectCard } from './components/ProjectCard'; // Import for Design Tab
 import { Loader } from './components/Loader';
+import { useAppStore } from './store/useAppStore';
 
 // Lazy Loaded Heavy Components
 const ScannerInterface = React.lazy(() => import('./components/ScannerInterface').then(module => ({ default: module.ScannerInterface })));
@@ -42,6 +43,8 @@ const ChallengesGallery = React.lazy(() => import('./components/ChallengesGaller
 const PublicGallery = React.lazy(() => import('./components/PublicGallery').then(module => ({ default: module.PublicGallery })));
 
 const App: React.FC = () => {
+  const { setUser } = useAppStore(); // Get setUser from store to pass down
+
   const {
     phase, isMounted, activeTab, projects, publicProjects, bounties, arbitrators, availableArbitrators, uxTip, user, orders, serviceProviders, serviceAgreements, proposals, designChallenges,
     initialize, setActiveTab, isScanning, scanProgress, currentScanInstruction, startScan, cancelScan,
@@ -64,7 +67,10 @@ const App: React.FC = () => {
     handleShareProject,
     selectedChallenge, submissions, handleSelectChallenge, closeChallengeDetailsModal, handleVoteOnSubmission,
     showSubmitToChallengeModal, projectToSubmit, openSubmitToChallengeModal, closeSubmitToChallengeModal, handleSubmitProjectToChallenge,
-    isCommandPaletteOpen, toggleCommandPalette
+    isCommandPaletteOpen, toggleCommandPalette,
+    // Shop & Common Props
+    products, cart, addToCart, openShoppingCart, openVendorProfile, 
+    votingPower, handleClaimStakingRewards, openCreateChallengeModal, handleJoinFounderProgram
   } = useArchitex();
 
   const renderDashboardContent = () => {
@@ -115,11 +121,22 @@ const App: React.FC = () => {
                 arbitrators={arbitrators}
                 proposals={proposals}
                 user={user}
+                onUpdateUser={setUser}
                 onStake={handleStake}
                 onUnstake={handleUnstake}
                 onVote={handleVote}
                 onExecuteProposal={handleExecuteProposal}
                 onViewTos={openGovernanceTosModal}
+                products={products}
+                cartCount={cart.reduce((acc, item) => acc + item.quantity, 0)}
+                onAddToCart={addToCart}
+                onOpenCart={openShoppingCart}
+                onVendorClick={openVendorProfile}
+                onOpenDetails={(p) => console.log(p)} // Placeholder
+                onJoinFounderProgram={handleJoinFounderProgram}
+                handleClaimStakingRewards={handleClaimStakingRewards}
+                votingPower={votingPower}
+                onCreateChallenge={openCreateChallengeModal}
                 />
             </Suspense>
         );
@@ -177,9 +194,9 @@ const App: React.FC = () => {
 
       {/* Modals */}
       {showPaymentModal && <PaymentModal onConfirm={confirmPayment} onCancel={cancelPayment} isProcessing={isProcessingPayment} />}
-      {isProfileVisible && user && <ProfileScreen user={user} projects={projects} orders={orders} serviceAgreements={serviceAgreements} onConfirmDelivery={handleConfirmDelivery} onRequestReturn={handleRequestReturn} onConfirmServiceCompletion={handleConfirmServiceCompletion} onClose={toggleProfile} />}
+      {isProfileVisible && user && <ProfileScreen user={user} projects={projects} orders={orders} serviceAgreements={serviceAgreements} onConfirmDelivery={handleConfirmDelivery} onRequestReturn={handleRequestReturn} onConfirmServiceCompletion={handleConfirmServiceCompletion} onClose={toggleProfile} userTokens={[]} onClaimVestedTokens={async () => {}} onSubscribe={() => {}} onBecomeProvider={() => {}} onBecomeArbitrator={() => {}} onOpenEnterprise={() => {}} />}
       {showUpsellModal && <UpsellModal onConfirm={() => { setActiveTab('market'); closeUpsellModal(); }} onCancel={closeUpsellModal}/>}
-      {showCreateBountyModal && <CreateBountyModal onConfirm={handleCreateBounty} onCancel={closeCreateBountyModal}/>}
+      {showCreateBountyModal && <CreateBountyModal user={user} onConfirm={handleCreateBounty} onCancel={closeCreateBountyModal}/>}
       {showMintNftModal && projectToMint && <MintNftModal project={projectToMint} onConfirm={() => handleMintNft(projectToMint.id)} onCancel={closeMintNftModal}/>}
       {selectedBounty && <BountyDetailsModal bounty={selectedBounty} arbitrators={availableArbitrators} onClose={closeBountyDetailsModal} onFund={handleInitiateFunding} onRelease={handleReleaseFunds} onDispute={() => handleRaiseDispute(selectedBounty)} onSelectArbitrator={(arbitrator: ArbitratorEntity) => handleSelectArbitrator(selectedBounty, arbitrator)} onOpenLegalShield={() => setShowUserLegalShieldModal(true)} onResolve={handleResolveArbitration}/>}
       {showAgreementModal && agreementText && <AgreementModal agreementText={agreementText} onConfirm={handleConfirmFunding} onCancel={closeAgreementModal}/>}

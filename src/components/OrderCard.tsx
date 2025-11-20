@@ -20,6 +20,7 @@ const statusColors: { [key in OrderEntity['status']]: string } = {
     Returned: 'bg-slate-500/20 text-slate-300',
     Refunded: 'bg-red-500/20 text-red-400',
     'In Dispute': 'bg-red-500 text-white',
+    'Forwarded to Vendor': 'bg-indigo-500/20 text-indigo-400',
 };
 
 const timeAgo = (date: string): string => {

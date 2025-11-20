@@ -1,27 +1,34 @@
-
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity } from '../core/schemas/entities';
+import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity, ProductEntity } from '../core/schemas/entities';
 import * as api from '../core/api/contract';
 import { getProactiveTip, guidedScanInstructions } from '../core/ux-engine/engine';
+import { useAppStore } from '../store/useAppStore';
 
 export type Phase = 'intro' | 'dashboard';
-export type ActiveTab = 'scan' | 'design' | 'market' | 'challenges' | 'explore'; // Added explore
+export type ActiveTab = 'scan' | 'design' | 'market' | 'challenges' | 'explore';
 
 export const useArchitex = () => {
   const [phase, setPhase] = useState<Phase>('intro');
-  const [activeTab, setActiveTab] = useState<ActiveTab>('explore'); // Default to explore for better engagement
+  const [activeTab, setActiveTab] = useState<ActiveTab>('explore');
   const [isMounted, setIsMounted] = useState(false);
   
   // Data State
   const [projects, setProjects] = useState<ProjectEntity[]>([]);
-  const [publicProjects, setPublicProjects] = useState<ProjectEntity[]>([]); // New State
+  const [publicProjects, setPublicProjects] = useState<ProjectEntity[]>([]);
   const [bounties, setBounties] = useState<BountyEntity[]>([]);
   const [arbitrators, setArbitrators] = useState<ArbitratorEntity[]>([]);
   const [availableArbitrators, setAvailableArbitrators] = useState<ArbitratorEntity[]>([]);
   const [user, setUser] = useState<UserEntity | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProfileVisible, setIsProfileVisible] = useState(false);
-  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false); // New State
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  
+  // Shop State
+  const [products, setProducts] = useState<ProductEntity[]>([]);
+  const { cart, addToCart } = useAppStore();
+  const [showShoppingCartModal, setShowShoppingCartModal] = useState(false); // Used by UI potentially
+  const [showVendorProfileModal, setShowVendorProfileModal] = useState(false);
+  const [showCreateChallengeModal, setShowCreateChallengeModal] = useState(false);
 
   // Scanning Flow
   const [isScanning, setIsScanning] = useState(false);
@@ -79,17 +86,18 @@ export const useArchitex = () => {
   useEffect(() => { setIsMounted(true); }, []);
   
   const refreshUserData = async () => {
-      const [userData, userProjects, pubProjects, userBounties, arbitratorsData, ordersData, serviceProvidersData, proposalsData, agreementsData, challengesData] = await Promise.all([
+      const [userData, userProjects, pubProjects, userBounties, arbitratorsData, ordersData, serviceProvidersData, proposalsData, agreementsData, challengesData, productsData] = await Promise.all([
         api.authenticateWithPi(), 
         api.listProjects(), 
-        api.listPublicProjects(), // Fetch Public Projects
+        api.listPublicProjects(),
         api.listBounties(), 
         api.listArbitrators(), 
         api.listOrders(), 
         api.listServiceProviders(), 
         api.listProposals(), 
         api.listServiceAgreements(), 
-        api.listDesignChallenges()
+        api.listDesignChallenges(),
+        api.listVendorProducts()
       ]);
       setUser(userData);
       setProjects(userProjects);
@@ -101,6 +109,7 @@ export const useArchitex = () => {
       setProposals(proposalsData);
       setServiceAgreements(agreementsData);
       setDesignChallenges(challengesData);
+      setProducts(productsData);
   };
 
   const initialize = async () => {
@@ -111,7 +120,7 @@ export const useArchitex = () => {
   };
   
   const toggleProfile = () => setIsProfileVisible(prev => !prev);
-  const toggleCommandPalette = () => setIsCommandPaletteOpen(prev => !prev); // Toggle fn
+  const toggleCommandPalette = () => setIsCommandPaletteOpen(prev => !prev);
 
   const handleProjectInteraction = async (project: ProjectEntity) => { setSelectedProject(project); setShowProjectDetailsModal(true); };
   const closeUpsellModal = () => setShowUpsellModal(false);
@@ -122,11 +131,7 @@ export const useArchitex = () => {
   const confirmPayment = async () => { setIsProcessingPayment(true); await api.generateModelFromScan(); const updatedProjects = await api.listProjects(); setProjects(updatedProjects); setIsProcessingPayment(false); setShowPaymentModal(false); setActiveTab('design'); };
   const cancelPayment = () => setShowPaymentModal(false);
 
-  // ... [Keep existing functions for Bounty, NFT, Commerce, Service, DAO, Challenges unchanged] ...
-  // Re-using existing logic references to keep file concise for this diff. 
-  // Assume all previous handler functions are here.
-  // Adding shortened versions for clarity in this diff, assuming full implementation persists.
-
+  // Wrappers for missing logic
   const openCreateBountyModal = () => setShowCreateBountyModal(true);
   const closeCreateBountyModal = () => setShowCreateBountyModal(false);
   const handleCreateBounty = async (bountyDetails: Omit<BountyEntity, 'id' | 'createdAt' | 'status' | 'escrowState'>) => { await api.createBounty(bountyDetails); const updatedBounties = await api.listBounties(); setBounties(updatedBounties); };
@@ -168,6 +173,15 @@ export const useArchitex = () => {
   const handleSubmitProjectToChallenge = async (challengeId: string) => { if (!projectToSubmit) return; await api.submitProjectToChallenge(projectToSubmit.id, challengeId); closeSubmitToChallengeModal(); };
   const handleVoteOnSubmission = async (submissionId: string) => { if (!user || !selectedChallenge) return; const votingPower = (user.stakedArchi || 0) + user.trustScore; await api.voteOnChallengeSubmission(submissionId, votingPower); const challengeSubmissions = await api.getChallengeSubmissions(selectedChallenge.id); setSubmissions(challengeSubmissions); };
 
+  // New Handlers for App.tsx
+  const openShoppingCart = () => setShowShoppingCartModal(true);
+  const openVendorProfile = () => setShowVendorProfileModal(true);
+  const handleClaimStakingRewards = async () => { await api.claimMiningRewards(); };
+  const openCreateChallengeModal = () => setShowCreateChallengeModal(true);
+  const handleJoinFounderProgram = async () => { await api.joinFounderProgram(); };
+  
+  const votingPower = user ? { total: (user.stakedArchi || 0) + user.trustScore * 50, fromTokens: user.stakedArchi || 0, fromTrust: user.trustScore * 50 } : { total: 0, fromTokens: 0, fromTrust: 0 };
+
   const uxTip = useMemo(() => getProactiveTip(activeTab), [activeTab]);
   const currentScanInstruction = guidedScanInstructions[currentScanStep];
 
@@ -192,7 +206,9 @@ export const useArchitex = () => {
     handleShareProject,
     selectedChallenge, submissions, handleSelectChallenge, closeChallengeDetailsModal, handleVoteOnSubmission,
     showSubmitToChallengeModal, projectToSubmit, openSubmitToChallengeModal, closeSubmitToChallengeModal, handleSubmitProjectToChallenge,
-    // New
-    isCommandPaletteOpen, toggleCommandPalette
+    isCommandPaletteOpen, toggleCommandPalette,
+    // Added for App.tsx compatibility
+    products, cart, addToCart, openShoppingCart, openVendorProfile, 
+    votingPower, handleClaimStakingRewards, openCreateChallengeModal, handleJoinFounderProgram
   };
 };
