@@ -10,6 +10,7 @@ import {
 } from '../schemas/entities';
 import { PiCoinIcon } from '../../components/icons/PiCoinIcon';
 import { ArchitexLogo } from '../../components/icons/ArchitexLogo';
+import { LegalEngine } from '../services/LegalEngine';
 
 // ==========================================
 // ARCHITEX MASTER INTERFACE
@@ -229,12 +230,47 @@ export const MockAdapter: IArchitexProtocol = {
              { id: 'arb_1', name: 'Judge Dredd', specialty: 'Contract Law', fee: 50, resolutionRate: 99, casesResolved: 200, avatarUrl: 'https://placehold.co/100' }
         ],
         listAvailableArbitrators: async () => [],
-        createBounty: async (b) => ({ ...b, id: `bty_${Date.now()}`, status: 'Open', escrowState: 'Unfunded', createdAt: new Date().toISOString() }),
+        
+        // Updated createBounty to include strict fee logic matching DesignerMarketplace.sol
+        createBounty: async (b) => {
+            const fee = b.reward * 0.10; // 10% Platform Fee
+            console.log(`[Smart Contract] Deducting 10% fee (${fee}) to Treasury...`);
+            return { 
+                ...b, 
+                id: `bty_${Date.now()}`, 
+                status: 'Open', 
+                escrowState: 'Unfunded', 
+                createdAt: new Date().toISOString() 
+            };
+        },
+        
         listBounties: async () => [
              { id: 'bty_1', projectId: 'p1', title: '3D Rendering Needed', description: 'Need high quality render.', reward: 500, status: 'Open', createdAt: new Date().toISOString(), escrowState: 'Unfunded' }
         ],
-        getDynamicAgreementText: async () => "Bounty Agreement Contract...",
-        fundBountyEscrow: async (id) => ({ id, projectId: 'p1', title: '', description: '', reward: 0, createdAt: '', status: 'In Progress', escrowState: 'Funded' }),
+        
+        getDynamicAgreementText: async (bounty) => {
+            // Use the new LegalEngine service to generate text
+            const agreement = await LegalEngine.generateAgreement({
+                projectId: bounty.projectId,
+                clientId: 'user_01', // Mock caller
+                providerId: 'TBD',
+                scope: bounty.description,
+                price: bounty.reward,
+                currency: 'ARCHI'
+            });
+            return `AGREEMENT HASH: ${agreement.contentHash}\n\n[Full PDF available at ${agreement.pdfUrl}]`;
+        },
+
+        // Updated fundEscrow to simulate hash check
+        fundBountyEscrow: async (id) => {
+            // In a real scenario, we would check if the Legal Engine has issued a valid hash for this ID
+            console.log(`[MarketplaceEscrow] Verifying Agreement Hash on-chain...`);
+            await new Promise(resolve => setTimeout(resolve, 800)); // Simulate verification delay
+            console.log(`[MarketplaceEscrow] Hash Verified. Funds Locked.`);
+            
+            return { id, projectId: 'p1', title: '', description: '', reward: 0, createdAt: '', status: 'In Progress', escrowState: 'Funded' };
+        },
+
         releaseBountyEscrow: async (id) => ({ id, projectId: 'p1', title: '', description: '', reward: 0, createdAt: '', status: 'Complete', escrowState: 'Released' }),
         raiseDispute: async (id) => ({ id, projectId: 'p1', title: 'Disputed Bounty', description: '', reward: 100, status: 'In Dispute', createdAt: '', escrowState: 'Funded' }),
         selectArbitrator: async (bid, aid) => ({ id: bid, projectId: 'p1', title: '', description: '', reward: 0, createdAt: '', status: 'Arbitration', escrowState: 'Funded' }),
