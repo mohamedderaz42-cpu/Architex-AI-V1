@@ -8,20 +8,22 @@ import { ShippingZones } from './ShippingZones';
 import { PromotionsEngine } from './PromotionsEngine';
 import { VendorApiAccess } from './VendorApiAccess';
 import { VendorFulfillment } from './VendorFulfillment';
+import { VendorDashboard } from './VendorDashboard';
 import { PackageIcon } from './icons/PackageIcon';
 import { TruckIcon } from './icons/TruckIcon';
 import { PercentIcon } from './icons/PercentIcon';
 import { DatabaseIcon } from './icons/DatabaseIcon';
 import { BoxIcon } from './icons/BoxIcon';
+import { ChartBarIcon } from './icons/ChartBarIcon';
 
-type VendorTab = 'products' | 'orders' | 'shipping' | 'promotions' | 'api';
+type VendorTab = 'dashboard' | 'products' | 'orders' | 'shipping' | 'promotions' | 'api';
 
 export const VendorPortal: React.FC = () => {
     const [isVerified, setIsVerified] = useState(false);
     const [hasInsurance, setHasInsurance] = useState(false);
     const [agreedToIndemnity, setAgreedToIndemnity] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<VendorTab>('orders');
+    const [activeTab, setActiveTab] = useState<VendorTab>('dashboard');
 
     const [products, setProducts] = useState<ProductEntity[]>([]);
     const [shippingZones, setShippingZones] = useState<ShippingZone[]>([]);
@@ -34,7 +36,13 @@ export const VendorPortal: React.FC = () => {
         // In a real app, you would sign a transaction to save this to the user's profile
         console.log("Vendor has attested to insurance and indemnity.");
         
-        // Fetch initial data
+        await refreshData();
+
+        setIsVerified(true);
+        setIsLoading(false);
+    };
+
+    const refreshData = async () => {
         const [productsData, zonesData, promosData] = await Promise.all([
             api.listVendorProducts(),
             api.listShippingZones(),
@@ -43,9 +51,6 @@ export const VendorPortal: React.FC = () => {
         setProducts(productsData);
         setShippingZones(zonesData);
         setPromotions(promosData);
-
-        setIsVerified(true);
-        setIsLoading(false);
     };
 
     const handleZoneUpdate = async (zoneId: string, newStatus: boolean) => {
@@ -62,10 +67,12 @@ export const VendorPortal: React.FC = () => {
 
     const renderContent = () => {
         switch (activeTab) {
+            case 'dashboard':
+                return <VendorDashboard products={products} />;
             case 'orders':
                 return <VendorFulfillment />;
             case 'products':
-                return <ProductManagement products={products} />;
+                return <ProductManagement products={products} onRefresh={refreshData} />;
             case 'shipping':
                 return <ShippingZones zones={shippingZones} onZoneUpdate={handleZoneUpdate} />;
             case 'promotions':
@@ -110,8 +117,11 @@ export const VendorPortal: React.FC = () => {
 
     return (
         <div className="flex flex-col h-full">
-            {/* Use justify-start and gap-2 to prevent tabs from being squashed and enable scrolling */}
+            {/* Navigation */}
             <div className="flex-shrink-0 flex items-center justify-start gap-2 p-1 bg-slate-900/50 rounded-full mb-2 overflow-x-auto no-scrollbar px-2">
+                 <button onClick={() => setActiveTab('dashboard')} className={`flex-shrink-0 flex items-center space-x-2 px-3 py-1.5 rounded-full font-semibold text-xs transition-colors duration-300 whitespace-nowrap ${activeTab === 'dashboard' ? 'bg-ai-violet text-white' : 'text-slate-400'}`}>
+                    <ChartBarIcon className="w-4 h-4" /> <span>Overview</span>
+                </button>
                 <button onClick={() => setActiveTab('orders')} className={`flex-shrink-0 flex items-center space-x-2 px-3 py-1.5 rounded-full font-semibold text-xs transition-colors duration-300 whitespace-nowrap ${activeTab === 'orders' ? 'bg-slate-700 text-white' : 'text-slate-400'}`}>
                     <BoxIcon className="w-4 h-4" /> <span>Orders</span>
                 </button>
