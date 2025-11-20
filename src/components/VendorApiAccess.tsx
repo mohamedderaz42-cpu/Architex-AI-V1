@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { DatabaseIcon } from './icons/DatabaseIcon';
-import { EyeIcon } from 'lucide-react'; // Assuming you have this or similar, if not will use standard button
+import { LockIcon } from './icons/LockIcon';
 
 const mockApiKey = "arch_sk_live_xxxxxxxxxxxxxx_vendor";
 
@@ -17,22 +17,22 @@ export const VendorApiAccess: React.FC = () => {
             
             <div className="my-6 text-left">
                  <h4 className="text-xs font-bold text-slate-500 uppercase mb-2">API Access Key</h4>
-                 <div className="p-3 bg-slate-900/50 rounded-lg border border-white/10 relative">
+                 <div className="p-3 bg-slate-900/50 rounded-lg border border-white/10 relative group">
                     <p className="text-xs text-slate-400 mb-1">Your Secret Key:</p>
                     <div className="flex justify-between items-center">
-                        <code className="text-pi-gold text-sm font-mono break-all">
-                            {showKey ? mockApiKey : "•••••••••••••••••••••••••••••"}
+                        <code className={`text-sm font-mono break-all ${showKey ? 'text-pi-gold' : 'text-slate-500 blur-sm select-none'}`}>
+                            {showKey ? mockApiKey : "arch_sk_live_•••••••••••••••••"}
                         </code>
                         <button 
                             onClick={() => setShowKey(!showKey)} 
-                            className="ml-2 text-xs text-slate-500 hover:text-white"
+                            className="ml-2 p-1.5 bg-white/10 rounded hover:bg-white/20 text-xs font-bold text-white transition-colors"
                         >
                             {showKey ? 'Hide' : 'Show'}
                         </button>
                     </div>
                  </div>
-                 <p className="text-[10px] text-red-400 mt-2 flex items-center">
-                    <span className="mr-1">⚠️</span> Keep this key secure. Do not share it in client-side code.
+                 <p className="text-[10px] text-red-400 mt-2 flex items-center bg-red-900/10 p-2 rounded">
+                    <LockIcon className="w-3 h-3 mr-1" /> Keep this key secure. Do not share it in client-side code.
                  </p>
             </div>
             

@@ -1,15 +1,16 @@
-
 import { useState, useRef } from 'react';
 import { ProjectEntity, ScanAnalysis } from '../../core/schemas/entities';
 import * as api from '../../core/api/contract';
 import { guidedScanInstructions } from '../../core/ux-engine/engine';
+import { useAppStore } from '../../store/useAppStore';
 
 export const useDesignStudio = (
     setActiveTab: (tab: any) => void, 
     addToast: (msg: string, type?: 'success' | 'error' | 'info') => void
 ) => {
-    const [projects, setProjects] = useState<ProjectEntity[]>([]);
-    const [publicProjects, setPublicProjects] = useState<ProjectEntity[]>([]);
+    // Use Global State for Projects
+    const { projects, publicProjects, setProjects, setPublicProjects, addProject, updateProject } = useAppStore();
+
     const [selectedProject, setSelectedProject] = useState<ProjectEntity | null>(null);
     const [showProjectDetailsModal, setShowProjectDetailsModal] = useState(false);
     
@@ -73,9 +74,8 @@ export const useDesignStudio = (
         setIsProcessingPayment(true); 
         setPaymentError(null);
         try {
-          await api.generateModelFromScan(); 
-          const updatedProjects = await api.listProjects(); 
-          setProjects(updatedProjects); 
+          const newProject = await api.generateModelFromScan(); 
+          addProject(newProject); // Update Global Store
           setIsProcessingPayment(false); 
           setShowPaymentModal(false); 
           setActiveTab('design');
@@ -96,7 +96,7 @@ export const useDesignStudio = (
     const handleModifyProject = async (project: ProjectEntity) => {
         const updated = await api.incrementProjectModification(project.id);
         const merged = { ...updated, ...project }; 
-        setProjects(prev => prev.map(p => p.id === merged.id ? merged : p));
+        updateProject(merged); // Update Global Store
         setSelectedProject(merged);
     };
 
@@ -106,7 +106,7 @@ export const useDesignStudio = (
     const handleCreateProject = async (data: any) => {
         const newProject = await api.generateModelFromScan(); // Reuse mock generator
         newProject.name = `${data.roomType} - ${data.style}`;
-        setProjects(prev => [newProject, ...prev]);
+        addProject(newProject); // Update Global Store
         addToast("New design generated!", "success");
     };
 
@@ -115,7 +115,7 @@ export const useDesignStudio = (
     const closeMintNftModal = () => { setProjectToMint(null); setShowMintNftModal(false); };
     const handleMintNft = async (projectId: string) => { 
         const updatedProject = await api.mintProjectAsNft(projectId); 
-        setProjects(prevProjects => prevProjects.map(p => p.id === updatedProject.id ? updatedProject : p)); 
+        updateProject(updatedProject); // Update Global Store
         addToast("NFT Minted!", "success"); 
     };
 
@@ -135,7 +135,7 @@ export const useDesignStudio = (
     const currentScanInstruction = guidedScanInstructions[currentScanStep];
 
     return {
-        projects, setProjects, publicProjects, setPublicProjects,
+        projects, publicProjects,
         selectedProject, setSelectedProject,
         showProjectDetailsModal, setShowProjectDetailsModal,
         handleProjectInteraction, handleModifyProject,

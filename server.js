@@ -37,6 +37,8 @@ apiRouter.post('/approve_payment', async (req, res) => {
   if (!PI_API_KEY) {
     console.warn('[SERVER] WARNING: PI_API_KEY is missing. Simulating approval.');
     payments[paymentId] = { status: 'approved' };
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 800));
     return res.json({ success: true, message: 'Payment approved (SIMULATION MODE).' });
   }
 
@@ -61,7 +63,11 @@ apiRouter.post('/approve_payment', async (req, res) => {
 
   } catch (error) {
     const errorData = error.response?.data || error.message;
-    console.error('[SERVER] Failed to approve payment. Details:', JSON.stringify(errorData, null, 2));
+    console.error('[SERVER] Failed to approve payment.');
+    console.error('URL:', `${PI_API_URL}/v2/payments/${paymentId}/approve`);
+    console.error('Status:', error.response?.status);
+    console.error('Data:', JSON.stringify(errorData, null, 2));
+    
     // Return more details to the client for debugging
     res.status(500).json({ 
       error: 'Failed to approve payment on Pi Network',
@@ -90,6 +96,7 @@ apiRouter.post('/complete_payment', async (req, res) => {
         payments[paymentId].status = 'completed';
         payments[paymentId].txid = txid;
     }
+    await new Promise(resolve => setTimeout(resolve, 1000));
     return res.json({ success: true, message: 'Payment completed (SIMULATION MODE).' });
   }
 
@@ -119,7 +126,8 @@ apiRouter.post('/complete_payment', async (req, res) => {
 
   } catch (error) {
     const errorData = error.response?.data || error.message;
-    console.error('[SERVER] Failed to complete payment. Details:', JSON.stringify(errorData, null, 2));
+    console.error('[SERVER] Failed to complete payment.');
+    console.error('Data:', JSON.stringify(errorData, null, 2));
     res.status(500).json({ 
       error: 'Failed to complete payment on Pi Network',
       details: errorData

@@ -1,8 +1,7 @@
-
-import { useState, useEffect, useMemo } from 'react';
-import { UserEntity, TokenEntity, ServiceProviderProfile, ArbitratorProfile } from '../../core/schemas/entities';
+import { useState, useEffect } from 'react';
+import { UserEntity, ServiceProviderProfile, ArbitratorProfile } from '../../core/schemas/entities';
 import * as api from '../../core/api/contract';
-import { getProactiveTip, UXContext } from '../../core/ux-engine/engine';
+import { useAppStore } from '../../store/useAppStore';
 
 export type Phase = 'intro' | 'onboarding' | 'dashboard';
 export type ActiveTab = 'scan' | 'design' | 'market' | 'challenges' | 'explore';
@@ -11,11 +10,12 @@ export const useCore = (addToast: (msg: string, type?: 'success' | 'error' | 'in
   const [phase, setPhase] = useState<Phase>('intro');
   const [activeTab, setActiveTab] = useState<ActiveTab>('design');
   const [isMounted, setIsMounted] = useState(false);
-  const [user, setUser] = useState<UserEntity | null>(null);
-  const [userTokens, setUserTokens] = useState<TokenEntity[]>(api.mockUserTokens);
   const [isLoading, setIsLoading] = useState(true);
   const [isProfileVisible, setIsProfileVisible] = useState(false);
   
+  // Access Global State
+  const { user, setUser, userTokens } = useAppStore();
+
   // Admin & Chat State
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [showProviderOnboarding, setShowProviderOnboarding] = useState(false);

@@ -6,6 +6,11 @@ interface ScannerInterfaceProps {
     onCancel: () => void;
 }
 
+// Extend Window definition for iOS 13+ permission
+interface DeviceOrientationEventiOS extends DeviceOrientationEvent {
+    requestPermission?: () => Promise<'granted' | 'denied'>;
+}
+
 export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction, progress, onCancel }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -63,9 +68,10 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
 
     // iOS 13+ Permission Request Logic - Must be triggered by user interaction
     const requestMotionPermission = async () => {
-        if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+        const requestPermission = (DeviceOrientationEvent as unknown as DeviceOrientationEventiOS).requestPermission;
+        if (typeof requestPermission === 'function') {
             try {
-                const response = await (DeviceOrientationEvent as any).requestPermission();
+                const response = await requestPermission();
                 if (response === 'granted') {
                     setPermissionGranted(true);
                     setShowPermissionButton(false);
@@ -200,7 +206,7 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
                     {showPermissionButton && (
                         <button 
                             onClick={requestMotionPermission}
-                            className="absolute top-4 right-4 z-50 bg-black/60 text-white text-xs font-bold px-3 py-2 rounded-full border border-white/20 hover:bg-black/80 transition-all"
+                            className="absolute top-4 right-4 z-50 bg-black/60 text-white text-xs font-bold px-3 py-2 rounded-full border border-white/20 hover:bg-black/80 transition-all pointer-events-auto"
                         >
                             Enable Motion Sensors
                         </button>
@@ -244,7 +250,7 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
             
             <button
                 onClick={onCancel}
-                className="absolute bottom-6 px-6 py-2 bg-red-500/20 border border-red-500/50 rounded-full text-sm font-semibold text-red-100 backdrop-blur-md hover:bg-red-500/40 transition-all duration-300 z-20"
+                className="absolute bottom-6 px-6 py-2 bg-red-500/20 border border-red-500/50 rounded-full text-sm font-semibold text-red-100 backdrop-blur-md hover:bg-red-500/40 transition-all duration-300 z-20 pointer-events-auto"
             >
                 {cameraError ? 'Go Back' : 'Cancel Scan'}
             </button>

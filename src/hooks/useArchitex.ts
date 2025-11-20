@@ -1,4 +1,3 @@
-
 import { useMemo, useEffect } from 'react';
 import { useToast } from '../components/Toast';
 import { getProactiveTip } from '../core/ux-engine/engine';

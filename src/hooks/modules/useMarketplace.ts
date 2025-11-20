@@ -1,7 +1,7 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { BountyEntity, OrderEntity, ProductEntity, UserEntity, ServiceAgreementEntity, ArbitratorEntity } from '../../core/schemas/entities';
 import * as api from '../../core/api/contract';
+import { useAppStore } from '../../store/useAppStore';
 
 export const useMarketplace = (
     user: UserEntity | null,
@@ -9,6 +9,9 @@ export const useMarketplace = (
     setActiveTab: (tab: any) => void,
     addToast: (msg: string, type?: 'success' | 'error' | 'info') => void
 ) => {
+    // Use Global Store for Cart
+    const { cart, addToCart, removeFromCart, updateCartItem, clearCart } = useAppStore();
+
     // Data
     const [bounties, setBounties] = useState<BountyEntity[]>([]);
     const [orders, setOrders] = useState<OrderEntity[]>([]);
@@ -30,7 +33,6 @@ export const useMarketplace = (
     // E-Commerce Modals
     const [showInstallationUpsellModal, setShowInstallationUpsellModal] = useState(false);
     const [orderForUpsell, setOrderForUpsell] = useState<OrderEntity | null>(null);
-    const [cart, setCart] = useState<{ product: ProductEntity; quantity: number }[]>([]);
     const [showShoppingCartModal, setShowShoppingCartModal] = useState(false);
     const [showVendorProfileModal, setShowVendorProfileModal] = useState(false);
     const [selectedVendor, setSelectedVendor] = useState<UserEntity | null>(null);
@@ -133,24 +135,13 @@ export const useMarketplace = (
     };
 
     // Cart & Orders
-    const addToCart = (product: ProductEntity) => {
-        setCart(prev => {
-            const existing = prev.find(item => item.product.id === product.id);
-            if (existing) return prev.map(item => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
-            return [...prev, { product, quantity: 1 }];
-        });
-        addToast(`${product.name} added to cart`, 'success');
-    };
-    const removeFromCart = (productId: string) => setCart(prev => prev.filter(item => item.product.id !== productId));
-    const updateCartItem = (oldId: string, newId: string) => {
-        const newProduct = products.find(p => p.id === newId);
-        if (!newProduct) return;
-        setCart(prev => prev.map(item => item.product.id === oldId ? { ...item, product: newProduct } : item));
-        addToast("Cart updated with optimization", 'info');
-    };
     const openShoppingCart = () => setShowShoppingCartModal(true);
     const closeShoppingCart = () => setShowShoppingCartModal(false);
-    const handleCheckout = async () => { setShowShoppingCartModal(false); setCart([]); addToast("Order placed successfully!", "success"); };
+    const handleCheckout = async () => { 
+        setShowShoppingCartModal(false); 
+        clearCart(); 
+        addToast("Order placed successfully!", "success"); 
+    };
     const openVendorProfile = (vendorId: string) => {
         const vendor = serviceProviders.find(u => u.id === vendorId) || user;
         if (vendor) { setSelectedVendor(vendor); setShowVendorProfileModal(true); }
