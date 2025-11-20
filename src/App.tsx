@@ -1,6 +1,5 @@
-
-
 import React from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { GlassPanel } from './components/GlassPanel';
 import { IconButton } from './components/IconButton';
 import { ArchitexLogo } from './components/icons/ArchitexLogo';
@@ -77,53 +76,71 @@ const AppContent: React.FC = () => {
     showSubmitToChallengeModal, projectToSubmit, openSubmitToChallengeModal, closeSubmitToChallengeModal, handleSubmitProjectToChallenge,
     showCreateChallengeModal, openCreateChallengeModal, closeCreateChallengeModal, handleCreateChallenge,
     showCreateProjectModal, openCreateProjectModal, closeCreateProjectModal, handleCreateProject,
-    // Cart & Vendor
     cart, addToCart, removeFromCart, updateCartItem, openShoppingCart, closeShoppingCart, showShoppingCartModal, handleCheckout,
     openVendorProfile, showVendorProfileModal, selectedVendor, setShowVendorProfileModal,
-    // DAO Discussion
     selectedProposal, showProposalDetailsModal, openProposalDetails, closeProposalDetails, handleSubmitComment,
-    // Admin & Chat
     isAdminModalOpen, openAdminModal, closeAdminModal,
     isChatOpen, openChat, closeChat, messages, handleSendMessage, chatContextId,
-    // Wallet & Founder
     userTokens, handleClaimVestedTokens, handleJoinFounderProgram,
-    // Subscription
     handleSubscribe,
-    // Professional Onboarding
     showProviderOnboarding, setShowProviderOnboarding, handleProviderRegistration,
     showArbitratorOnboarding, setShowArbitratorOnboarding, handleArbitratorRegistration,
-    // New Props
     handleClaimStakingRewards, votingPower,
-    // Enterprise
     showEnterprisePortal, openEnterprisePortal, closeEnterprisePortal
   } = useArchitex();
 
+  // --- Content Rendering Logic with Grid Support ---
   const renderDashboardContent = () => {
     switch (activeTab) {
       case 'scan':
         return isScanning ? <ScannerInterface instruction={currentScanInstruction} progress={scanProgress} onCancel={cancelScan} /> : (
-          <div className="text-center flex flex-col items-center w-full">
-            <h2 className="text-2xl font-bold text-white">Room Scanner</h2>
-            <div className="w-full max-w-xs px-2 mt-4"><ArchieBot message={uxTip} /></div>
-            <button onClick={startScan} className="group mt-8 flex items-center justify-center px-6 py-3 bg-pi-gold/80 border border-pi-gold/90 rounded-full text-lg font-semibold text-white backdrop-blur-md hover:bg-pi-gold hover:shadow-glow-violet transition-all duration-300">Activate Scanner</button>
+          <div className="text-center flex flex-col items-center justify-center h-full w-full p-6">
+            <motion.div initial={{scale: 0.9, opacity: 0}} animate={{scale: 1, opacity: 1}} className="relative w-48 h-48 mb-8">
+                 <div className="absolute inset-0 bg-pi-gold/20 rounded-full blur-3xl animate-pulse"></div>
+                 <ScanIcon className="w-full h-full text-pi-gold relative z-10 drop-shadow-lg" />
+            </motion.div>
+            <h2 className="text-3xl font-bold text-white mb-2">Reality Scanner</h2>
+            <p className="text-slate-400 max-w-xs mb-6">Use LIDAR simulation to capture your physical space in seconds.</p>
+            <div className="w-full max-w-xs mb-8"><ArchieBot message={uxTip} /></div>
+            <motion.button whileHover={{scale: 1.05}} whileTap={{scale: 0.95}} onClick={startScan} className="group flex items-center justify-center px-8 py-4 bg-pi-gold text-brand-dark rounded-full text-xl font-bold shadow-[0_0_20px_rgba(253,179,0,0.4)] hover:shadow-[0_0_30px_rgba(253,179,0,0.6)] transition-all duration-300">
+                Activate Scanner
+            </motion.button>
           </div>
         );
       case 'design':
         return (
           <div className="w-full h-full flex flex-col">
-            <div className="flex justify-between items-center mb-4 px-2">
-                <h2 className="text-2xl font-bold text-white">Design Studio</h2>
-                <div className="flex space-x-2">
-                    <button onClick={() => setActiveTab('explore')} className="p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white hover:bg-slate-700" title="Explore Community">
+            <div className="flex justify-between items-center mb-6 px-2">
+                <div>
+                    <h2 className="text-3xl font-bold text-white">Design Studio</h2>
+                    <p className="text-sm text-slate-400">Your creative workspace</p>
+                </div>
+                <div className="flex space-x-3">
+                    <motion.button whileHover={{scale: 1.05}} onClick={() => setActiveTab('explore')} className="p-3 bg-slate-800 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 border border-white/5" title="Explore Community">
                         <SearchIcon className="w-5 h-5" />
-                    </button>
-                    <button onClick={openCreateProjectModal} className="flex items-center text-ai-violet hover:text-white transition-colors duration-300"><PlusCircleIcon className="w-6 h-6 mr-2" /><span className="font-semibold">New</span></button>
+                    </motion.button>
+                    <motion.button whileHover={{scale: 1.05}} onClick={openCreateProjectModal} className="flex items-center px-5 py-2 bg-ai-violet text-white rounded-full font-bold shadow-lg hover:bg-violet-600 transition-colors">
+                        <PlusCircleIcon className="w-5 h-5 mr-2" /> New Project
+                    </motion.button>
                 </div>
             </div>
-            <div className="flex-grow overflow-y-auto space-y-4 pr-2">
-                {projects.map((project) => (<ProjectCard key={project.id} project={project} onCardClick={() => handleProjectInteraction(project)} onMintClick={() => openMintNftModal(project)} />))}
+            
+            {/* Responsive Grid for Projects */}
+            <div className="flex-grow overflow-y-auto pr-2 pb-20">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {projects.map((project, index) => (
+                        <motion.div 
+                            key={project.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.1 }}
+                        >
+                            <ProjectCard project={project} onCardClick={() => handleProjectInteraction(project)} onMintClick={() => openMintNftModal(project)} />
+                        </motion.div>
+                    ))}
+                </div>
             </div>
-            <div className="mt-4 px-2"><ArchieBot message={uxTip} /></div>
+            <div className="mt-auto pt-2"><ArchieBot message={uxTip} /></div>
           </div>
         );
       case 'explore':
@@ -143,17 +160,13 @@ const AppContent: React.FC = () => {
           onVote={handleVote}
           onExecuteProposal={handleExecuteProposal}
           onViewTos={openGovernanceTosModal}
-          // New Props for Shop
           products={products}
           cartCount={cart.length}
           onAddToCart={addToCart}
           onOpenCart={openShoppingCart}
           onVendorClick={openVendorProfile}
-          // DAO Discussion
           onOpenDetails={openProposalDetails}
-          // Founder Logic
           onJoinFounderProgram={handleJoinFounderProgram}
-          // DAO Props
           handleClaimStakingRewards={handleClaimStakingRewards}
           votingPower={votingPower}
           onCreateChallenge={openCreateChallengeModal}
@@ -165,59 +178,135 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-brand-dark text-slate-100 flex flex-col items-center p-4 overflow-hidden antialiased">
+    <div className="h-screen w-full bg-brand-dark text-slate-100 overflow-hidden flex flex-col md:flex-row">
       {/* Sandbox Indicator */}
-      <div className="fixed top-0 left-0 w-full bg-pi-gold/80 text-brand-dark text-xs font-bold text-center py-1 z-[90] backdrop-blur-sm">
+      <div className="fixed top-0 left-0 w-full bg-pi-gold/80 text-brand-dark text-xs font-bold text-center py-0.5 z-[110] backdrop-blur-sm pointer-events-none">
           TESTNET SANDBOX MODE
       </div>
 
       {phase === 'onboarding' && <OnboardingTour onComplete={completeOnboarding} />}
 
-      <div className={`absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-1000 ${phase === 'intro' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+      {/* Intro Screen */}
+      <div className={`absolute inset-0 z-50 bg-brand-dark flex flex-col items-center justify-center transition-opacity duration-1000 ${phase === 'intro' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         <div className={`transition-all duration-700 ease-out ${isMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-          <GlassPanel className="p-8 text-center"><ArchitexLogo className="w-24 h-24 mx-auto mb-6" /><h1 className="text-4xl font-bold text-white tracking-wider">Architex</h1><p className="mt-2 text-slate-300">The Future of Design, Decentralized.</p></GlassPanel>
+          <GlassPanel className="p-12 text-center border-ai-violet/30 shadow-[0_0_50px_rgba(139,92,246,0.2)]">
+              <ArchitexLogo className="w-32 h-32 mx-auto mb-8 animate-float" />
+              <h1 className="text-5xl font-bold text-white tracking-wider mb-4 bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">Architex</h1>
+              <p className="text-slate-400 text-lg">The Future of Design, Decentralized.</p>
+          </GlassPanel>
         </div>
-        <button onClick={initialize} className={`group mt-12 flex items-center justify-center px-8 py-3 bg-ai-violet/80 border border-ai-violet/90 rounded-full text-lg font-semibold text-white backdrop-blur-md hover:bg-ai-violet hover:shadow-glow-violet transition-all duration-300 ${isMounted ? 'opacity-100 translate-y-0 delay-300' : 'opacity-0 translate-y-10'}`}>Initialize Blueprint <ChevronRightIcon className="w-6 h-6 ml-2 group-hover:translate-x-1 transition-transform duration-300" /></button>
+        <motion.button 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={initialize} 
+            className={`group mt-16 flex items-center justify-center px-10 py-4 bg-ai-violet border border-ai-violet/50 rounded-full text-xl font-bold text-white shadow-glow-violet transition-all duration-300 ${isMounted ? 'opacity-100 translate-y-0 delay-300' : 'opacity-0 translate-y-10'}`}
+        >
+            Initialize Blueprint <ChevronRightIcon className="w-6 h-6 ml-3 group-hover:translate-x-1 transition-transform duration-300" />
+        </motion.button>
       </div>
 
-      <div className={`w-full max-w-md h-full flex flex-col transition-opacity duration-1000 ${phase === 'dashboard' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-        <header className="relative flex-shrink-0 pt-8 pb-4 text-center"><ArchitexLogo className="w-16 h-16 mx-auto mb-2 text-ai-violet"/><h1 className="text-2xl font-bold text-slate-200">Design HUD</h1><button onClick={toggleProfile} className="absolute top-8 right-0 p-2 text-slate-400 hover:text-white transition-colors"><UserIcon className="w-7 h-7" /></button></header>
-        <main className="flex-grow flex items-center justify-center p-1 min-h-0 pb-32">
-            {renderDashboardContent()}
+      {/* Main Dashboard Layout */}
+      <div className={`flex-grow flex h-full transition-opacity duration-1000 ${phase === 'dashboard' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        
+        {/* DESKTOP SIDEBAR */}
+        <nav className="hidden md:flex flex-col w-64 bg-slate-900/50 border-r border-white/5 p-4 pt-8 z-40 backdrop-blur-xl">
+            <div className="flex items-center mb-10 px-2">
+                <ArchitexLogo className="w-10 h-10 mr-3 text-ai-violet" />
+                <h1 className="text-2xl font-bold text-white tracking-wide">Architex</h1>
+            </div>
+            
+            <div className="space-y-2 flex-grow">
+                <IconButton isSidebar icon={<ScanIcon />} label="Scan Space" isActive={activeTab === 'scan'} onClick={() => setActiveTab('scan')} activeColor="pi-gold"/>
+                <IconButton isSidebar icon={<DesignIcon />} label="Design Studio" isActive={activeTab === 'design' || activeTab === 'explore'} onClick={() => setActiveTab('design')} activeColor="ai-violet"/>
+                <IconButton isSidebar icon={<MarketIcon />} label="Marketplace" isActive={activeTab === 'market'} onClick={() => setActiveTab('market')} activeColor="eco-green"/>
+                <IconButton isSidebar icon={<AwardIcon />} label="Challenges" isActive={activeTab === 'challenges'} onClick={() => setActiveTab('challenges')} activeColor="pi-gold"/>
+            </div>
+
+            <div className="mt-auto pt-4 border-t border-white/5">
+                <div 
+                    className="flex items-center p-3 rounded-xl bg-white/5 hover:bg-white/10 cursor-pointer transition-colors"
+                    onClick={toggleProfile}
+                >
+                    <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center mr-3 border border-white/10">
+                         <UserIcon className="w-5 h-5 text-slate-300" />
+                    </div>
+                    <div>
+                        <div className="text-sm font-bold text-white">{user?.piUsername || 'User'}</div>
+                        <div className="text-xs text-slate-400">View Profile</div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        {/* MOBILE HEADER (Only visible on mobile) */}
+        <header className="md:hidden fixed top-0 left-0 right-0 h-16 bg-brand-dark/80 backdrop-blur-md z-40 flex items-center justify-between px-4 border-b border-white/5">
+             <div className="flex items-center">
+                <ArchitexLogo className="w-8 h-8 mr-2 text-ai-violet"/>
+                <h1 className="text-xl font-bold text-slate-200">Design HUD</h1>
+            </div>
+            <button onClick={toggleProfile} className="p-2 text-slate-400 hover:text-white transition-colors">
+                <UserIcon className="w-6 h-6" />
+            </button>
+        </header>
+
+        {/* MAIN CONTENT AREA */}
+        <main className="flex-grow relative overflow-hidden pt-16 md:pt-0 pb-24 md:pb-0">
+            <div className="h-full w-full max-w-7xl mx-auto p-2 md:p-6">
+                <AnimatePresence mode="wait">
+                    <motion.div
+                        key={activeTab}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        className="h-full"
+                    >
+                        {renderDashboardContent()}
+                    </motion.div>
+                </AnimatePresence>
+            </div>
         </main>
-        <footer className="fixed bottom-4 left-4 right-4 z-50 max-w-md mx-auto">
-          <GlassPanel className="p-2 rounded-full"><nav className="flex items-center justify-around">
-              <IconButton icon={<ScanIcon />} label="Scan" isActive={activeTab === 'scan'} onClick={() => setActiveTab('scan')} activeColor="pi-gold"/>
-              <IconButton icon={<DesignIcon />} label="Design" isActive={activeTab === 'design' || activeTab === 'explore'} onClick={() => setActiveTab('design')} activeColor="ai-violet"/>
-              <IconButton icon={<MarketIcon />} label="Market" isActive={activeTab === 'market'} onClick={() => setActiveTab('market')} activeColor="eco-green"/>
-              <IconButton icon={<AwardIcon />} label="Challenges" isActive={activeTab === 'challenges'} onClick={() => setActiveTab('challenges')} activeColor="pi-gold"/>
-          </nav></GlassPanel>
+
+        {/* MOBILE BOTTOM BAR */}
+        <footer className="md:hidden fixed bottom-4 left-4 right-4 z-50">
+          <GlassPanel className="p-2 rounded-full shadow-2xl border-t border-white/10 bg-brand-dark/80 backdrop-blur-xl">
+              <nav className="flex items-center justify-around">
+                  <IconButton icon={<ScanIcon />} label="Scan" isActive={activeTab === 'scan'} onClick={() => setActiveTab('scan')} activeColor="pi-gold"/>
+                  <IconButton icon={<DesignIcon />} label="Design" isActive={activeTab === 'design' || activeTab === 'explore'} onClick={() => setActiveTab('design')} activeColor="ai-violet"/>
+                  <IconButton icon={<MarketIcon />} label="Market" isActive={activeTab === 'market'} onClick={() => setActiveTab('market')} activeColor="eco-green"/>
+                  <IconButton icon={<AwardIcon />} label="Challenges" isActive={activeTab === 'challenges'} onClick={() => setActiveTab('challenges')} activeColor="pi-gold"/>
+              </nav>
+          </GlassPanel>
         </footer>
       </div>
 
-      {showPaymentModal && <PaymentModal onConfirm={confirmPayment} onCancel={cancelPayment} isProcessing={isProcessingPayment} error={paymentError} analysis={scanAnalysis} />}
-      {showCreateProjectModal && <CreateProjectModal onConfirm={handleCreateProject} onCancel={closeCreateProjectModal} />}
-      {showCreateChallengeModal && <CreateChallengeModal onConfirm={handleCreateChallenge} onCancel={closeCreateChallengeModal} />}
-
-      {/* Profile with Admin Link Injection */}
-      {isProfileVisible && user && (
-          <ProfileScreen 
-            user={user} 
-            projects={projects} 
-            orders={orders} 
-            serviceAgreements={serviceAgreements}
-            userTokens={userTokens} 
-            onConfirmDelivery={handleConfirmDelivery} 
-            onRequestReturn={handleRequestReturn} 
-            onConfirmServiceCompletion={handleConfirmServiceCompletion} 
-            onClaimVestedTokens={handleClaimVestedTokens}
-            onSubscribe={handleSubscribe}
-            onClose={toggleProfile}
-            onBecomeProvider={() => setShowProviderOnboarding(true)}
-            onBecomeArbitrator={() => setShowArbitratorOnboarding(true)}
-            onOpenEnterprise={openEnterprisePortal}
-          />
-      )}
+      {/* Modals & Overlays */}
+      <AnimatePresence>
+        {showPaymentModal && <PaymentModal key="payment" onConfirm={confirmPayment} onCancel={cancelPayment} isProcessing={isProcessingPayment} error={paymentError} analysis={scanAnalysis} />}
+        {showCreateProjectModal && <CreateProjectModal key="createProj" onConfirm={handleCreateProject} onCancel={closeCreateProjectModal} />}
+        {showCreateChallengeModal && <CreateChallengeModal key="createChal" onConfirm={handleCreateChallenge} onCancel={closeCreateChallengeModal} />}
+        
+        {isProfileVisible && user && (
+            <ProfileScreen 
+                key="profile"
+                user={user} 
+                projects={projects} 
+                orders={orders} 
+                serviceAgreements={serviceAgreements}
+                userTokens={userTokens} 
+                onConfirmDelivery={handleConfirmDelivery} 
+                onRequestReturn={handleRequestReturn} 
+                onConfirmServiceCompletion={handleConfirmServiceCompletion} 
+                onClaimVestedTokens={handleClaimVestedTokens}
+                onSubscribe={handleSubscribe}
+                onClose={toggleProfile}
+                onBecomeProvider={() => setShowProviderOnboarding(true)}
+                onBecomeArbitrator={() => setShowArbitratorOnboarding(true)}
+                onOpenEnterprise={openEnterprisePortal}
+            />
+        )}
+      </AnimatePresence>
+      
       {isProfileVisible && (
         <div className="fixed bottom-6 right-6 z-[70]">
             <button onClick={openAdminModal} className="text-[10px] text-slate-600 hover:text-slate-400 font-mono bg-black/20 px-2 py-1 rounded">Admin Access</button>
@@ -239,7 +328,6 @@ const AppContent: React.FC = () => {
       {showAgreementModal && agreementText && <AgreementModal agreementText={agreementText} onConfirm={handleConfirmFunding} onCancel={closeAgreementModal}/>}
       {showInstallationUpsellModal && orderForUpsell && <InstallationUpsellModal order={orderForUpsell} onConfirm={() => setShowInstallationUpsellModal(false)} onCancel={() => setShowInstallationUpsellModal(false)}/>}
       
-      {/* Enhanced Project Details with Chat and Share */}
       {showProjectDetailsModal && selectedProject && (
         <ProjectDetailsModal 
             project={selectedProject} 
@@ -252,7 +340,6 @@ const AppContent: React.FC = () => {
         />
       )}
       
-      {/* Social Share Modal */}
       {showShareModal && projectToShare && (
           <ShareModal 
             project={projectToShare} 
@@ -270,7 +357,6 @@ const AppContent: React.FC = () => {
       {selectedChallenge && <ChallengeDetailsModal challenge={selectedChallenge} submissions={submissions} onVote={handleVoteOnSubmission} onClose={closeChallengeDetailsModal} />}
       {showSubmitToChallengeModal && projectToSubmit && <SubmitToChallengeModal project={projectToSubmit} challenges={designChallenges} onSubmit={handleSubmitProjectToChallenge} onCancel={closeSubmitToChallengeModal} />}
       
-      {/* New Modals */}
       {showShoppingCartModal && (
         <ShoppingCartModal 
             cart={cart} 
@@ -284,11 +370,9 @@ const AppContent: React.FC = () => {
       {showVendorProfileModal && selectedVendor && <VendorProfileModal vendor={selectedVendor} onClose={() => setShowVendorProfileModal(false)} />}
       {showProposalDetailsModal && selectedProposal && <ProposalDetailsModal proposal={selectedProposal} onClose={closeProposalDetails} onComment={handleSubmitComment} />}
       
-      {/* Onboarding Modals */}
       {showProviderOnboarding && <ServiceProviderOnboarding onRegister={handleProviderRegistration} onClose={() => setShowProviderOnboarding(false)} />}
       {showArbitratorOnboarding && <ArbitratorOnboarding onRegister={handleArbitratorRegistration} onClose={() => setShowArbitratorOnboarding(false)} />}
       
-      {/* Enterprise */}
       {showEnterprisePortal && <EnterprisePortal onClose={closeEnterprisePortal} />}
 
       {isAdminModalOpen && <AdminPortal onClose={closeAdminModal} />}

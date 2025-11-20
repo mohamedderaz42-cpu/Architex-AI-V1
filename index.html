@@ -19,6 +19,17 @@
             boxShadow: {
               'glow-violet': '0 0 20px 5px rgba(139, 92, 246, 0.3)',
               'glow-green': '0 0 20px 5px rgba(16, 185, 129, 0.3)',
+            },
+            animation: {
+              'blob': 'blob 7s infinite',
+            },
+            keyframes: {
+              blob: {
+                '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                '100%': { transform: 'translate(0px, 0px) scale(1)' },
+              }
             }
           }
         }
@@ -60,12 +71,13 @@
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
     "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
-    "zustand": "https://aistudiocdn.com/zustand@^5.0.8"
+    "zustand": "https://aistudiocdn.com/zustand@^5.0.8",
+    "framer-motion": "https://aistudiocdn.com/framer-motion@^11.0.8"
   }
 }
 </script>
 </head>
-  <body class="bg-brand-dark">
+  <body class="bg-brand-dark overflow-x-hidden">
     <div id="root"></div>
     <script type="module" src="/src/index.tsx"></script>
   </body>

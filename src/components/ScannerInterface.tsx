@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 
 interface ScannerInterfaceProps {
     instruction: string;
@@ -16,8 +17,19 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [cameraError, setCameraError] = useState(false);
     const [parallax, setParallax] = useState({ x: 0, y: 0 });
-    const [permissionGranted, setPermissionGranted] = useState(false);
     const [showPermissionButton, setShowPermissionButton] = useState(false);
+    const lastProgressRef = useRef(0);
+
+    // Haptic Feedback Effect
+    useEffect(() => {
+        // Trigger haptic on significant progress steps (every 10%)
+        if (progress > lastProgressRef.current + 10) {
+            if (navigator.vibrate) {
+                navigator.vibrate(15); // Short, crisp vibration
+            }
+            lastProgressRef.current = progress;
+        }
+    }, [progress]);
 
     useEffect(() => {
         const startCamera = async () => {
@@ -40,9 +52,7 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
         if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
             setShowPermissionButton(true);
         } else {
-            // Non-iOS or older devices, try adding listener directly
             window.addEventListener('deviceorientation', handleOrientation);
-            setPermissionGranted(true);
         }
 
         return () => {
@@ -54,11 +64,8 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
         };
     }, []);
 
-    // Gyroscope Parallax Handler
     const handleOrientation = (event: DeviceOrientationEvent) => {
         if (event.beta && event.gamma) {
-            // Beta: -180 to 180 (x), Gamma: -90 to 90 (y)
-            // Limit movement
             setParallax({
                 x: Math.min(Math.max(event.gamma * 0.5, -20), 20),
                 y: Math.min(Math.max(event.beta * 0.5, -20), 20)
@@ -66,22 +73,16 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
         }
     };
 
-    // iOS 13+ Permission Request Logic - Must be triggered by user interaction
     const requestMotionPermission = async () => {
         const requestPermission = (DeviceOrientationEvent as unknown as DeviceOrientationEventiOS).requestPermission;
         if (typeof requestPermission === 'function') {
             try {
                 const response = await requestPermission();
                 if (response === 'granted') {
-                    setPermissionGranted(true);
                     setShowPermissionButton(false);
                     window.addEventListener('deviceorientation', handleOrientation);
-                } else {
-                    alert('Motion permission is required for the 3D scanning effect.');
                 }
-            } catch (e) {
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
         }
     };
 
@@ -100,12 +101,9 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
                 canvas.width = canvas.clientWidth;
                 canvas.height = canvas.clientHeight;
             }
-
-            // Fade existing canvas
             ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Add new random points (simulating feature detection)
             if (Math.random() > 0.5) {
                 for (let i = 0; i < 3; i++) {
                     points.push({
@@ -116,17 +114,11 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
                 }
             }
 
-            // Draw points
-            ctx.fillStyle = '#10B981'; // Eco-green
+            ctx.fillStyle = '#10B981';
             for (let i = points.length - 1; i >= 0; i--) {
                 const p = points[i];
                 p.age++;
-                
-                if (p.age > 30) {
-                    points.splice(i, 1);
-                    continue;
-                }
-                
+                if (p.age > 30) { points.splice(i, 1); continue; }
                 const opacity = 1 - (p.age / 30);
                 ctx.globalAlpha = opacity;
                 ctx.beginPath();
@@ -135,11 +127,10 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
             }
             ctx.globalAlpha = 1.0;
 
-            // Draw Scan Grid (Lidar effect)
+            // LiDAR Grid Line
             const time = Date.now() / 1000;
-            const scanY = (time % 2) * canvas.height; // Sweep every 2 seconds
-            
-            ctx.strokeStyle = 'rgba(253, 179, 0, 0.3)'; // Pi Gold
+            const scanY = (time % 2) * canvas.height;
+            ctx.strokeStyle = 'rgba(253, 179, 0, 0.3)';
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(0, scanY);
@@ -148,112 +139,82 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
 
             animationFrameId = requestAnimationFrame(render);
         };
-
         render();
-
         return () => cancelAnimationFrame(animationFrameId);
     }, []);
 
-    const strokeWidth = 8;
     const radius = 80;
     const circumference = 2 * Math.PI * radius;
     const offset = circumference - (progress / 100) * circumference;
 
     return (
-        <div className="w-full h-full flex flex-col items-center justify-center relative bg-black rounded-3xl overflow-hidden">
-            {/* Camera Feed Layer */}
+        <div className="w-full h-full flex flex-col items-center justify-center relative bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/10">
             {!cameraError ? (
-                <video 
-                    ref={videoRef} 
-                    autoPlay 
-                    playsInline 
-                    muted 
-                    className="absolute inset-0 w-full h-full object-cover opacity-80"
-                />
+                <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover opacity-80" />
             ) : (
                 <div className="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center p-8 text-center">
                     <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4">
-                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-slate-500">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-                        </svg>
+                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-slate-500"><path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" /></svg>
                     </div>
                    <h3 className="text-white font-bold mb-2">Camera Access Denied</h3>
-                   <p className="text-slate-400 text-sm mb-6">Please check your browser permissions to enable the Room Scanner.</p>
+                   <p className="text-slate-400 text-sm mb-6">Please check your browser permissions.</p>
                 </div>
             )}
 
-            {/* Canvas Overlay for SLAM Visuals */}
             <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-0" />
 
-            {/* Parallax Grid Overlay (Atmosphere) */}
+            {/* AR HUD Overlay */}
             <div className="absolute inset-0 opacity-20 pointer-events-none" style={{
                 transform: `translate(${parallax.x}px, ${parallax.y}px)`,
                 transition: 'transform 0.1s ease-out',
                 backgroundImage: 'linear-gradient(to right, #FDB300 1px, transparent 1px), linear-gradient(to bottom, #FDB300 1px, transparent 1px)',
                 backgroundSize: '40px 40px',
-                maskImage: 'radial-gradient(circle at center, transparent 30%, black 100%)',
-                width: '120%',
-                height: '120%',
-                left: '-10%',
-                top: '-10%'
+                width: '120%', height: '120%', left: '-10%', top: '-10%'
             }}></div>
             
             <div className="absolute inset-0 bg-gradient-to-t from-brand-dark via-transparent to-brand-dark/50 pointer-events-none"></div>
             
             {!cameraError && (
                 <>
-                    {/* iOS Permission Button */}
                     {showPermissionButton && (
-                        <button 
-                            onClick={requestMotionPermission}
-                            className="absolute top-4 right-4 z-50 bg-black/60 text-white text-xs font-bold px-3 py-2 rounded-full border border-white/20 hover:bg-black/80 transition-all pointer-events-auto"
-                        >
-                            Enable Motion Sensors
-                        </button>
+                        <button onClick={requestMotionPermission} className="absolute top-4 right-4 z-50 bg-black/60 text-white text-xs font-bold px-3 py-2 rounded-full border border-white/20 hover:bg-black/80 transition-all pointer-events-auto">Enable Motion Sensors</button>
                     )}
 
                     <div className="relative w-48 h-48 flex items-center justify-center z-10">
                         <svg className="absolute w-full h-full transform -rotate-90" viewBox="0 0 200 200">
-                            <circle
-                                cx="100"
-                                cy="100"
-                                r={radius}
-                                strokeWidth={strokeWidth}
-                                className="stroke-pi-gold/10"
-                                fill="transparent"
-                            />
-                            <circle
-                                cx="100"
-                                cy="100"
-                                r={radius}
-                                strokeWidth={strokeWidth}
-                                className="stroke-pi-gold drop-shadow-[0_0_10px_rgba(253,179,0,0.8)]"
-                                fill="transparent"
-                                strokeDasharray={circumference}
-                                strokeDashoffset={offset}
-                                strokeLinecap="round"
-                                style={{ transition: 'stroke-dashoffset 0.5s ease-out' }}
-                            />
+                            <circle cx="100" cy="100" r={radius} strokeWidth="8" className="stroke-pi-gold/10" fill="transparent" />
+                            <circle cx="100" cy="100" r={radius} strokeWidth="8" className="stroke-pi-gold drop-shadow-[0_0_15px_rgba(253,179,0,0.6)]" fill="transparent" strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" style={{ transition: 'stroke-dashoffset 0.5s ease-out' }} />
                         </svg>
                         <div className="text-center">
-                            <div className="text-4xl font-bold text-pi-gold drop-shadow-md">{Math.round(progress)}%</div>
+                            <motion.div 
+                                key={Math.round(progress)}
+                                initial={{ scale: 0.8, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                className="text-4xl font-bold text-pi-gold drop-shadow-md"
+                            >
+                                {Math.round(progress)}%
+                            </motion.div>
                         </div>
                     </div>
 
-                    <div className="mt-8 p-4 bg-black/40 backdrop-blur-md rounded-xl border border-white/10 z-10 max-w-xs">
-                        <p className="text-lg text-center text-white font-medium animate-pulse">
-                            {instruction}
-                        </p>
-                    </div>
+                    <motion.div 
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        className="mt-8 p-4 bg-black/40 backdrop-blur-md rounded-xl border border-white/10 z-10 max-w-xs"
+                    >
+                        <p className="text-lg text-center text-white font-medium animate-pulse">{instruction}</p>
+                    </motion.div>
                 </>
             )}
             
-            <button
+            <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={onCancel}
-                className="absolute bottom-6 px-6 py-2 bg-red-500/20 border border-red-500/50 rounded-full text-sm font-semibold text-red-100 backdrop-blur-md hover:bg-red-500/40 transition-all duration-300 z-20 pointer-events-auto"
+                className="absolute bottom-6 px-8 py-3 bg-red-500/20 border border-red-500/50 rounded-full text-sm font-bold text-red-100 backdrop-blur-md hover:bg-red-500/40 transition-all z-20 pointer-events-auto"
             >
-                {cameraError ? 'Go Back' : 'Cancel Scan'}
-            </button>
+                {cameraError ? 'Go Back' : 'Stop Scan'}
+            </motion.button>
         </div>
     );
 };
