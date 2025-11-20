@@ -1,5 +1,5 @@
+
 import React, { Suspense } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { GlassPanel } from './components/GlassPanel';
 import { IconButton } from './components/IconButton';
 import { ArchitexLogo } from './components/icons/ArchitexLogo';
@@ -7,19 +7,8 @@ import { ScanIcon } from './components/icons/ScanIcon';
 import { DesignIcon } from './components/icons/DesignIcon';
 import { MarketIcon } from './components/icons/MarketIcon';
 import { ChevronRightIcon } from './components/icons/ChevronRightIcon';
-import { ProjectCard } from './components/ProjectCard';
 import { useArchitex } from './hooks/useArchitex';
 import { PlusCircleIcon } from './components/icons/PlusCircleIcon';
-import { AmbientBackground } from './components/AmbientBackground';
-import { CommandPalette } from './components/CommandPalette'; 
-
-// Heavy components loaded via Lazy
-const ScannerInterface = React.lazy(() => import('./components/ScannerInterface').then(module => ({ default: module.ScannerInterface })));
-const DeFiGateway = React.lazy(() => import('./components/DeFiGateway').then(module => ({ default: module.DeFiGateway })));
-const AdminPortal = React.lazy(() => import('./components/AdminPortal').then(module => ({ default: module.AdminPortal })));
-const EnterprisePortal = React.lazy(() => import('./components/EnterprisePortal').then(module => ({ default: module.EnterprisePortal })));
-const PublicGallery = React.lazy(() => import('./components/PublicGallery').then(module => ({ default: module.PublicGallery })));
-
 import { PaymentModal } from './components/PaymentModal';
 import { ProfileScreen } from './components/ProfileScreen';
 import { UserIcon } from './components/icons/UserIcon';
@@ -29,6 +18,7 @@ import { MintNftModal } from './components/MintNftModal';
 import { BountyDetailsModal } from './components/BountyDetailsModal';
 import { AgreementModal } from './components/AgreementModal';
 import { ArbitratorEntity } from './core/schemas/entities';
+import { ArchieBot } from './components/ArchieBot';
 import { InstallationUpsellModal } from './components/InstallationUpsellModal';
 import { ProjectDetailsModal } from './components/ProjectDetailsModal';
 import { ServiceAgreementModal } from './components/ServiceAgreementModal';
@@ -38,30 +28,25 @@ import { RatingModal } from './components/RatingModal';
 import { ProofOfInstallationModal } from './components/ProofOfInstallationModal';
 import { GovernanceTosModal } from './components/GovernanceTosModal';
 import { AwardIcon } from './components/icons/AwardIcon';
-import { ChallengesGallery } from './components/ChallengesGallery';
 import { ChallengeDetailsModal } from './components/ChallengeDetailsModal';
 import { SubmitToChallengeModal } from './components/SubmitToChallengeModal';
-import { CreateProjectModal } from './components/CreateProjectModal';
-import { ToastProvider } from './components/Toast';
-import { OnboardingTour } from './components/OnboardingTour';
-import { ShoppingCartModal } from './components/ShoppingCartModal';
-import { VendorProfileModal } from './components/VendorProfileModal';
-import { ProposalDetailsModal } from './components/ProposalDetailsModal';
-import { ChatInterface } from './components/ChatInterface';
-import { SearchIcon } from './components/icons/SearchIcon';
-import { ArchieBotWidget } from './components/ArchieBotWidget';
-import { ServiceProviderOnboarding } from './components/ServiceProviderOnboarding';
-import { ArbitratorOnboarding } from './components/ArbitratorOnboarding';
-import { ShareModal } from './components/ShareModal';
-import { CreateChallengeModal } from './components/CreateChallengeModal';
+import { AmbientBackground } from './components/AmbientBackground';
+import { CommandPalette } from './components/CommandPalette';
+import { ProjectCard } from './components/ProjectCard'; // Import for Design Tab
 import { Loader } from './components/Loader';
 
-const AppContent: React.FC = () => {
+// Lazy Loaded Heavy Components
+const ScannerInterface = React.lazy(() => import('./components/ScannerInterface').then(module => ({ default: module.ScannerInterface })));
+const DeFiGateway = React.lazy(() => import('./components/DeFiGateway').then(module => ({ default: module.DeFiGateway })));
+const ChallengesGallery = React.lazy(() => import('./components/ChallengesGallery').then(module => ({ default: module.ChallengesGallery })));
+const PublicGallery = React.lazy(() => import('./components/PublicGallery').then(module => ({ default: module.PublicGallery })));
+
+const App: React.FC = () => {
   const {
-    phase, isMounted, activeTab, projects, publicProjects, bounties, arbitrators, availableArbitrators, uxTip, user, orders, serviceProviders, serviceAgreements, proposals, designChallenges, products,
-    initialize, setActiveTab, isScanning, scanProgress, currentScanInstruction, startScan, cancelScan, completeOnboarding,
-    showPaymentModal, confirmPayment, cancelPayment, isProcessingPayment, paymentError, scanAnalysis, isProfileVisible, toggleProfile,
-    handleProjectInteraction, handleModifyProject, showUpsellModal, closeUpsellModal, showCreateBountyModal, openCreateBountyModal,
+    phase, isMounted, activeTab, projects, publicProjects, bounties, arbitrators, availableArbitrators, uxTip, user, orders, serviceProviders, serviceAgreements, proposals, designChallenges,
+    initialize, setActiveTab, isScanning, scanProgress, currentScanInstruction, startScan, cancelScan,
+    showPaymentModal, confirmPayment, cancelPayment, isProcessingPayment, isProfileVisible, toggleProfile,
+    handleProjectInteraction, showUpsellModal, closeUpsellModal, showCreateBountyModal, openCreateBountyModal,
     closeCreateBountyModal, handleCreateBounty, showMintNftModal, projectToMint, openMintNftModal,
     closeMintNftModal, handleMintNft, selectedBounty, handleSelectBounty, closeBountyDetailsModal,
     showAgreementModal, agreementText, handleInitiateFunding, handleConfirmFunding, closeAgreementModal,
@@ -76,261 +61,113 @@ const AppContent: React.FC = () => {
     handleStake, handleUnstake, handleVote,
     handleExecuteProposal, showProofOfInstallationModal, setShowProofOfInstallationModal, orderForProof, handleSubmitProofOfInstallation,
     showGovernanceTosModal, openGovernanceTosModal, closeGovernanceTosModal,
-    handleShareProject, handleConfirmShare, showShareModal, projectToShare, closeShareModal,
+    handleShareProject,
     selectedChallenge, submissions, handleSelectChallenge, closeChallengeDetailsModal, handleVoteOnSubmission,
     showSubmitToChallengeModal, projectToSubmit, openSubmitToChallengeModal, closeSubmitToChallengeModal, handleSubmitProjectToChallenge,
-    showCreateChallengeModal, openCreateChallengeModal, closeCreateChallengeModal, handleCreateChallenge,
-    showCreateProjectModal, openCreateProjectModal, closeCreateProjectModal, handleCreateProject,
-    cart, addToCart, removeFromCart, updateCartItem, openShoppingCart, closeShoppingCart, showShoppingCartModal, handleCheckout,
-    openVendorProfile, showVendorProfileModal, selectedVendor, setShowVendorProfileModal,
-    selectedProposal, showProposalDetailsModal, openProposalDetails, closeProposalDetails, handleSubmitComment,
-    isAdminModalOpen, openAdminModal, closeAdminModal,
-    isChatOpen, openChat, closeChat, messages, handleSendMessage, chatContextId,
-    userTokens, handleClaimVestedTokens, handleJoinFounderProgram,
-    handleSubscribe,
-    showProviderOnboarding, setShowProviderOnboarding, handleProviderRegistration,
-    showArbitratorOnboarding, setShowArbitratorOnboarding, handleArbitratorRegistration,
-    handleClaimStakingRewards, votingPower,
-    showEnterprisePortal, openEnterprisePortal, closeEnterprisePortal,
-    isCommandPaletteOpen, toggleCommandPalette, setIsCommandPaletteOpen
+    isCommandPaletteOpen, toggleCommandPalette
   } = useArchitex();
 
-  // --- Content Rendering Logic with Grid Support ---
   const renderDashboardContent = () => {
     switch (activeTab) {
       case 'scan':
         return isScanning ? (
-            <Suspense fallback={<Loader />}>
-                <ScannerInterface instruction={currentScanInstruction} progress={scanProgress} onCancel={cancelScan} />
-            </Suspense>
+            <Suspense fallback={<Loader />}><ScannerInterface instruction={currentScanInstruction} progress={scanProgress} onCancel={cancelScan} /></Suspense>
         ) : (
-          <div className="text-center flex flex-col items-center justify-center h-full w-full p-6">
-            <motion.div initial={{scale: 0.9, opacity: 0}} animate={{scale: 1, opacity: 1}} className="relative w-48 h-48 mb-8">
-                 <div className="absolute inset-0 bg-pi-gold/20 rounded-full blur-3xl animate-pulse"></div>
-                 <ScanIcon className="w-full h-full text-pi-gold relative z-10 drop-shadow-[0_0_30px_rgba(253,179,0,0.5)]" />
-            </motion.div>
-            <h2 className="text-4xl font-bold text-white mb-2 tracking-tight font-sans">Reality Scanner</h2>
-            <p className="text-slate-400 max-w-xs mb-8 text-lg font-light">Utilize LIDAR simulation to capture your physical space in seconds.</p>
-            
-            <motion.button 
-                whileHover={{scale: 1.05}} 
-                whileTap={{scale: 0.95}} 
-                onClick={startScan} 
-                className="group flex items-center justify-center px-8 py-4 bg-gradient-to-r from-pi-gold to-yellow-500 text-brand-dark rounded-full text-xl font-bold shadow-[0_0_30px_rgba(253,179,0,0.3)] hover:shadow-[0_0_50px_rgba(253,179,0,0.5)] transition-all duration-300 border border-white/20"
-            >
-                Activate Scanner
-            </motion.button>
-          </div>
-        );
-      case 'design':
-        return (
-          <div className="w-full h-full flex flex-col">
-            <div className="flex justify-between items-end mb-8 px-2">
-                <div>
-                    <h2 className="text-3xl font-bold text-white tracking-tight font-sans">Design Studio</h2>
-                    <p className="text-sm text-slate-400 font-mono mt-1">WORKSPACE // {user?.piUsername.toUpperCase()}</p>
-                </div>
-                <div className="flex space-x-3">
-                    <motion.button 
-                        whileHover={{scale: 1.05}} 
-                        onClick={toggleCommandPalette} 
-                        className="p-3 bg-white/5 backdrop-blur-md rounded-full text-slate-300 hover:text-white hover:bg-white/10 border border-white/10 transition-all shadow-lg group" 
-                        title="Command Palette (Cmd+K)"
-                    >
-                        <SearchIcon className="w-5 h-5 group-hover:text-ai-violet transition-colors" />
-                    </motion.button>
-                    <motion.button 
-                      whileHover={{scale: 1.05}} 
-                      onClick={openCreateProjectModal} 
-                      className="flex items-center px-5 py-2 bg-ai-violet/80 hover:bg-ai-violet text-white rounded-full font-bold shadow-glow-violet hover:shadow-lg transition-all border border-white/10 backdrop-blur-md"
-                    >
-                        <PlusCircleIcon className="w-5 h-5 mr-2" /> New Project
-                    </motion.button>
-                </div>
-            </div>
-            
-            {/* Responsive Grid for Projects */}
-            <div className="flex-grow overflow-y-auto pr-2 pb-20 no-scrollbar">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {projects.map((project, index) => (
-                        <motion.div 
-                            key={project.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.05, duration: 0.4 }}
-                        >
-                            <ProjectCard project={project} onCardClick={() => handleProjectInteraction(project)} onMintClick={() => openMintNftModal(project)} />
-                        </motion.div>
-                    ))}
-                    
-                    {/* Empty State CTA */}
-                    {projects.length === 0 && (
-                        <motion.div 
-                            onClick={openCreateProjectModal}
-                            whileHover={{ scale: 1.02 }}
-                            className="border-2 border-dashed border-white/10 rounded-3xl flex flex-col items-center justify-center text-slate-500 hover:text-ai-violet hover:border-ai-violet/30 hover:bg-white/5 transition-all cursor-pointer h-64"
-                        >
-                            <PlusCircleIcon className="w-12 h-12 mb-4 opacity-50" />
-                            <span className="font-bold">Create First Design</span>
-                        </motion.div>
-                    )}
-                </div>
-            </div>
+          <div className="text-center flex flex-col items-center w-full h-full justify-center pb-20 animate-fade-in">
+            <ScanIcon className="w-20 h-20 text-pi-gold mb-4 opacity-80 animate-pulse" />
+            <h2 className="text-3xl font-bold text-white tracking-tight">Reality Scanner</h2>
+            <p className="text-slate-400 mt-2 mb-8 max-w-xs">Capture physical spaces with LIDAR precision.</p>
+            <div className="w-full max-w-xs px-2 mb-6"><ArchieBot message={uxTip} /></div>
+            <button onClick={startScan} className="group flex items-center justify-center px-8 py-4 bg-pi-gold/90 rounded-full text-xl font-bold text-brand-dark hover:bg-white hover:shadow-glow-gold transition-all duration-300 transform hover:scale-105">Activate Scanner</button>
           </div>
         );
       case 'explore':
         return (
             <Suspense fallback={<Loader />}>
-                <PublicGallery projects={publicProjects} activeChallenges={designChallenges} onViewProject={handleProjectInteraction} />
+                <PublicGallery projects={publicProjects} onViewProject={handleProjectInteraction} />
             </Suspense>
+        );
+      case 'design':
+        return (
+          <div className="w-full h-full flex flex-col animate-fade-in">
+            <div className="flex justify-between items-center mb-4 px-2 pt-2">
+                <h2 className="text-2xl font-bold text-white">Studio</h2>
+                <button className="flex items-center text-ai-violet hover:text-white transition-colors duration-300 bg-white/5 px-3 py-1 rounded-full border border-white/10 hover:border-ai-violet"><PlusCircleIcon className="w-5 h-5 mr-2" /><span className="font-semibold text-sm">New Project</span></button>
+            </div>
+            <div className="flex-grow overflow-y-auto space-y-4 pr-2 pb-20">
+                {projects.length === 0 ? (
+                    <div className="text-center text-slate-500 mt-20">No projects yet. Start scanning!</div>
+                ) : (
+                    projects.map((project) => (<ProjectCard key={project.id} project={project} onCardClick={() => handleProjectInteraction(project)} onMintClick={() => openMintNftModal(project)} />))
+                )}
+            </div>
+          </div>
         );
       case 'market':
         return (
             <Suspense fallback={<Loader />}>
                 <DeFiGateway 
-                  bounties={bounties} 
-                  onBountySelect={handleSelectBounty} 
-                  onCreateBounty={openCreateBountyModal}
-                  serviceProviders={serviceProviders}
-                  onHireProvider={handleInitiateHiring}
-                  arbitrators={arbitrators}
-                  proposals={proposals}
-                  user={user}
-                  onStake={handleStake}
-                  onUnstake={handleUnstake}
-                  onVote={handleVote}
-                  onExecuteProposal={handleExecuteProposal}
-                  onViewTos={openGovernanceTosModal}
-                  products={products}
-                  cartCount={cart.length}
-                  onAddToCart={addToCart}
-                  onOpenCart={openShoppingCart}
-                  onVendorClick={openVendorProfile}
-                  onOpenDetails={openProposalDetails}
-                  onJoinFounderProgram={handleJoinFounderProgram}
-                  handleClaimStakingRewards={handleClaimStakingRewards}
-                  votingPower={votingPower}
-                  onCreateChallenge={openCreateChallengeModal}
+                bounties={bounties} 
+                onBountySelect={handleSelectBounty} 
+                onCreateBounty={openCreateBountyModal}
+                serviceProviders={serviceProviders}
+                onHireProvider={handleInitiateHiring}
+                arbitrators={arbitrators}
+                proposals={proposals}
+                user={user}
+                onStake={handleStake}
+                onUnstake={handleUnstake}
+                onVote={handleVote}
+                onExecuteProposal={handleExecuteProposal}
+                onViewTos={openGovernanceTosModal}
                 />
             </Suspense>
         );
       case 'challenges':
-        return <ChallengesGallery challenges={designChallenges} onSelectChallenge={handleSelectChallenge} />;
+        return (
+            <Suspense fallback={<Loader />}>
+                <ChallengesGallery challenges={designChallenges} onSelectChallenge={handleSelectChallenge} />
+            </Suspense>
+        );
       default: return null;
     }
   };
 
   return (
-    <div className="h-screen w-full text-slate-100 overflow-hidden flex flex-col md:flex-row relative font-sans">
+    <div className="min-h-screen w-full bg-brand-dark text-slate-100 flex flex-col items-center overflow-hidden antialiased relative">
       <AmbientBackground />
-
-      {/* Sandbox Indicator */}
-      <div className="fixed top-0 left-0 w-full bg-pi-gold/90 text-brand-dark text-[10px] font-bold text-center py-1 z-[110] backdrop-blur-md tracking-widest uppercase pointer-events-none font-mono">
-          Testnet Sandbox Mode • v2.5.0
-      </div>
-
-      <CommandPalette 
-        isOpen={isCommandPaletteOpen} 
-        onClose={() => setIsCommandPaletteOpen(false)} 
-        onNavigate={setActiveTab}
-        onCreateProject={openCreateProjectModal}
-        onCreateBounty={openCreateBountyModal}
-      />
-
-      {phase === 'onboarding' && <OnboardingTour onComplete={completeOnboarding} />}
+      <CommandPalette isOpen={isCommandPaletteOpen} onClose={toggleCommandPalette} onNavigate={(tab) => setActiveTab(tab as any)} />
 
       {/* Intro Screen */}
-      <div className={`absolute inset-0 z-[60] flex flex-col items-center justify-center transition-opacity duration-1000 ${phase === 'intro' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-        <div className={`transition-all duration-1000 ease-out ${isMounted ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-10 scale-95'}`}>
-          <GlassPanel className="p-12 text-center border-ai-violet/20 shadow-[0_0_100px_rgba(139,92,246,0.15)] bg-black/40">
-              <ArchitexLogo className="w-32 h-32 mx-auto mb-8 animate-float drop-shadow-[0_0_25px_rgba(139,92,246,0.6)]" />
-              <h1 className="text-6xl font-bold text-white tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-400 font-sans">Architex</h1>
-              <p className="text-slate-400 text-lg font-light tracking-wide font-sans">The Future of Design, Decentralized.</p>
-          </GlassPanel>
+      <div className={`absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-1000 z-[60] ${phase === 'intro' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        <div className={`transition-all duration-700 ease-out ${isMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+          <GlassPanel className="p-10 text-center bg-black/40 border-white/5"><ArchitexLogo className="w-24 h-24 mx-auto mb-6" /><h1 className="text-5xl font-bold text-white tracking-tighter">Architex</h1><p className="mt-2 text-slate-300 font-light text-lg">The Future of Design, Decentralized.</p></GlassPanel>
         </div>
-        <motion.button 
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={initialize} 
-            className={`group mt-16 flex items-center justify-center px-12 py-5 bg-white text-brand-dark border border-white rounded-full text-xl font-bold shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:shadow-[0_0_60px_rgba(255,255,255,0.5)] transition-all duration-500 ${isMounted ? 'opacity-100 translate-y-0 delay-300' : 'opacity-0 translate-y-10'}`}
-        >
-            Initialize Blueprint <ChevronRightIcon className="w-6 h-6 ml-3 group-hover:translate-x-1 transition-transform duration-300" />
-        </motion.button>
+        <button onClick={initialize} className={`group mt-12 flex items-center justify-center px-8 py-3 bg-white/10 border border-white/20 rounded-full text-lg font-semibold text-white backdrop-blur-md hover:bg-white hover:text-brand-dark hover:shadow-glow-violet transition-all duration-300 ${isMounted ? 'opacity-100 translate-y-0 delay-300' : 'opacity-0 translate-y-10'}`}>Initialize Blueprint <ChevronRightIcon className="w-6 h-6 ml-2 group-hover:translate-x-1 transition-transform duration-300" /></button>
       </div>
 
-      {/* Main Dashboard Layout */}
-      <div className={`flex-grow flex h-full z-10 transition-opacity duration-1000 ${phase === 'dashboard' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-        
-        {/* DESKTOP SIDEBAR */}
-        <nav className="hidden md:flex flex-col w-72 bg-slate-900/40 backdrop-blur-2xl border-r border-white/5 p-6 pt-8 z-40 h-full">
-            <div className="flex items-center mb-12 px-2">
-                <ArchitexLogo className="w-10 h-10 mr-3 text-ai-violet filter drop-shadow-lg" />
-                <h1 className="text-2xl font-bold text-white tracking-wide font-sans">Architex</h1>
-            </div>
-            
-            <div className="space-y-3 flex-grow">
-                <IconButton isSidebar icon={<ScanIcon />} label="Scan Space" isActive={activeTab === 'scan'} onClick={() => setActiveTab('scan')} activeColor="pi-gold"/>
-                <IconButton isSidebar icon={<DesignIcon />} label="Design Studio" isActive={activeTab === 'design' || activeTab === 'explore'} onClick={() => setActiveTab('design')} activeColor="ai-violet"/>
-                <IconButton isSidebar icon={<MarketIcon />} label="Marketplace" isActive={activeTab === 'market'} onClick={() => setActiveTab('market')} activeColor="eco-green"/>
-                <IconButton isSidebar icon={<AwardIcon />} label="Challenges" isActive={activeTab === 'challenges'} onClick={() => setActiveTab('challenges')} activeColor="pi-gold"/>
-            </div>
-
-            <div className="mt-auto pt-6 border-t border-white/5">
-                <div 
-                    className="flex items-center p-3 rounded-2xl bg-gradient-to-r from-white/5 to-transparent hover:from-white/10 cursor-pointer transition-all border border-white/5 group"
-                    onClick={toggleProfile}
-                >
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center mr-3 border border-white/10 shadow-lg group-hover:border-white/30 transition-colors">
-                         <UserIcon className="w-5 h-5 text-slate-300 group-hover:text-white" />
-                    </div>
-                    <div>
-                        <div className="text-sm font-bold text-white font-sans">{user?.piUsername || 'User'}</div>
-                        <div className="text-[10px] text-eco-green font-mono tracking-wide">ONLINE • TRUST {user?.trustScore || 0}</div>
-                    </div>
-                </div>
-            </div>
-        </nav>
-
-        {/* MOBILE HEADER */}
-        <header className="md:hidden fixed top-0 left-0 right-0 h-16 bg-brand-dark/60 backdrop-blur-xl z-40 flex items-center justify-between px-4 border-b border-white/5 transition-all duration-300">
+      {/* Dashboard Container */}
+      <div className={`w-full max-w-md h-full flex flex-col transition-opacity duration-1000 z-10 ${phase === 'dashboard' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        <header className="relative flex-shrink-0 pt-6 pb-2 px-4 flex justify-between items-center">
              <div className="flex items-center">
-                <ArchitexLogo className="w-8 h-8 mr-3 text-ai-violet drop-shadow-md"/>
-                <h1 className="text-xl font-bold text-slate-100 tracking-tight font-sans">Design HUD</h1>
-            </div>
-            <div className="flex items-center space-x-3">
-                <button onClick={toggleCommandPalette} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-all">
-                    <SearchIcon className="w-5 h-5" />
-                </button>
-                <button onClick={toggleProfile} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-all">
-                    <UserIcon className="w-5 h-5" />
-                </button>
-            </div>
+                 <ArchitexLogo className="w-8 h-8 mr-2 text-ai-violet"/>
+                 <span className="font-bold text-lg tracking-tight">Architex</span>
+             </div>
+             <div className="flex items-center space-x-2">
+                 <button onClick={toggleCommandPalette} className="p-2 text-slate-400 hover:text-white transition-colors"><span className="text-xs bg-white/10 px-2 py-1 rounded border border-white/5">CMD+K</span></button>
+                 <button onClick={toggleProfile} className="p-2 text-slate-400 hover:text-white transition-colors"><UserIcon className="w-6 h-6" /></button>
+             </div>
         </header>
 
-        {/* MAIN CONTENT AREA */}
-        <main className="flex-grow relative overflow-hidden pt-16 md:pt-0 pb-24 md:pb-0">
-            <div className="h-full w-full max-w-7xl mx-auto p-3 md:p-8">
-                <AnimatePresence mode="wait">
-                    <motion.div
-                        key={activeTab}
-                        initial={{ opacity: 0, y: 15, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -15, scale: 0.98 }}
-                        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                        className="h-full"
-                    >
-                        {renderDashboardContent()}
-                    </motion.div>
-                </AnimatePresence>
-            </div>
-        </main>
-
-        {/* MOBILE BOTTOM DOCK */}
-        <footer className="md:hidden fixed bottom-6 left-4 right-4 z-50">
-          <GlassPanel className="p-2 rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.8)] border border-white/10 bg-black/60 backdrop-blur-2xl">
-              <nav className="flex items-center justify-around">
+        <main className="flex-grow flex items-center justify-center p-2 min-h-0">{renderDashboardContent()}</main>
+        
+        {/* Floating Dock */}
+        <footer className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 w-auto">
+          <GlassPanel className="p-2 rounded-2xl bg-black/60 border-white/10 shadow-2xl backdrop-blur-2xl">
+              <nav className="flex items-center space-x-1 px-2">
+                  <IconButton icon={<DesignIcon />} label="Explore" isActive={activeTab === 'explore'} onClick={() => setActiveTab('explore')} activeColor="ai-violet"/>
                   <IconButton icon={<ScanIcon />} label="Scan" isActive={activeTab === 'scan'} onClick={() => setActiveTab('scan')} activeColor="pi-gold"/>
-                  <IconButton icon={<DesignIcon />} label="Design" isActive={activeTab === 'design' || activeTab === 'explore'} onClick={() => setActiveTab('design')} activeColor="ai-violet"/>
+                  <IconButton icon={<DesignIcon />} label="Studio" isActive={activeTab === 'design'} onClick={() => setActiveTab('design')} activeColor="ai-violet"/>
                   <IconButton icon={<MarketIcon />} label="Market" isActive={activeTab === 'market'} onClick={() => setActiveTab('market')} activeColor="eco-green"/>
                   <IconButton icon={<AwardIcon />} label="Games" isActive={activeTab === 'challenges'} onClick={() => setActiveTab('challenges')} activeColor="pi-gold"/>
               </nav>
@@ -338,74 +175,16 @@ const AppContent: React.FC = () => {
         </footer>
       </div>
 
-      {/* Modals & Overlays */}
-      <AnimatePresence>
-        {showPaymentModal && <PaymentModal key="payment" onConfirm={confirmPayment} onCancel={cancelPayment} isProcessing={isProcessingPayment} error={paymentError} analysis={scanAnalysis} />}
-        {showCreateProjectModal && <CreateProjectModal key="createProj" onConfirm={handleCreateProject} onCancel={closeCreateProjectModal} />}
-        {showCreateChallengeModal && <CreateChallengeModal key="createChal" onConfirm={handleCreateChallenge} onCancel={closeCreateChallengeModal} />}
-        
-        {isProfileVisible && user && (
-            <ProfileScreen 
-                key="profile"
-                user={user} 
-                projects={projects} 
-                orders={orders} 
-                serviceAgreements={serviceAgreements}
-                userTokens={userTokens} 
-                onConfirmDelivery={handleConfirmDelivery} 
-                onRequestReturn={handleRequestReturn} 
-                onConfirmServiceCompletion={handleConfirmServiceCompletion} 
-                onClaimVestedTokens={handleClaimVestedTokens}
-                onSubscribe={handleSubscribe}
-                onClose={toggleProfile}
-                onBecomeProvider={() => setShowProviderOnboarding(true)}
-                onBecomeArbitrator={() => setShowArbitratorOnboarding(true)}
-                onOpenEnterprise={openEnterprisePortal}
-            />
-        )}
-      </AnimatePresence>
-      
-      {isProfileVisible && (
-        <div className="fixed bottom-8 right-8 z-[70]">
-            <button onClick={openAdminModal} className="text-[10px] text-slate-500 hover:text-slate-300 font-mono bg-black/40 px-3 py-1.5 rounded-md border border-white/5 hover:border-white/20 transition-all">System Admin</button>
-        </div>
-      )}
-
-      {/* Global ArchieBot Widget */}
-      {phase === 'dashboard' && !isProfileVisible && !isAdminModalOpen && !isChatOpen && (
-          <ArchieBotWidget 
-            tip={uxTip} 
-            onClick={() => openChat('support_archie')} 
-          />
-      )}
-
+      {/* Modals */}
+      {showPaymentModal && <PaymentModal onConfirm={confirmPayment} onCancel={cancelPayment} isProcessing={isProcessingPayment} />}
+      {isProfileVisible && user && <ProfileScreen user={user} projects={projects} orders={orders} serviceAgreements={serviceAgreements} onConfirmDelivery={handleConfirmDelivery} onRequestReturn={handleRequestReturn} onConfirmServiceCompletion={handleConfirmServiceCompletion} onClose={toggleProfile} />}
       {showUpsellModal && <UpsellModal onConfirm={() => { setActiveTab('market'); closeUpsellModal(); }} onCancel={closeUpsellModal}/>}
-      {showCreateBountyModal && <CreateBountyModal user={user} onConfirm={handleCreateBounty} onCancel={closeCreateBountyModal}/>}
+      {showCreateBountyModal && <CreateBountyModal onConfirm={handleCreateBounty} onCancel={closeCreateBountyModal}/>}
       {showMintNftModal && projectToMint && <MintNftModal project={projectToMint} onConfirm={() => handleMintNft(projectToMint.id)} onCancel={closeMintNftModal}/>}
       {selectedBounty && <BountyDetailsModal bounty={selectedBounty} arbitrators={availableArbitrators} onClose={closeBountyDetailsModal} onFund={handleInitiateFunding} onRelease={handleReleaseFunds} onDispute={() => handleRaiseDispute(selectedBounty)} onSelectArbitrator={(arbitrator: ArbitratorEntity) => handleSelectArbitrator(selectedBounty, arbitrator)} onOpenLegalShield={() => setShowUserLegalShieldModal(true)} onResolve={handleResolveArbitration}/>}
       {showAgreementModal && agreementText && <AgreementModal agreementText={agreementText} onConfirm={handleConfirmFunding} onCancel={closeAgreementModal}/>}
       {showInstallationUpsellModal && orderForUpsell && <InstallationUpsellModal order={orderForUpsell} onConfirm={() => setShowInstallationUpsellModal(false)} onCancel={() => setShowInstallationUpsellModal(false)}/>}
-      
-      {showProjectDetailsModal && selectedProject && (
-        <ProjectDetailsModal 
-            project={selectedProject} 
-            onGetQuotes={handleGetQuotes} 
-            onClose={() => setShowProjectDetailsModal(false)} 
-            onShare={handleShareProject} 
-            onSubmitToChallenge={() => openSubmitToChallengeModal(selectedProject)} 
-            onOpenChat={() => openChat(selectedProject.id)}
-            onModify={handleModifyProject}
-        />
-      )}
-      
-      {showShareModal && projectToShare && (
-          <ShareModal 
-            project={projectToShare} 
-            onShare={handleConfirmShare} 
-            onCancel={closeShareModal} 
-          />
-      )}
-
+      {showProjectDetailsModal && selectedProject && <ProjectDetailsModal project={selectedProject} onGetQuotes={handleGetQuotes} onClose={() => setShowProjectDetailsModal(false)} onShare={handleShareProject} onSubmitToChallenge={() => openSubmitToChallengeModal(selectedProject)} />}
       {showServiceAgreementModal && activeServiceAgreement && user && <ServiceAgreementModal agreement={activeServiceAgreement} user={user} arbitrators={arbitrators} onConfirm={handleConfirmServiceHiring} onCancel={() => setShowServiceAgreementModal(false)}/>}
       {showUserLegalShieldModal && <UserLegalShieldModal onClose={() => setShowUserLegalShieldModal(false)}/>}
       {showDisputeResolutionModal && selectedBounty && <DisputeResolutionModal bounty={selectedBounty} arbitrators={availableArbitrators} onConfirmDispute={handleConfirmDispute} onSelectArbitrator={handleSelectArbitrator} onClose={() => setShowDisputeResolutionModal(false)}/>}
@@ -414,54 +193,8 @@ const AppContent: React.FC = () => {
       {showGovernanceTosModal && <GovernanceTosModal onClose={closeGovernanceTosModal} />}
       {selectedChallenge && <ChallengeDetailsModal challenge={selectedChallenge} submissions={submissions} onVote={handleVoteOnSubmission} onClose={closeChallengeDetailsModal} />}
       {showSubmitToChallengeModal && projectToSubmit && <SubmitToChallengeModal project={projectToSubmit} challenges={designChallenges} onSubmit={handleSubmitProjectToChallenge} onCancel={closeSubmitToChallengeModal} />}
-      
-      {showShoppingCartModal && (
-        <ShoppingCartModal 
-            cart={cart} 
-            user={user}
-            onRemove={removeFromCart} 
-            onUpdateItem={updateCartItem}
-            onCheckout={handleCheckout} 
-            onClose={closeShoppingCart} 
-        />
-      )}
-      {showVendorProfileModal && selectedVendor && <VendorProfileModal vendor={selectedVendor} onClose={() => setShowVendorProfileModal(false)} />}
-      {showProposalDetailsModal && selectedProposal && <ProposalDetailsModal proposal={selectedProposal} onClose={closeProposalDetails} onComment={handleSubmitComment} />}
-      
-      {showProviderOnboarding && <ServiceProviderOnboarding onRegister={handleProviderRegistration} onClose={() => setShowProviderOnboarding(false)} />}
-      {showArbitratorOnboarding && <ArbitratorOnboarding onRegister={handleArbitratorRegistration} onClose={() => setShowArbitratorOnboarding(false)} />}
-      
-      {showEnterprisePortal && (
-        <Suspense fallback={<Loader />}>
-          <EnterprisePortal onClose={closeEnterprisePortal} />
-        </Suspense>
-      )}
-
-      {isAdminModalOpen && (
-        <Suspense fallback={<Loader />}>
-          <AdminPortal onClose={closeAdminModal} />
-        </Suspense>
-      )}
-      {isChatOpen && chatContextId && user && (
-          <ChatInterface 
-            contextId={chatContextId} 
-            title={chatContextId === 'support_archie' ? "Archie Support" : "Project Discussion"} 
-            messages={messages} 
-            currentUserId={user.id} 
-            onSendMessage={handleSendMessage} 
-            onClose={closeChat} 
-          />
-      )}
     </div>
   );
 };
-
-const App: React.FC = () => {
-  return (
-    <ToastProvider>
-      <AppContent />
-    </ToastProvider>
-  );
-}
 
 export default App;

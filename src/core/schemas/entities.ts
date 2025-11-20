@@ -6,12 +6,11 @@ export type MaterialStatus = 'Pending' | 'Ordered' | 'Delivered';
 export type BountyStatus = 'Open' | 'In Progress' | 'In Dispute' | 'Arbitration' | 'Complete';
 export type EscrowState = 'Unfunded' | 'Funded' | 'Released' | 'Refunded';
 export type PromotionType = 'item' | 'invoice';
-export type OrderStatus = 'Processing' | 'Shipped' | 'Delivered' | 'Return Requested' | 'Returned' | 'In Dispute' | 'Refunded';
+export type OrderStatus = 'Processing' | 'Shipped' | 'Delivered' | 'Returned' | 'Return Requested' | 'Refunded' | 'In Dispute';
 export type ProofOfInstallationStatus = 'none' | 'pending' | 'submitted' | 'verified' | 'rejected';
 export type ProposalStatus = 'Voting' | 'Passed' | 'Failed' | 'Executing' | 'Executed';
-export type ReputationEventType = 'BountyCompleted' | 'DisputeWon' | 'RatingReceived' | 'ProofOfInstallation' | 'DisputeLost' | 'ServiceCompleted';
+export type ReputationEventType = 'BountyCompleted' | 'DisputeWon' | 'RatingReceived' | 'ProofOfInstallation';
 export type DesignChallengeStatus = 'Open' | 'Voting' | 'Complete';
-export type VerificationStatus = 'none' | 'pending' | 'verified' | 'rejected';
 
 
 export interface VendorProfile {
@@ -24,8 +23,8 @@ export interface ServiceProviderProfile {
     portfolioUrl: string;
     serviceZones: string[]; // e.g., ['USA-CA', 'USA-NV']
     hasLiabilityInsurance: boolean;
-    insuranceDocUrl?: string;
-    verificationStatus: VerificationStatus;
+    verificationStatus?: string; // Added
+    insuranceDocUrl?: string; // Added
 }
 
 export interface ArbitratorProfile {
@@ -33,7 +32,7 @@ export interface ArbitratorProfile {
     yearsExperience: number;
     fee: number;
     cvUrl: string;
-    verificationStatus: VerificationStatus;
+    verificationStatus: string;
     casesResolved: number;
     resolutionRate: number;
 }
@@ -44,35 +43,31 @@ export interface UserEntity {
   walletAddress: string;
   trustScore: number; 
   avatarUrl?: string;
-  subscriptionTier: 'Free' | 'Accelerator' | 'Enterprise';
-  subscriptionExpiry?: string; // ISO Date
+  subscriptionTier: 'Free' | 'Accelerator' | 'Enterprise'; // Added Enterprise
   vendorProfile?: VendorProfile;
   serviceProviderProfile?: ServiceProviderProfile;
-  arbitratorProfile?: ArbitratorProfile;
-  role: 'user' | 'vendor' | 'service-provider' | 'arbitrator' | 'admin';
+  arbitratorProfile?: ArbitratorProfile; // Added
+  role: 'user' | 'vendor' | 'service-provider' | 'arbitrator';
   stakedArchi?: number;
-  stakingPosition?: StakingPosition;
-  miningPosition?: LiquidityMiningPosition;
-  isFounder?: boolean; // Supply-side incentive status
-  organizationId?: string;
+  isFounder?: boolean; // Added
+  stakingPosition?: { unclaimedRewards: number }; // Added
+  subscriptionExpiry?: string; // Added
 }
 
 export interface BillOfMaterialsEntry {
   materialId: string;
-  name?: string; // Denormalized for display
   quantity: number;
   status: MaterialStatus;
-  // Calculated fields for UI/Reports
-  estimatedCost?: number;
-  ecoImpactScore?: number; 
-  imageUrl?: string;
-  isSustainable?: boolean;
+  name?: string; // Added for UI convenience
+  estimatedCost?: number; // Added for UI convenience
+  imageUrl?: string; // Added for UI convenience
+  isSustainable?: boolean; // Added
 }
 
 export interface ProjectEntity {
   id: string;
   ownerId: string;
-  ownerName?: string; // Denormalized for Public Gallery
+  ownerName?: string; // Added
   name: string;
   roomScanUrl?: string; 
   status: ProjectStatus;
@@ -84,8 +79,7 @@ export interface ProjectEntity {
   unreadMessages?: number;
   modificationCount?: number;
   isNft?: boolean;
-  likes?: number;
-  sustainabilityReport?: SustainabilityReport;
+  likes?: number; // Added
 }
 
 export interface MaterialEntity {
@@ -110,119 +104,7 @@ export interface LiquidityPoolEntity {
     pair: [TokenEntity, TokenEntity];
     userShare: number;
     totalValueLocked: number;
-    protocolLiquidity: number; // Amount seeded by the platform
-}
-
-// --- Enterprise & B2B Entities ---
-export interface OrganizationEntity {
-    id: string;
-    name: string;
-    plan: 'Enterprise' | 'Standard';
-    commissionRate: number; // e.g. 0.05 for 5%
-    balance: number; // Corporate account balance
-}
-
-export interface TeamMemberEntity {
-    id: string;
-    userId: string;
-    name: string;
-    role: 'Admin' | 'Designer' | 'Accountant';
-    avatarUrl: string;
-    lastActive: string;
-}
-
-export interface DesignTemplateEntity {
-    id: string;
-    name: string;
-    style: string;
-    thumbnailUrl: string;
-    itemCount: number;
-    createdAt: string;
-}
-
-export interface SpendingMetric {
-    month: string;
-    amount: number;
-    category: 'Materials' | 'Labor' | 'Software';
-}
-
-// --- Smart Contract Logic Entities ---
-export interface VestingSchedule {
-    id: string;
-    beneficiaryId: string;
-    totalAmount: number;
-    releasedAmount: number;
-    startTime: string; // ISO Date
-    cliff: number; // Seconds
-    duration: number; // Seconds
-    revocable: boolean;
-}
-
-export interface StakingPosition {
-    amount: number;
-    startTime: string;
-    lastClaimTime: string;
-    unclaimedRewards: number;
-}
-
-export interface LiquidityMiningPosition {
-    lpTokenAmount: number;
-    lastClaimTime: string;
-    unclaimedRewards: number;
-}
-
-export interface OracleData {
-    price: number;
-    lastUpdate: string;
-    confidenceScore: number; // 0-100
-    isCircuitBreakerActive: boolean;
-}
-
-export interface FuzzTestResult {
-    testId: string;
-    timestamp: string;
-    operationsCount: number;
-    invariantsChecked: string[];
-    status: 'Passed' | 'Failed';
-    logs: string[];
-    coverage: number;
-}
-
-export interface IntegrationTestStep {
-    name: string;
-    status: 'Pending' | 'Running' | 'Passed' | 'Failed';
-    details: string;
-}
-
-export interface IntegrationTestResult {
-    timestamp: string;
-    success: boolean;
-    steps: IntegrationTestStep[];
-    finalTreasuryBalance: number;
-    finalEscrowBalance: number;
-}
-
-export interface StressTestResult {
-    testId: string;
-    timestamp: string;
-    virtualUsers: number;
-    totalTransactions: number;
-    tps: number; // Transactions Per Second
-    avgLatencyMs: number;
-    errorRate: number; // Percentage
-    bottlenecks: string[];
-    status: 'Passed' | 'Failed' | 'Warning';
-}
-
-export interface SignedAgreement {
-    id: string;
-    type: 'Bounty' | 'Service' | 'Purchase';
-    referenceId: string; // BountyID or ServiceAgreementID
-    parties: string[]; // User IDs
-    timestamp: string;
-    contentHash: string; // Simulation of IPFS/Blockchain hash
-    fullText: string;
-    status: 'Active' | 'Fulfilled' | 'Disputed';
+    protocolLiquidity?: number; // Added
 }
 
 export interface BountyEntity {
@@ -246,7 +128,6 @@ export interface ArbitratorEntity {
     casesResolved: number;
     avatarUrl: string;
     conflictsWithProjectIds?: string[];
-    verificationStatus?: VerificationStatus;
 }
 
 // --- E-Commerce Engine Entities ---
@@ -259,8 +140,8 @@ export interface ProductEntity {
     inStock: number;
     imageUrl: string;
     tags?: string[];
-    sustainabilityCertifications?: string[]; // e.g., 'FSC', 'Energy Star'
-    isEcoFriendly?: boolean;
+    isEcoFriendly?: boolean; // Added
+    sustainabilityCertifications?: string[]; // Added
 }
 
 export interface CartItem {
@@ -293,20 +174,6 @@ export interface PromotionEntity {
     minSpend?: number;
 }
 
-export interface InventoryConflict {
-    productId: string;
-    available: number;
-    requested: number;
-    alternativeProductId?: string;
-}
-
-export interface CartOptimization {
-    originalProductId: string;
-    suggestedProductId: string;
-    reason: string;
-    savings: number;
-}
-
 // --- Service Provider Entities ---
 export type ServiceAgreementStatus = 'pending' | 'signed' | 'funded' | 'work-in-progress' | 'client-confirmed' | 'validator-confirmed' | 'complete' | 'dispute';
 
@@ -322,6 +189,15 @@ export interface ServiceAgreementEntity {
     createdAt: string;
 }
 
+export interface SignedAgreement {
+    id: string;
+    type: string;
+    status: string;
+    referenceId: string;
+    contentHash: string;
+    timestamp: string;
+}
+
 
 // --- Reputation & DAO Entities ---
 
@@ -334,13 +210,15 @@ export interface ReputationEvent {
     timestamp: string;
 }
 
-export interface ProposalComment {
+export interface MessageEntity {
     id: string;
-    proposalId: string;
-    authorId: string;
-    authorName: string;
+    contextId: string;
+    senderId: string;
+    senderName: string;
     text: string;
     timestamp: string;
+    isSystem?: boolean;
+    authorName?: string; // For comments
 }
 
 export interface ProposalEntity {
@@ -355,7 +233,7 @@ export interface ProposalEntity {
     endsAt: string;
     quorum: number; // e.g., 0.20 for 20%
     turnout: number; // Percentage of total voting power that voted
-    comments?: ProposalComment[];
+    comments?: MessageEntity[]; // Added
 }
 
 
@@ -382,36 +260,82 @@ export interface ChallengeSubmissionEntity {
     projectName: string;
 }
 
-// --- AI Analysis Entities ---
+// --- New Entities for Modules ---
+
+export interface SustainabilityReport {
+    energyEfficiencyScore: number;
+    carbonFootprint: number;
+    estimatedAnnualSavings: number;
+    recommendations: string[];
+}
+
+export interface InventoryConflict {
+    productId: string;
+    requested: number;
+    available: number;
+    alternativeProductId?: string;
+}
+
+export interface CartOptimization {
+    originalProductId: string;
+    suggestedProductId: string;
+    reason: string;
+    savings: number;
+}
+
+export interface IntegrationTestResult {
+    success: boolean;
+    steps: { name: string; status: 'Passed' | 'Failed' }[];
+}
+
+export interface StressTestResult {
+    status: 'Passed' | 'Failed';
+    virtualUsers: number;
+    tps: number;
+    avgLatencyMs: number;
+    errorRate: number;
+}
+
+export interface VestingSchedule {
+    startTime: string;
+    duration: number;
+    cliff: number;
+    totalAmount: number;
+    releasedAmount: number;
+}
+
+export interface FuzzTestResult {
+    status: 'Passed' | 'Failed';
+    operationsCount: number;
+    coverage: number;
+    testId: string;
+    logs: string[];
+}
+
+export interface TeamMemberEntity {
+    id: string;
+    name: string;
+    role: string;
+    avatarUrl: string;
+    lastActive: string;
+}
+
+export interface DesignTemplateEntity {
+    id: string;
+    name: string;
+    itemCount: number;
+    style: string;
+    thumbnailUrl: string;
+}
+
+export interface SpendingMetric {
+    month: string;
+    amount: number;
+}
+
 export interface ScanAnalysis {
     dimensions: string;
     style: string;
     lighting: string;
     summary: string;
-}
-
-export interface SustainabilityReport {
-    carbonFootprint: number; // kg CO2e
-    energyEfficiencyScore: number; // 0-100
-    estimatedAnnualSavings: number; // PiUSD
-    recommendations: string[];
-}
-
-// --- UX Engine Entities ---
-export interface SystemNotification {
-    type: 'tip' | 'alert' | 'upsell';
-    message: string;
-    actionLabel?: string;
-    actionTarget?: string;
-}
-
-// --- Communication Entities ---
-export interface MessageEntity {
-    id: string;
-    contextId: string; // ProjectID or OrderID
-    senderId: string;
-    senderName: string;
-    text: string;
-    timestamp: string;
-    isSystem?: boolean;
 }

@@ -1,25 +1,17 @@
 
-
-import { ProjectEntity, UserEntity, MaterialEntity, TokenEntity, LiquidityPoolEntity, BountyEntity, ArbitratorEntity, ProductEntity, ShippingZone, PromotionEntity, OrderEntity, OrderStatus, ServiceProviderProfile, ServiceAgreementEntity, ReputationEvent, ProposalEntity, ProofOfInstallationStatus, DesignChallengeEntity, ChallengeSubmissionEntity, InventoryConflict, CartOptimization, VestingSchedule, IntegrationTestResult, StressTestResult, FuzzTestResult, ScanAnalysis, SignedAgreement, OrganizationEntity, TeamMemberEntity, DesignTemplateEntity, SpendingMetric, SustainabilityReport } from '../schemas/entities';
+import { ProjectEntity, UserEntity, MaterialEntity, TokenEntity, LiquidityPoolEntity, BountyEntity, ArbitratorEntity, ProductEntity, ShippingZone, PromotionEntity, OrderEntity, OrderStatus, ServiceProviderProfile, ServiceAgreementEntity, ReputationEvent, ProposalEntity, ProofOfInstallationStatus, DesignChallengeEntity, ChallengeSubmissionEntity, SustainabilityReport, InventoryConflict, CartOptimization, IntegrationTestResult, StressTestResult, VestingSchedule, FuzzTestResult, TeamMemberEntity, DesignTemplateEntity, SpendingMetric, SignedAgreement } from '../schemas/entities';
 import { PiCoinIcon } from '../../components/icons/PiCoinIcon';
 import { ArchitexLogo } from '../../components/icons/ArchitexLogo';
 
-// Declare Global Window type for Pi
-declare global {
-  interface Window {
-    Pi: any;
-  }
-}
-
 // --- MOCK DATA ---
-export const mockProjects: ProjectEntity[] = [
+const mockProjects: ProjectEntity[] = [
   {
     id: 'proj_01',
     ownerId: 'user_01',
     ownerName: 'ArchieBot',
     name: 'Living Room Remodel',
     status: 'Designing',
-    billOfMaterials: [{ materialId: 'mat_01', quantity: 20, status: 'Pending', name: 'Teak Wood', estimatedCost: 15.50, imageUrl: 'https://placehold.co/100x100/8B5CF6/FFFFFF/png?text=Teak', isSustainable: false }],
+    billOfMaterials: [{ materialId: 'mat_01', quantity: 20, status: 'Pending', name: 'Oak Flooring', estimatedCost: 450, isSustainable: true }],
     createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
     updatedAt: new Date().toISOString(),
     isPublic: true,
@@ -27,7 +19,7 @@ export const mockProjects: ProjectEntity[] = [
     unreadMessages: 2,
     modificationCount: 1,
     isNft: false,
-    likes: 24
+    likes: 42,
   },
   {
     id: 'proj_02',
@@ -43,7 +35,7 @@ export const mockProjects: ProjectEntity[] = [
     unreadMessages: 0,
     modificationCount: 0,
     isNft: false,
-    likes: 5
+    likes: 15,
   },
   {
     id: 'proj_03',
@@ -58,7 +50,41 @@ export const mockProjects: ProjectEntity[] = [
     thumbnailUrl: 'https://placehold.co/400x300/FDB300/FFFFFF/png?text=Bedroom',
     modificationCount: 5,
     isNft: true,
+    likes: 120,
   },
+];
+
+// Mock some "Community" projects that are just variations
+const mockPublicProjects: ProjectEntity[] = [
+    ...mockProjects,
+    {
+        id: 'proj_pub_01',
+        ownerId: 'user_99',
+        ownerName: 'DesignGuru',
+        name: 'Zen Garden Loft',
+        status: 'Complete',
+        billOfMaterials: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        isPublic: true,
+        thumbnailUrl: 'https://placehold.co/400x300/334155/FFFFFF/png?text=Zen+Loft',
+        likes: 350,
+        isNft: true
+    },
+    {
+        id: 'proj_pub_02',
+        ownerId: 'user_88',
+        ownerName: 'EcoBuilder',
+        name: 'Sustainable Tiny Home',
+        status: 'Designing',
+        billOfMaterials: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        isPublic: true,
+        thumbnailUrl: 'https://placehold.co/400x300/10B981/FFFFFF/png?text=Tiny+Home',
+        likes: 89,
+        isNft: false
+    }
 ];
 
 export let mockUserTokens: TokenEntity[] = [
@@ -69,9 +95,12 @@ export let mockUserTokens: TokenEntity[] = [
 export const mockLiquidityPool: LiquidityPoolEntity = {
     pair: [mockUserTokens[0], mockUserTokens[1]],
     userShare: 0.05,
-    totalValueLocked: 5200000,
-    protocolLiquidity: 3000000
+    totalValueLocked: 5000000,
+    protocolLiquidity: 2000000,
 };
+
+export const treasuryBalance = 1500000;
+export const escrowBalance = 500000;
 
 let mockBounties: BountyEntity[] = [
     {
@@ -118,7 +147,6 @@ const mockArbitrators: ArbitratorEntity[] = [
         casesResolved: 152,
         avatarUrl: 'https://placehold.co/100x100/020617/FDB300/png?text=JP',
         conflictsWithProjectIds: ['proj_03'],
-        verificationStatus: 'verified'
     },
     {
         id: 'arb_02',
@@ -128,17 +156,13 @@ const mockArbitrators: ArbitratorEntity[] = [
         resolutionRate: 95,
         casesResolved: 88,
         avatarUrl: 'https://placehold.co/100x100/020617/10B981/png?text=AL',
-        verificationStatus: 'verified'
     }
 ];
 
-// --- UPDATE: Mocks now include sustainability fields ---
 const mockProducts: ProductEntity[] = [
-    { id: 'prod_01', vendorId: 'user_01', name: 'Eco-Friendly Timber', price: 15.50, inStock: 500, imageUrl: 'https://placehold.co/100x100/10B981/FFFFFF/png?text=Timber', tags: ['requires-installation', 'Structural'], sustainabilityCertifications: ['FSC Certified'], isEcoFriendly: true },
-    { id: 'prod_02', vendorId: 'user_01', name: 'Recycled Steel Beams', price: 125.00, inStock: 80, imageUrl: 'https://placehold.co/100x100/8B5CF6/FFFFFF/png?text=Steel', tags: ['requires-installation', 'Structural'], sustainabilityCertifications: ['Recycled Content'], isEcoFriendly: true },
-    { id: 'prod_03', vendorId: 'user_01', name: 'Low-VOC Paint', price: 45.00, inStock: 250, imageUrl: 'https://placehold.co/100x100/FDB300/FFFFFF/png?text=Paint', tags: ['Decor'], sustainabilityCertifications: ['GreenGuard Gold'], isEcoFriendly: true },
-    { id: 'prod_04', vendorId: 'user_01', name: 'Standard Drywall', price: 12.00, inStock: 1000, imageUrl: 'https://placehold.co/100x100/CCCCCC/000000/png?text=Drywall', tags: ['Structural'], isEcoFriendly: false },
-    { id: 'prod_05', vendorId: 'user_01', name: 'Hemp Insulation', price: 22.00, inStock: 300, imageUrl: 'https://placehold.co/100x100/10B981/FFFFFF/png?text=Hemp', tags: ['Insulation'], sustainabilityCertifications: ['Carbon Negative'], isEcoFriendly: true },
+    { id: 'prod_01', vendorId: 'user_01', name: 'Eco-Friendly Timber', price: 15.50, inStock: 500, imageUrl: 'https://placehold.co/100x100/10B981/FFFFFF/png?text=Timber', tags: ['requires-installation'], isEcoFriendly: true, sustainabilityCertifications: ['FSC Certified'] },
+    { id: 'prod_02', vendorId: 'user_01', name: 'Recycled Steel Beams', price: 125.00, inStock: 80, imageUrl: 'https://placehold.co/100x100/8B5CF6/FFFFFF/png?text=Steel', tags: ['requires-installation'], isEcoFriendly: true },
+    { id: 'prod_03', vendorId: 'user_01', name: 'Low-VOC Paint', price: 45.00, inStock: 250, imageUrl: 'https://placehold.co/100x100/FDB300/FFFFFF/png?text=Paint', isEcoFriendly: false },
 ];
 
 let mockOrders: OrderEntity[] = [
@@ -147,20 +171,12 @@ let mockOrders: OrderEntity[] = [
     { id: 'ord_03', userId: 'user_01', items: [{productId: 'prod_02', quantity: 10}], total: 1250, status: 'Delivered', createdAt: new Date(Date.now() - 86400000 * 5).toISOString(), proofOfInstallationStatus: 'none' },
 ];
 
-const mockShippingZones: ShippingZone[] = [
-    { id: 'zone_na', name: 'North America', active: true },
-    { id: 'zone_eu', name: 'European Union', active: true },
-    { id: 'zone_asia', name: 'Asia-Pacific', active: false },
-    { id: 'zone_sa', name: 'South America', active: false },
-    { id: 'zone_af', name: 'Africa', active: false },
-    { id: 'zone_me', name: 'Middle East', active: false },
-    { id: 'zone_global', name: 'Rest of World', active: false }
-];
+const mockShippingZones: ShippingZone[] = [{ id: 'zone_na', name: 'North America', active: true },{ id: 'zone_eu', name: 'European Union', active: true },{ id: 'zone_asia', name: 'Asia-Pacific', active: false }];
 const mockPromotions: PromotionEntity[] = [{ id: 'promo_01', type: 'item', description: '15% off Eco-Timber', discountValue: 15, targetId: 'prod_01' },{ id: 'promo_02', type: 'invoice', description: '10% off orders over 200 PiUSD', discountValue: 10, minSpend: 200 }];
 
 const mockServiceProviders: Omit<UserEntity, 'role'>[] = [
-    { id: 'sp_01', piUsername: 'InstallPro', walletAddress: 'GC...P1', trustScore: 98, avatarUrl: 'https://placehold.co/100x100/10B981/FFFFFF/png?text=IP', subscriptionTier: 'Accelerator', serviceProviderProfile: { specialty: 'General Construction', portfolioUrl: '#', serviceZones: ['USA-CA'], hasLiabilityInsurance: true, verificationStatus: 'verified' } },
-    { id: 'sp_02', piUsername: 'ElecTech', walletAddress: 'GC...P2', trustScore: 95, avatarUrl: 'https://placehold.co/100x100/FDB300/FFFFFF/png?text=ET', subscriptionTier: 'Accelerator', serviceProviderProfile: { specialty: 'Electrical & Automation', portfolioUrl: '#', serviceZones: ['USA-CA', 'USA-NV'], hasLiabilityInsurance: true, verificationStatus: 'verified' } },
+    { id: 'sp_01', piUsername: 'InstallPro', walletAddress: 'GC...P1', trustScore: 98, avatarUrl: 'https://placehold.co/100x100/10B981/FFFFFF/png?text=IP', subscriptionTier: 'Accelerator', serviceProviderProfile: { specialty: 'General Construction', portfolioUrl: '#', serviceZones: ['USA-CA'], hasLiabilityInsurance: true } },
+    { id: 'sp_02', piUsername: 'ElecTech', walletAddress: 'GC...P2', trustScore: 95, avatarUrl: 'https://placehold.co/100x100/FDB300/FFFFFF/png?text=ET', subscriptionTier: 'Accelerator', serviceProviderProfile: { specialty: 'Electrical & Automation', portfolioUrl: '#', serviceZones: ['USA-CA', 'USA-NV'], hasLiabilityInsurance: true } },
 ];
 const mockServiceAgreements: ServiceAgreementEntity[] = [
     { id: 'sa_01', clientId: 'user_01', providerId: 'sp_01', projectId: 'proj_01', scope: 'Installation of all materials for Living Room Remodel', price: 1500, status: 'funded', createdAt: new Date(Date.now() - 86400000 * 3).toISOString() }
@@ -171,45 +187,12 @@ let reputationEvents: ReputationEvent[] = [
 ];
 
 let mockProposals: ProposalEntity[] = [
-    { id: 'prop_01', title: 'Reduce Bounty Commission to 8%', description: 'Lowering the platform fee will attract more high-quality designers.', proposerId: 'user_01', status: 'Voting', forVotes: 125000, againstVotes: 30000, createdAt: new Date(Date.now() - 86400000 * 5).toISOString(), endsAt: new Date(Date.now() + 86400000 * 2).toISOString(), quorum: 0.20, turnout: 0.155, comments: [] },
-    { id: 'prop_02', title: 'Fund a new Eco-Grant Program', description: 'Allocate 1M ARCHI from the treasury to fund projects using sustainable materials.', proposerId: 'designer_01', status: 'Passed', forVotes: 550000, againstVotes: 100000, createdAt: new Date(Date.now() - 86400000 * 10).toISOString(), endsAt: new Date(Date.now() - 86400000 * 3).toISOString(), quorum: 0.20, turnout: 0.65, comments: [] },
-    { id: 'prop_03', title: 'Integrate a new 3D modeling engine', description: 'A proposal to research and potentially integrate a more advanced rendering engine.', proposerId: 'designer_02', status: 'Failed', forVotes: 80000, againstVotes: 95000, createdAt: new Date(Date.now() - 86400000 * 15).toISOString(), endsAt: new Date(Date.now() - 86400000 * 8).toISOString(), quorum: 0.20, turnout: 0.175, comments: [] },
+    { id: 'prop_01', title: 'Reduce Bounty Commission to 8%', description: 'Lowering the platform fee will attract more high-quality designers.', proposerId: 'user_01', status: 'Voting', forVotes: 125000, againstVotes: 30000, createdAt: new Date(Date.now() - 86400000 * 5).toISOString(), endsAt: new Date(Date.now() + 86400000 * 2).toISOString(), quorum: 0.20, turnout: 0.155 },
+    { id: 'prop_02', title: 'Fund a new Eco-Grant Program', description: 'Allocate 1M ARCHI from the treasury to fund projects using sustainable materials.', proposerId: 'designer_01', status: 'Passed', forVotes: 550000, againstVotes: 100000, createdAt: new Date(Date.now() - 86400000 * 10).toISOString(), endsAt: new Date(Date.now() - 86400000 * 3).toISOString(), quorum: 0.20, turnout: 0.65 },
+    { id: 'prop_03', title: 'Integrate a new 3D modeling engine', description: 'A proposal to research and potentially integrate a more advanced rendering engine.', proposerId: 'designer_02', status: 'Failed', forVotes: 80000, againstVotes: 95000, createdAt: new Date(Date.now() - 86400000 * 15).toISOString(), endsAt: new Date(Date.now() - 86400000 * 8).toISOString(), quorum: 0.20, turnout: 0.175 },
 ];
 
-let mockUser: UserEntity = { 
-    id: 'user_01', 
-    piUsername: 'ArchieBot', 
-    walletAddress: 'GD...QW', 
-    trustScore: 95, 
-    avatarUrl: 'https://placehold.co/100x100/020617/8B5CF6/png?text=A', 
-    subscriptionTier: 'Enterprise', 
-    role: 'user', 
-    vendorProfile: { hasInsurance: false, agreedToIndemnity: false }, 
-    stakedArchi: 5000,
-    stakingPosition: { amount: 5000, startTime: new Date().toISOString(), lastClaimTime: new Date().toISOString(), unclaimedRewards: 125.50 },
-    organizationId: 'org_01'
-};
-
-// --- B2B Mocks ---
-const mockOrganization: OrganizationEntity = {
-    id: 'org_01',
-    name: 'Archie Design Corp',
-    plan: 'Enterprise',
-    commissionRate: 0.06, // Start at 6%
-    balance: 25000 // PiUSD
-};
-
-const mockTeam: TeamMemberEntity[] = [
-    { id: 'tm_1', userId: 'user_01', name: 'ArchieBot', role: 'Admin', avatarUrl: 'https://placehold.co/64x64/020617/8B5CF6/png?text=AB', lastActive: new Date().toISOString() },
-    { id: 'tm_2', userId: 'user_02', name: 'Designer Dave', role: 'Designer', avatarUrl: 'https://placehold.co/64x64/334155/FFFFFF/png?text=DD', lastActive: new Date(Date.now() - 3600000).toISOString() },
-    { id: 'tm_3', userId: 'user_03', name: 'Finance Fiona', role: 'Accountant', avatarUrl: 'https://placehold.co/64x64/10B981/FFFFFF/png?text=FF', lastActive: new Date(Date.now() - 86400000).toISOString() }
-];
-
-const mockTemplates: DesignTemplateEntity[] = [
-    { id: 'tmp_1', name: 'Modern Office Standard', style: 'Minimalist', thumbnailUrl: 'https://placehold.co/200x150/020617/FFFFFF/png?text=Office', itemCount: 15, createdAt: new Date(Date.now() - 86400000 * 10).toISOString() },
-    { id: 'tmp_2', name: 'Eco-Friendly Lobby', style: 'Biophilic', thumbnailUrl: 'https://placehold.co/200x150/10B981/FFFFFF/png?text=Lobby', itemCount: 32, createdAt: new Date(Date.now() - 86400000 * 5).toISOString() },
-];
-
+let mockUser: UserEntity = { id: 'user_01', piUsername: 'ArchieBot', walletAddress: 'GD...QW', trustScore: 95, avatarUrl: 'https://placehold.co/100x100/020617/8B5CF6/png?text=A', subscriptionTier: 'Free', role: 'user', vendorProfile: { hasInsurance: false, agreedToIndemnity: false }, stakedArchi: 5000, isFounder: false, stakingPosition: { unclaimedRewards: 0 } };
 
 const TOTAL_VOTING_POWER = 1000000; // Mock total voting power in the DAO for turnout calculation
 
@@ -225,15 +208,13 @@ let mockChallengeSubmissions: ChallengeSubmissionEntity[] = [
     { id: 'sub_02', challengeId: 'dc_01', projectId: 'proj_xx', submitterId: 'user_02', submitterName: 'CreativeCat', votes: 1840, thumbnailUrl: 'https://placehold.co/400x300/10B981/020617/png?text=Green+Kitchen', projectName: 'Verdant Kitchen' }
 ];
 
-export let treasuryBalance = 1250000;
-export const escrowBalance = 450000;
 
 // --- API CONTRACT ---
 export const authenticateWithPi = async (): Promise<UserEntity> => { return { ...mockUser }; };
 export const listProjects = async (): Promise<ProjectEntity[]> => { return [...mockProjects]; };
-export const listPublicProjects = async (): Promise<ProjectEntity[]> => { return [...mockProjects, ...mockProjects]; }; // Just duplicate for mock public
+export const listPublicProjects = async (): Promise<ProjectEntity[]> => { return [...mockPublicProjects]; }; // New API
 export const incrementProjectModification = async (projectId: string): Promise<ProjectEntity> => { const p = mockProjects.find(p => p.id === projectId); if(p) { p.modificationCount = (p.modificationCount || 0) + 1; p.updatedAt = new Date().toISOString(); return {...p}; } throw new Error('P not found'); };
-export const generateModelFromScan = async (): Promise<ProjectEntity> => { const newProject: ProjectEntity = { id: `proj_${Date.now()}`, ownerId: 'user_01', ownerName: mockUser.piUsername, name: 'New Scanned Room', status: 'Scanning', billOfMaterials: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), roomScanUrl: 'mock_scan_url', isPublic: false, thumbnailUrl: `https://placehold.co/400x300/020617/FFFFFF/png?text=New+Scan`, modificationCount: 0, isNft: false, }; mockProjects.unshift(newProject); return newProject; };
+export const generateModelFromScan = async (): Promise<ProjectEntity> => { const newProject: ProjectEntity = { id: `proj_${Date.now()}`, ownerId: 'user_01', name: 'New Scanned Room', status: 'Scanning', billOfMaterials: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), roomScanUrl: 'mock_scan_url', isPublic: false, thumbnailUrl: `https://placehold.co/400x300/020617/FFFFFF/png?text=New+Scan`, modificationCount: 0, isNft: false, }; mockProjects.unshift(newProject); return newProject; };
 export const listMaterials = async (): Promise<MaterialEntity[]> => { return []; };
 export const swapTokens = async (from: TokenEntity['symbol'], to: TokenEntity['symbol'], amount: number): Promise<boolean> => { return true; }
 export const addLiquidity = async (amountA: number, amountB: number): Promise<boolean> => { return true; }
@@ -270,20 +251,29 @@ export const stakeArchi = async (amount: number): Promise<UserEntity> => { const
 export const unstakeArchi = async (amount: number): Promise<UserEntity> => { if ((mockUser.stakedArchi || 0) < amount) throw new Error('Insufficient staked ARCHI'); const tIdx = mockUserTokens.findIndex(t => t.symbol === 'ARCHI'); mockUserTokens[tIdx].balance += amount; mockUser.stakedArchi -= amount; return { ...mockUser }; };
 export const voteOnProposal = async (proposalId: string, vote: 'for' | 'against', votingPower: number): Promise<ProposalEntity> => { const idx = mockProposals.findIndex(p => p.id === proposalId); if (idx === -1) throw new Error('Proposal not found'); if (vote === 'for') mockProposals[idx].forVotes += votingPower; else mockProposals[idx].againstVotes += votingPower; mockProposals[idx].turnout += (votingPower / TOTAL_VOTING_POWER); return { ...mockProposals[idx] }; };
 
-// --- New Functions ---
 export const executeProposal = async(proposalId: string): Promise<ProposalEntity> => {
+    console.log(`[AdminBot] Attempting to execute proposal ${proposalId}...`);
+    await new Promise(resolve => setTimeout(resolve, 1500));
     const idx = mockProposals.findIndex(p => p.id === proposalId);
     if (idx === -1) throw new Error("Proposal not found.");
+
     const proposal = mockProposals[idx];
     const canExecute = proposal.status === 'Passed' && new Date() > new Date(proposal.endsAt) && proposal.turnout >= proposal.quorum;
-    if (!canExecute) { throw new Error("Proposal is not in a state that can be executed."); }
+
+    if (!canExecute) {
+        throw new Error("Proposal is not in a state that can be executed.");
+    }
+
     proposal.status = 'Executing';
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate execution time
     proposal.status = 'Executed';
+    console.log(`[AdminBot] Successfully executed proposal: ${proposal.title}`);
     return {...proposal};
 };
 
 export const submitProofOfInstallation = async(orderId: string, photoData: string): Promise<OrderEntity> => {
+    console.log(`API: Received proof of installation for order ${orderId}`);
+    await new Promise(resolve => setTimeout(resolve, 1000));
     const idx = mockOrders.findIndex(o => o.id === orderId);
     if (idx === -1) throw new Error('Order not found');
     mockOrders[idx].proofOfInstallationStatus = 'submitted';
@@ -291,82 +281,40 @@ export const submitProofOfInstallation = async(orderId: string, photoData: strin
 }
 
 export const verifyProofOfInstallation = async(orderId: string): Promise<OrderEntity> => {
-    await new Promise(resolve => setTimeout(resolve, 2000)); 
+    console.log(`API: Verifying proof for order ${orderId}...`);
+    await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate AI verification
     const idx = mockOrders.findIndex(o => o.id === orderId);
     if (idx === -1) throw new Error('Order not found');
+    
     mockOrders[idx].proofOfInstallationStatus = 'verified';
     const CASHBACK_RATE = 0.02;
     const cashbackAmount = mockOrders[idx].total * CASHBACK_RATE;
     const archiIndex = mockUserTokens.findIndex(t => t.symbol === 'ARCHI');
     mockUserTokens[archiIndex].balance += cashbackAmount;
+    
+    console.log(`API: Awarded ${cashbackAmount} ARCHI as cashback.`);
+    
+    reputationEvents.push({
+        id: `rev_${Date.now()}`,
+        userId: mockOrders[idx].userId,
+        type: 'ProofOfInstallation',
+        value: 5,
+        description: `Verified physical installation for order ${orderId}`,
+        timestamp: new Date().toISOString(),
+    });
+
     return {...mockOrders[idx]};
 };
 
 export const shareToPiFeed = async (projectId: string, caption?: string): Promise<{ success: boolean; message: string }> => {
+    console.log(`[PiSocialAPI] User ${mockUser.id} is sharing project ${projectId} with caption: ${caption}`);
     await new Promise(resolve => setTimeout(resolve, 1200));
+    console.log(`[PiSocialAPI] Share successful.`);
     return { success: true, message: 'Project shared to Pi Feed!' };
 };
 
 export const listDesignChallenges = async (): Promise<DesignChallengeEntity[]> => {
     return [...mockDesignChallenges];
-};
-
-export const createDesignChallenge = async (challenge: Omit<DesignChallengeEntity, 'id' | 'status' | 'winnerId'>): Promise<DesignChallengeEntity> => {
-    if (treasuryBalance < challenge.reward) {
-        throw new Error("Insufficient Treasury Funds");
-    }
-    treasuryBalance -= challenge.reward;
-    const newChallenge: DesignChallengeEntity = {
-        ...challenge,
-        id: `dc_${Date.now()}`,
-        status: 'Open',
-    };
-    mockDesignChallenges.unshift(newChallenge);
-    console.log(`[DAO] Created challenge '${challenge.title}' with ${challenge.reward} ARCHI reward.`);
-    return newChallenge;
-};
-
-// Simulated Administration Bot function
-export const processExpiredChallenges = async (): Promise<DesignChallengeEntity[]> => {
-    const now = new Date();
-    let updated = false;
-
-    for (let i = 0; i < mockDesignChallenges.length; i++) {
-        const challenge = mockDesignChallenges[i];
-        if (challenge.status !== 'Complete' && new Date(challenge.endsAt) < now) {
-            // Find winner
-            const submissions = mockChallengeSubmissions.filter(s => s.challengeId === challenge.id);
-            if (submissions.length > 0) {
-                const winner = submissions.sort((a, b) => b.votes - a.votes)[0];
-                challenge.winnerId = winner.submitterId;
-                
-                // Automatic Payout (Simulated)
-                console.log(`[AdminBot] Challenge '${challenge.title}' expired. Winner: ${winner.submitterName}. Payout: ${challenge.reward} ARCHI.`);
-                // In real contract, this triggers transfer
-                if (winner.submitterId === mockUser.id) {
-                     const idx = mockUserTokens.findIndex(t => t.symbol === 'ARCHI');
-                     mockUserTokens[idx].balance += challenge.reward;
-                }
-                
-                reputationEvents.push({
-                    id: `rev_${Date.now()}`,
-                    userId: winner.submitterId,
-                    type: 'BountyCompleted', // Reusing type or create new 'ChallengeWon'
-                    value: 50,
-                    description: `Won Design Challenge: ${challenge.title}`,
-                    timestamp: now.toISOString()
-                });
-            } else {
-                 console.log(`[AdminBot] Challenge '${challenge.title}' expired with no submissions. Refunded to Treasury.`);
-                 treasuryBalance += challenge.reward;
-            }
-            challenge.status = 'Complete';
-            updated = true;
-        }
-    }
-    
-    if (updated) return [...mockDesignChallenges];
-    return []; // No changes
 };
 
 export const getChallengeSubmissions = async (challengeId: string): Promise<ChallengeSubmissionEntity[]> => {
@@ -376,6 +324,7 @@ export const getChallengeSubmissions = async (challengeId: string): Promise<Chal
 export const submitProjectToChallenge = async (projectId: string, challengeId: string): Promise<ChallengeSubmissionEntity> => {
     const project = mockProjects.find(p => p.id === projectId);
     if (!project) throw new Error("Project not found");
+
     const newSubmission: ChallengeSubmissionEntity = {
         id: `sub_${Date.now()}`,
         challengeId,
@@ -397,240 +346,135 @@ export const voteOnChallengeSubmission = async (submissionId: string, votingPowe
     return { ...mockChallengeSubmissions[idx] };
 };
 
-export const calculateFeeDetails = (amount: number, staked: number) => {
-    const originalFee = amount * 0.10;
-    const discount = staked > 1000 ? 0.2 : 0; // 20% discount if staked > 1000
-    const fee = originalFee * (1 - discount);
-    return { fee, effectiveRate: 0.1 * (1 - discount), discountPercent: discount * 100, originalFee };
-}
+export const finalizeChallenge = async (challengeId: string): Promise<DesignChallengeEntity> => {
+    const challengeIndex = mockDesignChallenges.findIndex(c => c.id === challengeId);
+    if (challengeIndex === -1) throw new Error("Challenge not found");
+
+    const submissions = mockChallengeSubmissions.filter(s => s.challengeId === challengeId);
+    if (submissions.length === 0) {
+        mockDesignChallenges[challengeIndex].status = 'Complete';
+        return { ...mockDesignChallenges[challengeIndex] };
+    }
+
+    const winner = submissions.sort((a, b) => b.votes - a.votes)[0];
+    mockDesignChallenges[challengeIndex].status = 'Complete';
+    mockDesignChallenges[challengeIndex].winnerId = winner.submitterId;
+    
+    if (winner.submitterId === mockUser.id) {
+        const tokenIndex = mockUserTokens.findIndex(t => t.symbol === 'ARCHI');
+        mockUserTokens[tokenIndex].balance += mockDesignChallenges[challengeIndex].reward;
+    }
+    
+    console.log(`[Contract] Challenge ${challengeId} finalized. Winner is ${winner.submitterName}. ${mockDesignChallenges[challengeIndex].reward} ARCHI awarded.`);
+    return { ...mockDesignChallenges[challengeIndex] };
+};
+
+// Implement missing functions
+export const calculateFeeDetails = (reward: number, staked: number) => {
+    const discountPercent = staked > 1000 ? 50 : 0;
+    const originalFee = reward * 0.1;
+    const fee = originalFee * (1 - discountPercent / 100);
+    return { fee, effectiveRate: 10 - (discountPercent/10), discountPercent, originalFee };
+};
 
 export const getMarketMetrics = async () => {
     return [
-        { name: "Timber", change: 2.5, price: 15.50 },
-        { name: "Steel", change: -1.2, price: 125.00 },
-        { name: "Glass", change: 0.5, price: 45.00 }
+        { name: 'Eco-Timber', change: 2.5, price: 15.50 },
+        { name: 'Steel Beams', change: -1.8, price: 125.00 },
+        { name: 'Glass', change: 0.5, price: 45.00 },
+        { name: 'Concrete', change: 0.1, price: 12.00 }
     ];
-}
+};
 
-export const generateApiKey = async () => {
-    await new Promise(resolve => setTimeout(resolve, 800));
-    return "arch_sk_" + Math.random().toString(36).substring(2);
-}
+export const generateApiKey = async () => "arch_pk_live_" + Math.random().toString(36).substring(2);
 
-export const stakeLpTokens = async () => { return true; }
-export const claimMiningRewards = async () => { return true; }
-
-export const listSignedAgreements = async (): Promise<SignedAgreement[]> => {
-    return [
-        { id: 'agg_1', type: 'Bounty', referenceId: 'bty_02', parties: ['user_01', 'designer_01'], timestamp: new Date().toISOString(), contentHash: '0x123...', fullText: 'Agreement text...', status: 'Fulfilled' }
-    ];
-}
-
-export const requestServiceQuote = async (projectId: string, materialId: string) => {
-    await new Promise(resolve => setTimeout(resolve, 500));
-}
-
-export const getCartOptimizations = async (cart: any[]): Promise<CartOptimization[]> => {
-    await new Promise(resolve => setTimeout(resolve, 600));
-    if (cart.some(i => i.product.id === 'prod_01')) {
-        return [{ originalProductId: 'prod_01', suggestedProductId: 'prod_03', reason: 'Bulk discount available on alternate vendor', savings: 25.00 }];
-    }
-    return [];
-}
-
-export const checkInventory = async (cart: any[]): Promise<InventoryConflict[]> => {
-    await new Promise(resolve => setTimeout(resolve, 400));
-    return [];
-}
-
-export const generatePurchaseAgreement = async (cart: any[], total: number): Promise<string> => {
-    return `PURCHASE AGREEMENT\nTotal: ${total} PiUSD\nItems: ${cart.length}\n...`;
-}
-
-export const requestAdminMfa = async (password: string) => { return password === 'admin'; }
-export const verifyAdminMfa = async (code: string) => { return code === '000000'; }
-
-export const runIntegrationTest = async (): Promise<IntegrationTestResult> => {
-    return { 
-        timestamp: new Date().toISOString(), 
-        success: true, 
-        steps: [{name: 'Treasury Check', status: 'Passed', details: ''}, {name: 'Escrow Lock', status: 'Passed', details: ''}], 
-        finalTreasuryBalance: 1250000, 
-        finalEscrowBalance: 450000 
-    };
-}
-
-export const runStressTest = async (onProgress: (users: number) => void): Promise<StressTestResult> => {
-    for(let i=0; i<=1000; i+=100) {
-        onProgress(i);
-        await new Promise(resolve => setTimeout(resolve, 100));
-    }
-    return { testId: 'stress_1', timestamp: new Date().toISOString(), virtualUsers: 1000, totalTransactions: 50000, tps: 2500, avgLatencyMs: 45, errorRate: 0.01, bottlenecks: [], status: 'Passed' };
-}
-
-export const getVestingSchedule = async (userId: string): Promise<VestingSchedule | null> => {
-    return { id: 'vs_1', beneficiaryId: userId, totalAmount: 1000, releasedAmount: 200, startTime: new Date(Date.now() - 86400000 * 30).toISOString(), cliff: 0, duration: 31536000, revocable: false };
-}
-
-export const executeFuzzTest = async (): Promise<FuzzTestResult> => {
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    return { testId: 'fuzz_1', timestamp: new Date().toISOString(), operationsCount: 10000, invariantsChecked: ['solvency'], status: 'Passed', logs: ['Check solvency...', 'Check reentrancy...'], coverage: 98 };
-}
-
-export const processVendorOrderAction = async (orderId: string, action: string) => { return true; }
-
-export const joinFounderProgram = async (): Promise<boolean> => {
-    mockUser.isFounder = true;
+export const claimMiningRewards = async () => {
     return true;
 };
 
-export const submitProposalComment = async (proposalId: string, text: string): Promise<ProposalEntity> => {
-    const p = mockProposals.find(p => p.id === proposalId);
-    if (p) {
-        if (!p.comments) p.comments = [];
-        p.comments.push({ id: `c_${Date.now()}`, proposalId, authorId: mockUser.id, authorName: mockUser.piUsername, text, timestamp: new Date().toISOString() });
-        return {...p};
+export const stakeLpTokens = async (amount: number) => {
+    return true;
+};
+
+export const updateProductSustainability = async (productId: string, isSustainable: boolean, certifications: string[]) => {
+    const product = mockProducts.find(p => p.id === productId);
+    if (product) {
+        product.isEcoFriendly = isSustainable;
+        product.sustainabilityCertifications = certifications;
     }
-    throw new Error("Proposal not found");
-}
-
-// --- Enterprise & B2B Functions ---
-export const listTeamMembers = async (orgId: string): Promise<TeamMemberEntity[]> => {
-    // Return mock team, filtered if we had multiple orgs
-    return [...mockTeam];
 };
 
-export const inviteTeamMember = async (email: string, role: 'Admin' | 'Designer' | 'Accountant'): Promise<TeamMemberEntity> => {
-    const newMember: TeamMemberEntity = {
-        id: `tm_${Date.now()}`,
-        userId: 'pending',
-        name: email.split('@')[0],
-        role,
-        avatarUrl: 'https://placehold.co/64x64/CCCCCC/000000/png?text=New',
-        lastActive: 'Never'
-    };
-    mockTeam.push(newMember);
-    return newMember;
-};
-
-export const listDesignTemplates = async (): Promise<DesignTemplateEntity[]> => {
-    return [...mockTemplates];
-};
-
-export const createDesignTemplate = async (template: Omit<DesignTemplateEntity, 'id' | 'createdAt'>): Promise<DesignTemplateEntity> => {
-    const newTemplate: DesignTemplateEntity = {
-        ...template,
-        id: `tmp_${Date.now()}`,
-        createdAt: new Date().toISOString()
-    };
-    mockTemplates.push(newTemplate);
-    return newTemplate;
-};
-
-export const getEnterpriseAnalytics = async (): Promise<SpendingMetric[]> => {
-    // Mock data for the last 6 months
+export const listSignedAgreements = async (): Promise<SignedAgreement[]> => {
     return [
-        { month: 'Jan', amount: 12500, category: 'Materials' },
-        { month: 'Feb', amount: 15200, category: 'Materials' },
-        { month: 'Mar', amount: 8900, category: 'Labor' },
-        { month: 'Apr', amount: 11000, category: 'Materials' },
-        { month: 'May', amount: 18500, category: 'Materials' },
-        { month: 'Jun', amount: 22000, category: 'Materials' },
+        { id: 'sa_01', type: 'Service', status: 'Active', referenceId: 'proj_01', contentHash: '0x123...', timestamp: new Date().toISOString() }
     ];
 };
 
-// B2B Commission Logic
-export const processBulkOrder = async (productIds: string[], quantities: number[]): Promise<{ total: number, commission: number, discount: number }> => {
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Calculate...
-    
-    // Calculate base total from products
-    let baseTotal = 0;
-    productIds.forEach((pid, idx) => {
-        const prod = mockProducts.find(p => p.id === pid);
-        if (prod) baseTotal += prod.price * quantities[idx];
-    });
-
-    // Dynamic B2B Commission (5-8% based on volume)
-    // If total > 5000, rate is 5%, else 8%
-    const commissionRate = baseTotal > 5000 ? 0.05 : 0.08;
-    
-    // Volume Discount for Bulk (e.g., 10% off products)
-    const discount = baseTotal > 1000 ? baseTotal * 0.10 : 0;
-    
-    const commission = (baseTotal - discount) * commissionRate;
-    const total = (baseTotal - discount) + commission;
-
-    return { total, commission, discount };
+export const requestServiceQuote = async (projectId: string, materialId: string) => {
+    return true;
 };
 
-// Simulate Administration Bot Parameter Negotiation
-export const negotiateRate = async (orgId: string, volume: number): Promise<number> => {
-    await new Promise(resolve => setTimeout(resolve, 1500)); // AI processing
-    if (volume > 50000) return 0.04; // 4% for high volume
-    if (volume > 10000) return 0.05; // 5%
-    return 0.07; // 7% default negotiated
-};
-
-// --- Sustainability Logic ---
 export const generateSustainabilityReport = async (projectId: string): Promise<SustainabilityReport> => {
-    // Mock AI Analysis based on BOM
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    const project = mockProjects.find(p => p.id === projectId);
-    
-    let ecoScore = 70;
-    let carbon = 1500;
-    
-    // Adjust based on materials
-    if (project?.billOfMaterials) {
-        const greenItems = project.billOfMaterials.filter(i => i.isSustainable).length;
-        const totalItems = project.billOfMaterials.length;
-        if (totalItems > 0) {
-            ecoScore += (greenItems / totalItems) * 25;
-            carbon -= (greenItems * 50);
-        }
-    }
-
     return {
-        carbonFootprint: carbon,
-        energyEfficiencyScore: Math.min(100, Math.round(ecoScore)),
-        estimatedAnnualSavings: 125.50, // PiUSD
-        recommendations: [
-            "Replace standard bulbs with LED smart lighting",
-            "Upgrade windows to double-glazing",
-            "Use recycled timber for flooring"
-        ]
+        energyEfficiencyScore: 78,
+        carbonFootprint: 1200,
+        estimatedAnnualSavings: 350,
+        recommendations: ['Use LED lighting', 'Upgrade insulation']
     };
 };
 
-export const optimizeProjectForSustainability = async (projectId: string): Promise<ProjectEntity> => {
-    await new Promise(resolve => setTimeout(resolve, 2500)); // Simulate AI processing
-    const idx = mockProjects.findIndex(p => p.id === projectId);
-    if (idx === -1) throw new Error("Project not found");
-    
-    const project = mockProjects[idx];
-    // Swap items in BOM for eco versions
-    const newBOM = project.billOfMaterials.map(item => {
-        // Mock logic: if item is not sustainable, swap it
-        if (!item.isSustainable) {
-            return {
-                ...item,
-                name: `Eco-Friendly ${item.name}`, // Rename
-                isSustainable: true,
-                estimatedCost: (item.estimatedCost || 10) * 1.15 // Eco items are slightly pricier but better
-            };
-        }
-        return item;
-    });
-
-    mockProjects[idx] = { ...project, billOfMaterials: newBOM, updatedAt: new Date().toISOString() };
-    return mockProjects[idx];
+export const optimizeProjectForSustainability = async (projectId: string) => {
+    const p = mockProjects.find(p => p.id === projectId);
+    return p || mockProjects[0];
 };
 
-export const updateProductSustainability = async (productId: string, isEco: boolean, certs: string[]) => {
-    const prod = mockProducts.find(p => p.id === productId);
-    if (prod) {
-        prod.isEcoFriendly = isEco;
-        prod.sustainabilityCertifications = certs;
-    }
-    return prod;
+export const getCartOptimizations = async (cart: any): Promise<CartOptimization[]> => {
+    return [{ originalProductId: 'prod_02', suggestedProductId: 'prod_01', reason: 'Switch to Timber', savings: 50 }];
 };
+
+export const checkInventory = async (cart: any): Promise<InventoryConflict[]> => {
+    return [];
+};
+
+export const generatePurchaseAgreement = async (cart: any, total: number) => {
+    return `Purchase Agreement for ${total} PiUSD...`;
+};
+
+export const requestAdminMfa = async (password: string) => true;
+export const verifyAdminMfa = async (code: string) => true;
+export const runIntegrationTest = async (): Promise<IntegrationTestResult> => ({ success: true, steps: [{ name: 'DB Connection', status: 'Passed' }] });
+export const runStressTest = async (cb: (n: number) => void): Promise<StressTestResult> => {
+    cb(1000);
+    return { status: 'Passed', virtualUsers: 1000, tps: 5000, avgLatencyMs: 20, errorRate: 0 };
+};
+
+export const getVestingSchedule = async (userId: string): Promise<VestingSchedule> => ({ startTime: new Date().toISOString(), duration: 31536000, cliff: 0, totalAmount: 10000, releasedAmount: 2000 });
+
+export const executeFuzzTest = async (): Promise<FuzzTestResult> => ({ status: 'Passed', operationsCount: 5000, coverage: 95, testId: 'fuzz_01', logs: ['Test complete'] });
+
+export const processVendorOrderAction = async (orderId: string, action: string) => true;
+
+export const joinFounderProgram = async () => true;
+
+export const processExpiredChallenges = async () => [];
+
+export const submitProposalComment = async (proposalId: string, text: string) => {
+    const p = mockProposals.find(pr => pr.id === proposalId);
+    return p || mockProposals[0];
+};
+
+export const createDesignChallenge = async (data: any): Promise<DesignChallengeEntity> => {
+    return { ...mockDesignChallenges[0], ...data, id: 'dc_new' };
+};
+
+export const inviteTeamMember = async (email: string, role: string) => true;
+export const listTeamMembers = async (orgId: string): Promise<TeamMemberEntity[]> => [
+    { id: 'tm_01', name: 'Alice', role: 'Admin', avatarUrl: 'https://placehold.co/50', lastActive: 'Now' }
+];
+export const listDesignTemplates = async (): Promise<DesignTemplateEntity[]> => [
+    { id: 'tmpl_01', name: 'Modern Office', itemCount: 15, style: 'Modern', thumbnailUrl: 'https://placehold.co/100' }
+];
+export const getEnterpriseAnalytics = async (): Promise<SpendingMetric[]> => [
+    { month: 'Jan', amount: 5000 }, { month: 'Feb', amount: 12000 }
+];
+export const processBulkOrder = async (pids: string[], qtys: number[]) => ({ total: 5000, commission: 50, discount: 500 });
