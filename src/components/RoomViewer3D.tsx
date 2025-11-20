@@ -1,22 +1,7 @@
-
 import React, { useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Grid, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
-
-// Fix for missing Three.js intrinsic elements in JSX types
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      mesh: any;
-      boxGeometry: any;
-      meshStandardMaterial: any;
-      ambientLight: any;
-      pointLight: any;
-      color: any;
-    }
-  }
-}
 
 interface RoomViewer3DProps {
   isNightMode: boolean;
@@ -92,4 +77,3 @@ export const RoomViewer3D: React.FC<RoomViewer3DProps> = ({ isNightMode, color =
     </div>
   );
 };
-    

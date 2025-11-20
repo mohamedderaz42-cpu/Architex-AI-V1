@@ -1,5 +1,5 @@
 
-import React, { Suspense } from 'react';
+import React, { Suspense, useState } from 'react';
 import { GlassPanel } from './components/GlassPanel';
 import { IconButton } from './components/IconButton';
 import { ArchitexLogo } from './components/icons/ArchitexLogo';
@@ -38,6 +38,9 @@ import { useAppStore } from './store/useAppStore';
 import { WhitePaperModal } from './components/WhitePaperModal';
 import { AboutModal } from './components/AboutModal';
 import { LegalModal } from './components/LegalModal';
+import { LanguageSelectorModal } from './components/LanguageSelectorModal';
+import { GlobeIcon } from './components/icons/GlobeIcon';
+import { useLanguage } from './core/i18n/LanguageContext';
 
 // Lazy Loaded Heavy Components
 const ScannerInterface = React.lazy(() => import('./components/ScannerInterface').then(module => ({ default: module.ScannerInterface })));
@@ -46,7 +49,9 @@ const ChallengesGallery = React.lazy(() => import('./components/ChallengesGaller
 const PublicGallery = React.lazy(() => import('./components/PublicGallery').then(module => ({ default: module.PublicGallery })));
 
 const App: React.FC = () => {
-  const { setUser } = useAppStore(); // Get setUser from store to pass down
+  const { setUser } = useAppStore();
+  const { t } = useLanguage(); // Use translation hook
+  const [showLangModal, setShowLangModal] = useState(false);
 
   const {
     phase, isMounted, activeTab, projects, publicProjects, bounties, arbitrators, availableArbitrators, uxTip, user, orders, serviceProviders, serviceAgreements, proposals, designChallenges,
@@ -71,7 +76,6 @@ const App: React.FC = () => {
     selectedChallenge, submissions, handleSelectChallenge, closeChallengeDetailsModal, handleVoteOnSubmission,
     showSubmitToChallengeModal, projectToSubmit, openSubmitToChallengeModal, closeSubmitToChallengeModal, handleSubmitProjectToChallenge,
     isCommandPaletteOpen, toggleCommandPalette,
-    // Shop & Common Props
     products, cart, addToCart, openShoppingCart, openVendorProfile, 
     votingPower, handleClaimStakingRewards, openCreateChallengeModal, handleJoinFounderProgram,
     showWhitePaper, openWhitePaper, closeWhitePaper,
@@ -87,10 +91,10 @@ const App: React.FC = () => {
         ) : (
           <div className="text-center flex flex-col items-center w-full h-full justify-center pb-20 animate-fade-in">
             <ScanIcon className="w-20 h-20 text-pi-gold mb-4 opacity-80 animate-pulse" />
-            <h2 className="text-3xl font-bold text-white tracking-tight">Reality Scanner</h2>
-            <p className="text-slate-400 mt-2 mb-8 max-w-xs">Capture physical spaces with LIDAR precision.</p>
+            <h2 className="text-3xl font-bold text-white tracking-tight">{t('scan.title')}</h2>
+            <p className="text-slate-400 mt-2 mb-8 max-w-xs">{t('scan.desc')}</p>
             <div className="w-full max-w-xs px-2 mb-6"><ArchieBot message={uxTip} /></div>
-            <button onClick={startScan} className="group flex items-center justify-center px-8 py-4 bg-pi-gold/90 rounded-full text-xl font-bold text-brand-dark hover:bg-white hover:shadow-glow-gold transition-all duration-300 transform hover:scale-105">Activate Scanner</button>
+            <button onClick={startScan} className="group flex items-center justify-center px-8 py-4 bg-pi-gold/90 rounded-full text-xl font-bold text-brand-dark hover:bg-white hover:shadow-glow-gold transition-all duration-300 transform hover:scale-105">{t('scan.action')}</button>
           </div>
         );
       case 'explore':
@@ -103,12 +107,12 @@ const App: React.FC = () => {
         return (
           <div className="w-full h-full flex flex-col animate-fade-in">
             <div className="flex justify-between items-center mb-4 px-2 pt-2">
-                <h2 className="text-2xl font-bold text-white">Studio</h2>
-                <button className="flex items-center text-ai-violet hover:text-white transition-colors duration-300 bg-white/5 px-3 py-1 rounded-full border border-white/10 hover:border-ai-violet"><PlusCircleIcon className="w-5 h-5 mr-2" /><span className="font-semibold text-sm">New Project</span></button>
+                <h2 className="text-2xl font-bold text-white">{t('studio.title')}</h2>
+                <button className="flex items-center text-ai-violet hover:text-white transition-colors duration-300 bg-white/5 px-3 py-1 rounded-full border border-white/10 hover:border-ai-violet"><PlusCircleIcon className="w-5 h-5 mr-2" /><span className="font-semibold text-sm">{t('studio.new')}</span></button>
             </div>
             <div className="flex-grow overflow-y-auto space-y-4 pr-2 pb-20">
                 {projects.length === 0 ? (
-                    <div className="text-center text-slate-500 mt-20">No projects yet. Start scanning!</div>
+                    <div className="text-center text-slate-500 mt-20">{t('studio.empty')}</div>
                 ) : (
                     projects.map((project) => (<ProjectCard key={project.id} project={project} onCardClick={() => handleProjectInteraction(project)} onMintClick={() => openMintNftModal(project)} />))
                 )}
@@ -138,7 +142,7 @@ const App: React.FC = () => {
                 onAddToCart={addToCart}
                 onOpenCart={openShoppingCart}
                 onVendorClick={openVendorProfile}
-                onOpenDetails={(p) => console.log(p)} // Placeholder
+                onOpenDetails={(p) => console.log(p)} 
                 onJoinFounderProgram={handleJoinFounderProgram}
                 handleClaimStakingRewards={handleClaimStakingRewards}
                 votingPower={votingPower}
@@ -164,9 +168,9 @@ const App: React.FC = () => {
       {/* Intro Screen */}
       <div className={`absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-1000 z-[60] ${phase === 'intro' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         <div className={`transition-all duration-700 ease-out ${isMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-          <GlassPanel className="p-10 text-center bg-black/40 border-white/5"><ArchitexLogo className="w-24 h-24 mx-auto mb-6" /><h1 className="text-5xl font-bold text-white tracking-tighter">Architex</h1><p className="mt-2 text-slate-300 font-light text-lg">The Future of Design, Decentralized.</p></GlassPanel>
+          <GlassPanel className="p-10 text-center bg-black/40 border-white/5"><ArchitexLogo className="w-24 h-24 mx-auto mb-6" /><h1 className="text-5xl font-bold text-white tracking-tighter">{t('app.title')}</h1><p className="mt-2 text-slate-300 font-light text-lg">{t('app.subtitle')}</p></GlassPanel>
         </div>
-        <button onClick={initialize} className={`group mt-12 flex items-center justify-center px-8 py-3 bg-white/10 border border-white/20 rounded-full text-lg font-semibold text-white backdrop-blur-md hover:bg-white hover:text-brand-dark hover:shadow-glow-violet transition-all duration-300 ${isMounted ? 'opacity-100 translate-y-0 delay-300' : 'opacity-0 translate-y-10'}`}>Initialize Blueprint <ChevronRightIcon className="w-6 h-6 ml-2 group-hover:translate-x-1 transition-transform duration-300" /></button>
+        <button onClick={initialize} className={`group mt-12 flex items-center justify-center px-8 py-3 bg-white/10 border border-white/20 rounded-full text-lg font-semibold text-white backdrop-blur-md hover:bg-white hover:text-brand-dark hover:shadow-glow-violet transition-all duration-300 ${isMounted ? 'opacity-100 translate-y-0 delay-300' : 'opacity-0 translate-y-10'}`}>{t('app.init')} <ChevronRightIcon className="w-6 h-6 ml-2 group-hover:translate-x-1 transition-transform duration-300" /></button>
       </div>
 
       {/* Dashboard Container */}
@@ -174,9 +178,10 @@ const App: React.FC = () => {
         <header className="relative flex-shrink-0 pt-6 pb-2 px-4 flex justify-between items-center">
              <div className="flex items-center">
                  <ArchitexLogo className="w-8 h-8 mr-2 text-ai-violet"/>
-                 <span className="font-bold text-lg tracking-tight">Architex</span>
+                 <span className="font-bold text-lg tracking-tight">{t('app.title')}</span>
              </div>
              <div className="flex items-center space-x-2">
+                 <button onClick={() => setShowLangModal(true)} className="p-2 text-slate-400 hover:text-white transition-colors"><GlobeIcon className="w-5 h-5" /></button>
                  <button onClick={toggleCommandPalette} className="p-2 text-slate-400 hover:text-white transition-colors"><span className="text-xs bg-white/10 px-2 py-1 rounded border border-white/5">CMD+K</span></button>
                  <button onClick={toggleProfile} className="p-2 text-slate-400 hover:text-white transition-colors"><UserIcon className="w-6 h-6" /></button>
              </div>
@@ -188,17 +193,18 @@ const App: React.FC = () => {
         <footer className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 w-auto">
           <GlassPanel className="p-2 rounded-2xl bg-black/60 border-white/10 shadow-2xl backdrop-blur-2xl">
               <nav className="flex items-center space-x-1 px-2">
-                  <IconButton icon={<DesignIcon />} label="Explore" isActive={activeTab === 'explore'} onClick={() => setActiveTab('explore')} activeColor="ai-violet"/>
-                  <IconButton icon={<ScanIcon />} label="Scan" isActive={activeTab === 'scan'} onClick={() => setActiveTab('scan')} activeColor="pi-gold"/>
-                  <IconButton icon={<DesignIcon />} label="Studio" isActive={activeTab === 'design'} onClick={() => setActiveTab('design')} activeColor="ai-violet"/>
-                  <IconButton icon={<MarketIcon />} label="Market" isActive={activeTab === 'market'} onClick={() => setActiveTab('market')} activeColor="eco-green"/>
-                  <IconButton icon={<AwardIcon />} label="Games" isActive={activeTab === 'challenges'} onClick={() => setActiveTab('challenges')} activeColor="pi-gold"/>
+                  <IconButton icon={<DesignIcon />} label={t('nav.explore')} isActive={activeTab === 'explore'} onClick={() => setActiveTab('explore')} activeColor="ai-violet"/>
+                  <IconButton icon={<ScanIcon />} label={t('nav.scan')} isActive={activeTab === 'scan'} onClick={() => setActiveTab('scan')} activeColor="pi-gold"/>
+                  <IconButton icon={<DesignIcon />} label={t('nav.design')} isActive={activeTab === 'design'} onClick={() => setActiveTab('design')} activeColor="ai-violet"/>
+                  <IconButton icon={<MarketIcon />} label={t('nav.market')} isActive={activeTab === 'market'} onClick={() => setActiveTab('market')} activeColor="eco-green"/>
+                  <IconButton icon={<AwardIcon />} label={t('nav.challenges')} isActive={activeTab === 'challenges'} onClick={() => setActiveTab('challenges')} activeColor="pi-gold"/>
               </nav>
           </GlassPanel>
         </footer>
       </div>
 
       {/* Modals */}
+      {showLangModal && <LanguageSelectorModal onClose={() => setShowLangModal(false)} />}
       {showPaymentModal && <PaymentModal onConfirm={confirmPayment} onCancel={cancelPayment} isProcessing={isProcessingPayment} />}
       {isProfileVisible && user && <ProfileScreen user={user} projects={projects} orders={orders} serviceAgreements={serviceAgreements} userTokens={[]} onConfirmDelivery={handleConfirmDelivery} onRequestReturn={handleRequestReturn} onConfirmServiceCompletion={handleConfirmServiceCompletion} onClaimVestedTokens={async () => {}} onSubscribe={() => {}} onClose={toggleProfile} onBecomeProvider={() => {}} onBecomeArbitrator={() => {}} onOpenEnterprise={() => {}} onOpenWhitePaper={openWhitePaper} onOpenAbout={openAboutModal} onOpenLegal={openLegalModal} />}
       {showUpsellModal && <UpsellModal onConfirm={() => { setActiveTab('market'); closeUpsellModal(); }} onCancel={closeUpsellModal}/>}
