@@ -11,88 +11,111 @@ export interface UXContext {
     currentProjectModificationCount?: number;
     pendingReviews: number; 
     hasUnverifiedInstallation: boolean;
+    walletBalance?: number;
+    isOnline?: boolean;
+}
+
+interface Insight {
+    message: string;
+    type: 'critical' | 'warning' | 'opportunity' | 'guide';
+    weight: number;
+    action?: string;
 }
 
 /**
- * The Proactive UX Engine: Analyzes application state to determine the
- * "Next Best Action" for the user, driving engagement via ArchieBot.
+ * The Proactive User Experience Engine.
+ * Uses a weighted priority queue to determine the single most important
+ * piece of information or guidance to display to the user.
  */
 export const getProactiveTip = (context: UXContext): string => {
-  const { activeTab, user, projectCount, hasPendingOrders, currentProjectModificationCount, pendingReviews, hasUnverifiedInstallation } = context;
+  const insights: Insight[] = [];
+  const { activeTab, user, projectCount, currentProjectModificationCount, pendingReviews, hasUnverifiedInstallation } = context;
 
-  // 1. Onboarding / Empty State
-  if (!user) return "Welcome! Initialize your blueprint to begin the journey.";
-  
-  if (projectCount === 0 && activeTab !== 'scan') {
-      return "Your portfolio is empty. Head to the Room Scanner to capture your first space!";
+  // --- 1. CRITICAL BLOCKERS (Weight 100+) ---
+  if (!user) {
+      insights.push({
+          message: "Welcome to Architex. Initialize your blockchain identity to begin.",
+          type: 'critical',
+          weight: 100
+      });
   }
-  
-  // 2. Reward & Reputation Rules (High Priority)
+
   if (hasUnverifiedInstallation) {
-      return "Reward Alert: You have a delivered order. Upload a photo of the installation to verify and claim your cashback reward!";
+      insights.push({
+          message: "Action Required: Verify your recent installation upload to claim your 2% cashback reward.",
+          type: 'critical',
+          weight: 90
+      });
   }
 
+  // --- 2. REPUTATION & GROWTH (Weight 70-90) ---
   if (pendingReviews > 0) {
-      return `You have ${pendingReviews} completed service(s) awaiting feedback. Rate your provider to boost your own Trust Score!`;
+      insights.push({
+          message: `You have ${pendingReviews} pending reviews. Rate your provider to increase your own Trust Score.`,
+          type: 'warning',
+          weight: 80
+      });
+  }
+  
+  if (user && user.trustScore < 50 && activeTab === 'market') {
+      insights.push({
+          message: "Your Trust Score is low. Complete verification or successful bounties to unlock lower fees.",
+          type: 'warning',
+          weight: 75
+      });
   }
 
-  // 3. Proactive Upsell Rule (Tip Fallback)
-  if (currentProjectModificationCount && currentProjectModificationCount >= 2) {
-      return "You've iterated on this design multiple times. Our professional designers can help finalize your vision.";
+  // --- 3. WORKFLOW OPTIMIZATION (Weight 50-70) ---
+  if (activeTab === 'design' && currentProjectModificationCount && currentProjectModificationCount >= 3) {
+      insights.push({
+          message: "Stuck on the details? You can hire a professional designer from the marketplace to finalize this blueprint.",
+          type: 'opportunity',
+          weight: 60
+      });
   }
 
-  // 4. Context-Specific Tips
-  switch (activeTab) {
-    case 'scan':
-      return "Pro Tip: Ensure the room is well-lit for the most accurate LIDAR measurements.";
-    case 'design':
-      if (projectCount > 0) {
-          return "Tap on a project to view AI-generated variations or mint it as an NFT.";
-      }
-      return "Start a new project by scanning a room or describing your vision.";
-    case 'market':
-      if (user && user.trustScore < 50) {
-          return "Complete bounties to raise your Trust Score and unlock lower platform fees.";
-      }
-      if (hasPendingOrders) {
-          return "You have items on the way. Don't forget to request an installation quote!";
-      }
-      return "Filter materials by 'Eco-Rating' to find sustainable options that earn you ARCHI rewards.";
-    case 'challenges':
-      return "Winning a design challenge grants significant voting power in the DAO.";
-    default:
-      return "Architex is ready. What will you build today?";
+  // --- 4. CONTEXTUAL GUIDANCE (Weight 10-50) ---
+  if (activeTab === 'scan') {
+      insights.push({ message: "Pro Tip: Slow, steady pans allow the LIDAR to capture cleaner point clouds.", type: 'guide', weight: 30 });
   }
+
+  if (activeTab === 'design' && projectCount === 0) {
+      insights.push({ message: "Your studio is empty. Start by scanning a room or using the 'New Project' wizard.", type: 'guide', weight: 40 });
+  }
+
+  if (activeTab === 'market' && user?.role === 'vendor') {
+      insights.push({ message: "Check the 'Promotions' tab to boost visibility for your slow-moving inventory.", type: 'opportunity', weight: 45 });
+  }
+  
+  if (activeTab === 'challenges') {
+      insights.push({ message: "Winning challenges grants significant voting power in the Architex DAO.", type: 'guide', weight: 20 });
+  }
+
+  // Fallback
+  insights.push({ message: "Architex is online. Ready to build.", type: 'guide', weight: 0 });
+
+  // Sort by weight descending
+  insights.sort((a, b) => b.weight - a.weight);
+
+  return insights[0].message;
 };
 
-/**
- * Logic Rule: Triggers when a user struggles or iterates frequently on a single design.
- * @param modificationCount The number of times the current project has been modified/regenerated.
- */
 export const shouldTriggerDesignerUpsell = (modificationCount: number): boolean => {
-    return modificationCount >= 2;
+    return modificationCount >= 3;
 };
 
-/**
- * Provides the content for the proactive designer marketplace upsell.
- * @returns An object containing the title and body for the upsell modal.
- */
 export const getUpsellPrompt = (): { title: string, body: string } => {
     return {
-        title: "Need a Professional Touch?",
-        body: "We noticed you're refining your design. Our marketplace connects you with professional human architects who can perfect your vision.",
+        title: "Need Expert Help?",
+        body: "You've iterated on this design several times. Our marketplace has certified architects who can turn this concept into a buildable plan.",
     };
 };
 
-/**
- * A sequence of instructions for the Guided Scanning feature.
- * Optimized for audio duration.
- */
 export const guidedScanInstructions: string[] = [
-    "Initializing Scanner.",
+    "Initializing Lidar...",
     "Scan floor area.",
     "Pan up to walls.",
-    "Capture perimeter.",
-    "Scan ceiling now.",
-    "Processing Cloud.",
+    "Capture corners.",
+    "Scan ceiling.",
+    "Processing cloud.",
 ];

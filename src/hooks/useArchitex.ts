@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity, ProductEntity, ScanAnalysis } from '../core/schemas/entities';
 import * as api from '../core/api/contract';
@@ -297,7 +298,7 @@ export const useArchitex = () => {
   const handleSubmitProofOfInstallation = async (orderId: string) => { await api.submitProofOfInstallation(orderId, 'mock_photo_data'); const updatedOrder = await api.verifyProofOfInstallation(orderId); setOrders(prev => prev.map(o => o.id === orderId ? updatedOrder : o)); const score = await api.calculateTrustScore(user!.id); setUser(prev => prev ? {...prev, trustScore: score} : null); };
   const openGovernanceTosModal = () => setShowGovernanceTosModal(true);
   const closeGovernanceTosModal = () => setShowGovernanceTosModal(false);
-  const handleShareProject = async (projectId: string) => { const result = await api.shareToPiFeed(projectId); return result; };
+  const handleShareProject = async (projectId: string) => { const result = await api.shareToPiFeed(projectId, "Check out my design!"); return result; };
   const handleSelectChallenge = async (challenge: DesignChallengeEntity) => { const challengeSubmissions = await api.getChallengeSubmissions(challenge.id); setSubmissions(challengeSubmissions); setSelectedChallenge(challenge); };
   const closeChallengeDetailsModal = () => { setSelectedChallenge(null); setSubmissions([]); };
   const openSubmitToChallengeModal = (project: ProjectEntity) => { setProjectToSubmit(project); setShowSubmitToChallengeModal(true); };

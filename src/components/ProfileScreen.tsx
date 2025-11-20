@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { UserEntity, ProjectEntity, OrderEntity, ServiceAgreementEntity, TokenEntity, SignedAgreement } from '../core/schemas/entities';
 import { GlassPanel } from './GlassPanel';
@@ -42,9 +43,9 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, projects, or
 
     useEffect(() => {
         if (activeTab === 'contracts') {
-            api.listSignedAgreements().then(setAgreements);
+            api.listSignedAgreements(user.id).then(setAgreements);
         }
-    }, [activeTab]);
+    }, [activeTab, user.id]);
 
     const handleReportBug = () => {
         window.open('mailto:support@architex.app?subject=Beta Feedback - Architex App');

@@ -1,37 +1,66 @@
 
 import type { FC, SVGProps } from 'react';
 
-export type ProjectStatus = 'Scanning' | 'Designing' | 'Sourcing' | 'Complete';
-export type MaterialStatus = 'Pending' | 'Ordered' | 'Delivered';
-export type BountyStatus = 'Open' | 'In Progress' | 'In Dispute' | 'Arbitration' | 'Complete';
-export type EscrowState = 'Unfunded' | 'Funded' | 'Released' | 'Refunded';
-export type PromotionType = 'item' | 'invoice';
-export type OrderStatus = 'Processing' | 'Shipped' | 'Delivered' | 'Returned' | 'Return Requested' | 'Refunded' | 'In Dispute' | 'Forwarded to Vendor';
-export type ProofOfInstallationStatus = 'none' | 'pending' | 'submitted' | 'verified' | 'rejected';
-export type ProposalStatus = 'Voting' | 'Passed' | 'Failed' | 'Executing' | 'Executed';
-export type ReputationEventType = 'BountyCompleted' | 'DisputeWon' | 'RatingReceived' | 'ProofOfInstallation';
-export type DesignChallengeStatus = 'Open' | 'Voting' | 'Complete';
-export type GigCategory = 'Plumbing' | 'Electrical' | 'Carpentry' | 'Painting' | 'HVAC' | 'General';
+// ==========================================
+// DOMAIN: IDENTITY & ACCESS
+// ==========================================
 
+export type UserRole = 'user' | 'vendor' | 'service-provider' | 'arbitrator' | 'admin';
+export type SubscriptionTier = 'Free' | 'Accelerator' | 'Enterprise';
+
+export interface ReputationEvent {
+    id: string;
+    userId: string;
+    type: 'BountyCompleted' | 'DisputeWon' | 'RatingReceived' | 'ProofOfInstallation' | 'GovernanceVote';
+    value: number;
+    description: string;
+    timestamp: string;
+}
+
+export interface UserEntity {
+  id: string;
+  piUsername: string;
+  walletAddress: string;
+  trustScore: number;
+  reputationHistory?: ReputationEvent[]; 
+  avatarUrl?: string;
+  subscriptionTier: SubscriptionTier;
+  subscriptionExpiry?: string;
+  role: UserRole;
+  
+  // Module Profiles
+  vendorProfile?: VendorProfile;
+  serviceProviderProfile?: ServiceProviderProfile;
+  arbitratorProfile?: ArbitratorProfile;
+  affiliateProfile?: AffiliateProfile;
+  dropshipProfile?: DropshipProfile;
+  
+  // Governance
+  stakedArchi?: number;
+  isFounder?: boolean;
+  stakingPosition?: { unclaimedRewards: number };
+}
 
 export interface VendorProfile {
     hasInsurance: boolean;
     agreedToIndemnity: boolean;
+    verificationDate?: string;
+    businessName?: string;
+    taxId?: string;
 }
 
 export interface ServiceProviderProfile {
     specialty: string;
     portfolioUrl: string;
-    serviceZones: string[]; // e.g., ['USA-CA', 'USA-NV']
+    serviceZones: string[]; 
     hasLiabilityInsurance: boolean;
-    verificationStatus?: string;
+    verificationStatus?: 'pending' | 'verified' | 'rejected';
     insuranceDocUrl?: string;
-    // Gig Worker Specifics
     isGigWorker?: boolean;
     gigCategories?: GigCategory[];
     hourlyRate?: number;
     isAvailable?: boolean;
-    distance?: string; // Simulated distance string e.g., "0.5 km"
+    distance?: string;
 }
 
 export interface ArbitratorProfile {
@@ -39,22 +68,20 @@ export interface ArbitratorProfile {
     yearsExperience: number;
     fee: number;
     cvUrl: string;
-    verificationStatus: string;
+    verificationStatus: 'pending' | 'verified';
     casesResolved: number;
     resolutionRate: number;
 }
 
-// --- Affiliate Entities ---
 export interface AffiliateProfile {
     referralCode: string;
     totalReferrals: number;
-    totalEarnings: number; // In ARCHI
+    totalEarnings: number;
     pendingEarnings: number;
     tier: 'Scout' | 'Ambassador';
     campaigns: { id: string; name: string; clicks: number; conversions: number }[];
 }
 
-// --- Dropshipping Entities ---
 export interface DropshipProfile {
     storeName: string;
     isActive: boolean;
@@ -63,34 +90,12 @@ export interface DropshipProfile {
     reputationScore: number;
 }
 
-export interface DropshipListing {
-    id: string;
-    originalProductId: string; // Link to manufacturer
-    vendorId: string; // The dropshipper ID
-    markupPrice: number;
-    originalPrice: number;
-    margin: number;
-    active: boolean;
-}
+// ==========================================
+// DOMAIN: ENGINEERING & DESIGN
+// ==========================================
 
-export interface UserEntity {
-  id: string;
-  piUsername: string;
-  walletAddress: string;
-  trustScore: number; 
-  avatarUrl?: string;
-  subscriptionTier: 'Free' | 'Accelerator' | 'Enterprise';
-  vendorProfile?: VendorProfile;
-  serviceProviderProfile?: ServiceProviderProfile;
-  arbitratorProfile?: ArbitratorProfile;
-  affiliateProfile?: AffiliateProfile; // New
-  dropshipProfile?: DropshipProfile; // New
-  role: 'user' | 'vendor' | 'service-provider' | 'arbitrator';
-  stakedArchi?: number;
-  isFounder?: boolean;
-  stakingPosition?: { unclaimedRewards: number };
-  subscriptionExpiry?: string;
-}
+export type ProjectStatus = 'Scanning' | 'Designing' | 'Sourcing' | 'Complete';
+export type MaterialStatus = 'Pending' | 'Ordered' | 'Delivered';
 
 export interface BillOfMaterialsEntry {
   materialId: string;
@@ -100,6 +105,8 @@ export interface BillOfMaterialsEntry {
   estimatedCost?: number;
   imageUrl?: string;
   isSustainable?: boolean;
+  carbonFootprint?: number; // CO2e per unit
+  sourcingDistance?: number; // km
 }
 
 export interface ProjectEntity {
@@ -117,18 +124,92 @@ export interface ProjectEntity {
   unreadMessages?: number;
   modificationCount?: number;
   isNft?: boolean;
+  nftContractAddress?: string;
+  nftTokenId?: string;
   likes?: number;
+  sustainabilityScore?: number; // 0-100
 }
 
-export interface MaterialEntity {
-  id: string;
-  name: string;
-  description: string;
-  supplierId: string;
-  ecoRating: number; 
-  price: number; 
-  imageUrl: string;
-  tags?: string[];
+export interface ScanAnalysis {
+    dimensions: string;
+    style: string;
+    lighting: string;
+    summary: string;
+}
+
+export interface DesignTemplateEntity {
+    id: string;
+    name: string;
+    itemCount: number;
+    style: string;
+    thumbnailUrl: string;
+}
+
+// ==========================================
+// DOMAIN: COMMERCE & MARKETPLACE
+// ==========================================
+
+export type OrderStatus = 'Processing' | 'Shipped' | 'Delivered' | 'Returned' | 'Return Requested' | 'Refunded' | 'In Dispute' | 'Forwarded to Vendor';
+export type PromotionType = 'item' | 'invoice';
+export type ProofOfInstallationStatus = 'none' | 'pending' | 'submitted' | 'verified' | 'rejected';
+export type GigCategory = 'Plumbing' | 'Electrical' | 'Carpentry' | 'Painting' | 'HVAC' | 'General';
+
+export interface ProductEntity {
+    id: string;
+    vendorId: string;
+    name: string;
+    price: number;
+    inStock: number;
+    imageUrl: string;
+    tags?: string[];
+    isEcoFriendly?: boolean;
+    sustainabilityCertifications?: string[];
+    allowDropshipping?: boolean;
+    wholesalePrice?: number;
+    dropshipListings?: DropshipListing[]; 
+}
+
+export interface DropshipListing {
+    id: string;
+    originalProductId: string;
+    vendorId: string;
+    markupPrice: number;
+    originalPrice: number;
+    margin: number;
+    active: boolean;
+}
+
+export interface CartItem {
+    productId: string;
+    quantity: number;
+    product: ProductEntity; // Expanded for UI convenience
+}
+
+export interface OrderEntity {
+    id: string;
+    userId: string;
+    items: { productId: string; quantity: number; }[];
+    total: number;
+    status: OrderStatus;
+    createdAt: string;
+    proofOfInstallationStatus: ProofOfInstallationStatus;
+    isDropshipOrder?: boolean;
+    dropshipperId?: string;
+}
+
+export interface ShippingZone {
+    id: string;
+    name: string;
+    active: boolean;
+}
+
+export interface PromotionEntity {
+    id: string;
+    type: PromotionType;
+    description: string;
+    discountValue: number;
+    targetId?: string;
+    minSpend?: number;
 }
 
 export interface TokenEntity {
@@ -143,6 +224,37 @@ export interface LiquidityPoolEntity {
     userShare: number;
     totalValueLocked: number;
     protocolLiquidity?: number;
+}
+
+// ==========================================
+// DOMAIN: CONTRACTS & LEGAL
+// ==========================================
+
+export type ServiceAgreementStatus = 'pending' | 'signed' | 'funded' | 'work-in-progress' | 'client-confirmed' | 'validator-confirmed' | 'complete' | 'dispute';
+export type BountyStatus = 'Open' | 'In Progress' | 'In Dispute' | 'Arbitration' | 'Complete';
+export type EscrowState = 'Unfunded' | 'Funded' | 'Released' | 'Refunded';
+
+export interface ServiceAgreementEntity {
+    id: string;
+    clientId: string;
+    providerId: string;
+    projectId: string;
+    scope: string;
+    price: number;
+    status: ServiceAgreementStatus;
+    qualityAssuranceValidatorId?: string;
+    createdAt: string;
+    completedAt?: string;
+}
+
+export interface SignedAgreement {
+    id: string;
+    type: 'Service' | 'Bounty' | 'Dropship';
+    status: 'Active' | 'Fulfilled' | 'Breached';
+    referenceId: string;
+    contentHash: string;
+    timestamp: string;
+    signatories: string[];
 }
 
 export interface BountyEntity {
@@ -168,102 +280,34 @@ export interface ArbitratorEntity {
     conflictsWithProjectIds?: string[];
 }
 
-// --- E-Commerce Engine Entities ---
-
-export interface ProductEntity {
+export interface DisputeCase {
     id: string;
-    vendorId: string;
-    name: string;
-    price: number;
-    inStock: number;
-    imageUrl: string;
-    tags?: string[];
-    isEcoFriendly?: boolean;
-    sustainabilityCertifications?: string[];
-    // Dropshipping Support
-    allowDropshipping?: boolean;
-    wholesalePrice?: number;
-    dropshipListings?: DropshipListing[]; 
-}
-
-export interface CartItem {
-    productId: string;
-    quantity: number;
-}
-
-export interface OrderEntity {
-    id: string;
-    userId: string;
-    items: CartItem[];
-    total: number;
-    status: OrderStatus;
-    createdAt: string;
-    proofOfInstallationStatus: ProofOfInstallationStatus;
-    isDropshipOrder?: boolean;
-    dropshipperId?: string;
-}
-
-export interface ShippingZone {
-    id: string;
-    name: string;
-    active: boolean;
-}
-
-export interface PromotionEntity {
-    id: string;
-    type: PromotionType;
-    description: string;
-    discountValue: number;
-    targetId?: string;
-    minSpend?: number;
-}
-
-// --- Service Provider Entities ---
-export type ServiceAgreementStatus = 'pending' | 'signed' | 'funded' | 'work-in-progress' | 'client-confirmed' | 'validator-confirmed' | 'complete' | 'dispute';
-
-export interface ServiceAgreementEntity {
-    id: string;
-    clientId: string;
-    providerId: string;
-    projectId: string;
-    scope: string;
-    price: number;
-    status: ServiceAgreementStatus;
-    qualityAssuranceValidatorId?: string;
+    referenceId: string; // Order or Bounty ID
+    complainantId: string;
+    respondentId: string;
+    arbitratorId?: string;
+    status: 'Open' | 'Under Review' | 'Resolved';
+    evidenceUrls: string[];
+    ruling?: 'Upheld' | 'Dismissed';
     createdAt: string;
 }
 
-export interface SignedAgreement {
+export interface AuditLog {
     id: string;
-    type: string;
-    status: string;
-    referenceId: string;
-    contentHash: string;
+    actorId: string;
+    action: string;
+    targetResource: string;
     timestamp: string;
+    status: 'Success' | 'Failure';
+    metadata?: any;
 }
 
+// ==========================================
+// DOMAIN: GOVERNANCE (DAO)
+// ==========================================
 
-// --- Reputation & DAO Entities ---
-
-export interface ReputationEvent {
-    id: string;
-    userId: string;
-    type: ReputationEventType;
-    value: number;
-    description: string;
-    timestamp: string;
-}
-
-export interface MessageEntity {
-    id: string;
-    contextId: string;
-    senderId: string;
-    senderName: string;
-    text: string;
-    timestamp: string;
-    isSystem?: boolean;
-    authorName?: string;
-}
+export type ProposalStatus = 'Voting' | 'Passed' | 'Failed' | 'Executing' | 'Executed';
+export type DesignChallengeStatus = 'Open' | 'Voting' | 'Complete';
 
 export interface ProposalEntity {
     id: string;
@@ -280,8 +324,16 @@ export interface ProposalEntity {
     comments?: MessageEntity[];
 }
 
-
-// --- Design Challenge Entities ---
+export interface MessageEntity {
+    id: string;
+    contextId: string;
+    senderId: string;
+    senderName: string;
+    text: string;
+    timestamp: string;
+    isSystem?: boolean;
+    authorName?: string;
+}
 
 export interface DesignChallengeEntity {
     id: string;
@@ -304,7 +356,9 @@ export interface ChallengeSubmissionEntity {
     projectName: string;
 }
 
-// --- New Entities for Modules ---
+// ==========================================
+// DOMAIN: SYSTEM ANALYTICS
+// ==========================================
 
 export interface SustainabilityReport {
     energyEfficiencyScore: number;
@@ -364,22 +418,7 @@ export interface TeamMemberEntity {
     lastActive: string;
 }
 
-export interface DesignTemplateEntity {
-    id: string;
-    name: string;
-    itemCount: number;
-    style: string;
-    thumbnailUrl: string;
-}
-
 export interface SpendingMetric {
     month: string;
     amount: number;
-}
-
-export interface ScanAnalysis {
-    dimensions: string;
-    style: string;
-    lighting: string;
-    summary: string;
 }

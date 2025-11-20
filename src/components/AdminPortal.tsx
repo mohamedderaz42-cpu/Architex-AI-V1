@@ -9,11 +9,11 @@ import { CheckCircleIcon } from './icons/CheckCircleIcon';
 import { XCircleIcon } from './icons/XCircleIcon';
 import { LoaderIcon } from './icons/LoaderIcon';
 import { ServerIcon } from './icons/ServerIcon';
-import { DatabaseIcon } from './icons/DatabaseIcon'; // Import DB Icon
+import { DatabaseIcon } from './icons/DatabaseIcon';
 import * as api from '../core/api/contract';
 import { useToast } from './Toast';
 import { SecurityTerminal } from './SecurityTerminal';
-import { BackupManager } from './BackupManager'; // Import BackupManager
+import { BackupManager } from './BackupManager';
 import { IntegrationTestResult, StressTestResult } from '../core/schemas/entities';
 
 interface AdminPortalProps {
@@ -21,7 +21,7 @@ interface AdminPortalProps {
 }
 
 type AuthStep = 'login' | 'mfa' | 'dashboard';
-type AdminTab = 'overview' | 'stress' | 'backup'; // Added 'backup' tab
+type AdminTab = 'overview' | 'stress' | 'backup';
 
 export const AdminPortal: React.FC<AdminPortalProps> = ({ onClose }) => {
     const [step, setStep] = useState<AuthStep>('login');
@@ -73,7 +73,6 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onClose }) => {
         setIsRunningTest(true);
         setTestResult(null);
         try {
-            // Simulate delay for visual effect
             await new Promise(resolve => setTimeout(resolve, 1000));
             const result = await api.runIntegrationTest();
             setTestResult(result);
@@ -92,9 +91,14 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onClose }) => {
         setStressResult(null);
         setStressProgress(0);
         try {
-            const result = await api.runStressTest((users) => {
-                setStressProgress(users);
-            });
+            const interval = setInterval(() => {
+                setStressProgress(prev => Math.min(prev + 100, 1000));
+            }, 200);
+            
+            const result = await api.runStressTest(1000);
+            
+            clearInterval(interval);
+            setStressProgress(1000);
             setStressResult(result);
             addToast('Load Test Complete', 'success');
         } catch (e) {
@@ -135,7 +139,6 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onClose }) => {
             <LockIcon className="w-16 h-16 mx-auto text-pi-gold mb-4" />
             <h2 className="text-xl font-bold text-white mb-2">Security Verification</h2>
             <p className="text-sm text-slate-400 mb-6">Please enter the 6-digit code sent to your secure device.</p>
-            
             <div className="flex justify-center space-x-2 mb-6">
                 <input 
                     type="text" 
@@ -146,7 +149,6 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onClose }) => {
                     className="w-32 bg-slate-900/50 border border-white/10 rounded-lg px-4 py-2 text-center text-2xl tracking-widest text-white focus:outline-none focus:border-pi-gold/50"
                 />
             </div>
-
             <button 
                 onClick={handleMfaVerify}
                 disabled={isLoading || mfaCode.length !== 6}
@@ -158,55 +160,8 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onClose }) => {
         </div>
     );
 
-    const renderRoutingVisualizer = () => (
-        <div className="mb-4 p-4 bg-slate-900/50 rounded-xl border border-white/10 relative overflow-hidden">
-            <h3 className="text-xs font-bold text-slate-400 uppercase mb-3">Active Revenue Routing</h3>
-            <div className="flex justify-between items-center text-xs">
-                <div className="flex flex-col items-center">
-                    <div className="w-10 h-10 rounded-full bg-blue-500/20 border border-blue-500/50 flex items-center justify-center mb-2">
-                        <UserIcon className="w-5 h-5 text-blue-400" />
-                    </div>
-                    <span className="text-slate-300">User</span>
-                </div>
-                
-                <div className="flex-grow px-2 relative h-10">
-                    {/* Paths */}
-                    <div className="absolute top-1/2 left-0 w-full h-px bg-slate-700"></div>
-                    <div className="absolute top-1/2 left-1/2 w-px h-8 bg-slate-700 -translate-y-1/2 origin-bottom rotate-45 transform"></div> 
-                    <div className="absolute top-1/2 left-1/2 w-px h-8 bg-slate-700 -translate-y-1/2 origin-top -rotate-45 transform"></div> 
-                    
-                    {/* Flow Indicators */}
-                    <div className="absolute top-0 left-1/3 text-[9px] text-eco-green font-bold">100% Value</div>
-                </div>
-
-                <div className="flex flex-col space-y-4">
-                    <div className="flex items-center">
-                        <div className="w-8 h-8 rounded-full bg-pi-gold/20 border border-pi-gold/50 flex items-center justify-center mr-2">
-                            <ShieldCheckIcon className="w-4 h-4 text-pi-gold" />
-                        </div>
-                        <div>
-                            <span className="block text-white font-bold">Treasury</span>
-                            <span className="text-[9px] text-slate-400">Fees (10%)</span>
-                        </div>
-                    </div>
-                    <div className="flex items-center">
-                        <div className="w-8 h-8 rounded-full bg-ai-violet/20 border border-ai-violet/50 flex items-center justify-center mr-2">
-                            <LockIcon className="w-4 h-4 text-ai-violet" />
-                        </div>
-                        <div>
-                            <span className="block text-white font-bold">Escrow</span>
-                            <span className="text-[9px] text-slate-400">Reward (90%)</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-
     const renderOverviewTab = () => (
         <>
-            {renderRoutingVisualizer()}
-
             <div className="grid grid-cols-2 gap-3 mb-4 flex-shrink-0">
                  <div className="bg-slate-800/50 p-3 rounded-xl border border-white/5">
                     <div className="text-xs text-slate-400">Treasury Balance</div>
@@ -254,11 +209,6 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onClose }) => {
                                 <span className="text-red-400 font-bold flex items-center"><XCircleIcon className="w-4 h-4 mr-1"/> FAILED</span>
                             )}
                         </div>
-                        {testResult.success && (
-                            <div className="mt-2 p-2 bg-green-900/20 border border-green-500/30 rounded text-center">
-                                <span className="text-green-400 font-bold tracking-wider">CODE FREEZE ACTIVE</span>
-                            </div>
-                        )}
                     </div>
                 ) : (
                      <div className="text-center py-4 text-xs text-slate-500">
@@ -273,12 +223,6 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onClose }) => {
                     <SecurityTerminal />
                 </div>
             </div>
-            
-            <div className="mt-4 pt-4 border-t border-white/10">
-                <button onClick={handleExportAuditPackage} className="w-full py-2 bg-slate-700/50 rounded border border-white/20 text-slate-300 text-sm hover:text-white hover:bg-slate-600 transition-colors">
-                    Prepare Audit Package
-                </button>
-            </div>
         </>
     );
 
@@ -289,9 +233,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onClose }) => {
                     <ServerIcon className="w-6 h-6 text-red-400 mr-2" />
                     <h3 className="font-bold text-white">Infrastructure Stress Test</h3>
                 </div>
-                <p className="text-xs text-slate-400 mb-4">
-                    Simulate high-concurrency traffic to identify bottlenecks in the contract execution layer and database sharding logic.
-                </p>
+                <p className="text-xs text-slate-400 mb-4">Simulate high-concurrency traffic.</p>
                 
                 {!isStressTesting && !stressResult && (
                      <button 
@@ -309,10 +251,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onClose }) => {
                             <span>{stressProgress} / 1000</span>
                         </div>
                         <div className="w-full bg-slate-800 rounded-full h-4 overflow-hidden">
-                            <div 
-                                className="bg-gradient-to-r from-orange-500 to-red-500 h-full transition-all duration-300" 
-                                style={{width: `${(stressProgress / 1000) * 100}%`}}
-                            ></div>
+                            <div className="bg-gradient-to-r from-orange-500 to-red-500 h-full" style={{width: `${(stressProgress / 1000) * 100}%`}}></div>
                         </div>
                     </div>
                 )}
@@ -331,14 +270,6 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onClose }) => {
                             <span className="text-slate-400">Throughput</span>
                             <span className="text-white">{stressResult.tps} TPS</span>
                         </div>
-                        <div className="flex justify-between border-b border-white/10 pb-1">
-                            <span className="text-slate-400">Avg Latency</span>
-                            <span className="text-white">{stressResult.avgLatencyMs}ms</span>
-                        </div>
-                         <div className="flex justify-between">
-                            <span className="text-slate-400">Error Rate</span>
-                            <span className={stressResult.errorRate < 1 ? 'text-green-400' : 'text-red-400'}>{stressResult.errorRate.toFixed(2)}%</span>
-                        </div>
                     </div>
                 )}
             </div>
@@ -356,24 +287,9 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({ onClose }) => {
             </div>
             
             <div className="flex space-x-2 mb-4 overflow-x-auto">
-                <button 
-                    onClick={() => setActiveTab('overview')}
-                    className={`flex-shrink-0 px-4 py-2 rounded-lg text-xs font-bold transition-colors ${activeTab === 'overview' ? 'bg-white text-black' : 'bg-slate-800 text-slate-400 hover:text-white'}`}
-                >
-                    System Overview
-                </button>
-                <button 
-                    onClick={() => setActiveTab('stress')}
-                    className={`flex-shrink-0 px-4 py-2 rounded-lg text-xs font-bold transition-colors ${activeTab === 'stress' ? 'bg-red-500 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}`}
-                >
-                    Stress Testing
-                </button>
-                 <button 
-                    onClick={() => setActiveTab('backup')}
-                    className={`flex-shrink-0 px-4 py-2 rounded-lg text-xs font-bold transition-colors flex items-center ${activeTab === 'backup' ? 'bg-ai-violet text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}`}
-                >
-                    <DatabaseIcon className="w-3 h-3 mr-1" /> Backup & Recovery
-                </button>
+                <button onClick={() => setActiveTab('overview')} className={`flex-shrink-0 px-4 py-2 rounded-lg text-xs font-bold transition-colors ${activeTab === 'overview' ? 'bg-white text-black' : 'bg-slate-800 text-slate-400'}`}>Overview</button>
+                <button onClick={() => setActiveTab('stress')} className={`flex-shrink-0 px-4 py-2 rounded-lg text-xs font-bold transition-colors ${activeTab === 'stress' ? 'bg-red-500 text-white' : 'bg-slate-800 text-slate-400'}`}>Stress Testing</button>
+                 <button onClick={() => setActiveTab('backup')} className={`flex-shrink-0 px-4 py-2 rounded-lg text-xs font-bold transition-colors flex items-center ${activeTab === 'backup' ? 'bg-ai-violet text-white' : 'bg-slate-800 text-slate-400'}`}><DatabaseIcon className="w-3 h-3 mr-1" /> Backup</button>
             </div>
 
             {activeTab === 'overview' && renderOverviewTab()}
