@@ -32,7 +32,7 @@ import { ChallengeDetailsModal } from './components/ChallengeDetailsModal';
 import { SubmitToChallengeModal } from './components/SubmitToChallengeModal';
 import { AmbientBackground } from './components/AmbientBackground';
 import { CommandPalette } from './components/CommandPalette';
-import { ProjectCard } from './components/ProjectCard'; // Import for Design Tab
+import { ProjectCard } from './components/ProjectCard'; 
 import { Loader } from './components/Loader';
 import { useAppStore } from './store/useAppStore';
 import { WhitePaperModal } from './components/WhitePaperModal';
@@ -43,8 +43,8 @@ import { GlobeIcon } from './components/icons/GlobeIcon';
 import { useLanguage } from './core/i18n/LanguageContext';
 import { PiBrowserGate } from './components/PiBrowserGate';
 import { OfflineNotice } from './components/OfflineNotice';
-import { SystemBootLoader } from './components/SystemBootLoader'; // New Import
-import { ScanAnalysisView } from './components/ScanAnalysisView'; // We will create this inline for now or simple div
+import { SystemBootLoader } from './components/SystemBootLoader'; 
+import { ScanAnalysisView } from './components/ScanAnalysisView';
 
 // Lazy Loaded Heavy Components
 const ScannerInterface = React.lazy(() => import('./components/ScannerInterface').then(module => ({ default: module.ScannerInterface })));
@@ -94,31 +94,7 @@ const App: React.FC = () => {
             return <Suspense fallback={<Loader />}><ScannerInterface instruction={currentScanInstruction} progress={scanProgress} onCancel={cancelScan} /></Suspense>;
         }
         if (scanFinished && scanAnalysis) {
-            return (
-                <div className="w-full h-full flex items-center justify-center p-4 animate-fade-in">
-                     <GlassPanel className="w-full max-w-md p-6">
-                         <h2 className="text-xl font-bold text-white mb-4 text-center">Analysis Complete</h2>
-                         <div className="space-y-3 mb-6">
-                             <div className="flex justify-between border-b border-white/10 pb-2">
-                                 <span className="text-slate-400">Detected Size</span>
-                                 <span className="text-white font-mono">{scanAnalysis.dimensions}</span>
-                             </div>
-                             <div className="flex justify-between border-b border-white/10 pb-2">
-                                 <span className="text-slate-400">Current Style</span>
-                                 <span className="text-white">{scanAnalysis.style}</span>
-                             </div>
-                             <div className="flex justify-between border-b border-white/10 pb-2">
-                                 <span className="text-slate-400">Lighting</span>
-                                 <span className="text-white">{scanAnalysis.lighting}</span>
-                             </div>
-                             <p className="text-xs text-slate-400 italic mt-2 text-center">"{scanAnalysis.summary}"</p>
-                         </div>
-                         <div className="text-center text-sm text-pi-gold animate-pulse">
-                             Initializing Design Studio...
-                         </div>
-                     </GlassPanel>
-                </div>
-            );
+            return <ScanAnalysisView analysis={scanAnalysis} />;
         }
         return (
           <div className="text-center flex flex-col items-center w-full h-full justify-center pb-20 animate-fade-in">
