@@ -171,7 +171,8 @@ const App: React.FC = () => {
   return (
     <PiBrowserGate>
         <OfflineNotice />
-        <div dir={dir} className="h-[100dvh] w-full bg-brand-dark text-slate-100 flex flex-col items-center overflow-hidden antialiased relative">
+        {/* Use h-[100dvh] for mobile viewport adjustment and pb-safe for iOS home indicator area */}
+        <div dir={dir} className="h-[100dvh] w-full bg-brand-dark text-slate-100 flex flex-col items-center overflow-hidden antialiased relative pb-safe">
         <AmbientBackground />
         <CommandPalette isOpen={isCommandPaletteOpen} onClose={toggleCommandPalette} onNavigate={(tab) => setActiveTab(tab as any)} onOpenWhitePaper={openWhitePaper} />
 
@@ -204,8 +205,8 @@ const App: React.FC = () => {
 
             <main className="flex-grow flex items-center justify-center p-2 min-h-0">{renderDashboardContent()}</main>
             
-            {/* Floating Dock */}
-            <footer className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 w-auto">
+            {/* Floating Dock - Added bottom padding for safety */}
+            <footer className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 w-auto mb-safe">
             <GlassPanel className="p-2 rounded-2xl bg-black/60 border-white/10 shadow-2xl backdrop-blur-2xl">
                 <nav className="flex items-center space-x-1 px-2">
                     <IconButton icon={<DesignIcon />} label={t('nav.explore')} isActive={activeTab === 'explore'} onClick={() => setActiveTab('explore')} activeColor="ai-violet"/>

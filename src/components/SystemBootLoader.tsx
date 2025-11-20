@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useEffect } from 'react';
 import { GlassPanel } from './GlassPanel';
 import { CheckCircleIcon } from './icons/CheckCircleIcon';
 import { XCircleIcon } from './icons/XCircleIcon';
@@ -18,6 +19,9 @@ interface SystemBootLoaderProps {
 export const SystemBootLoader: React.FC<SystemBootLoaderProps> = ({ steps, onRetry }) => {
     const hasError = steps.some(s => s.status === 'error');
 
+    // Optional: You could add internal timeout logic here if the parent doesn't control it fully
+    // But currently useArchitex.ts controls the flow.
+
     return (
         <div className="w-full max-w-md animate-fade-in p-4">
             <GlassPanel className="p-6 border-ai-violet/30">
@@ -28,7 +32,7 @@ export const SystemBootLoader: React.FC<SystemBootLoaderProps> = ({ steps, onRet
 
                 <div className="space-y-4 font-mono text-sm">
                     {steps.map((step) => (
-                        <div key={step.id} className="flex items-center justify-between">
+                        <div key={step.id} className="flex items-center justify-between transition-all duration-300">
                             <span className={`${
                                 step.status === 'active' ? 'text-white font-semibold' : 
                                 step.status === 'complete' ? 'text-slate-400' : 
@@ -40,9 +44,9 @@ export const SystemBootLoader: React.FC<SystemBootLoaderProps> = ({ steps, onRet
                             
                             <div>
                                 {step.status === 'active' && <LoaderIcon className="w-4 h-4 text-ai-violet animate-spin" />}
-                                {step.status === 'complete' && <CheckCircleIcon className="w-4 h-4 text-eco-green" />}
+                                {step.status === 'complete' && <CheckCircleIcon className="w-4 h-4 text-eco-green animate-scale-in" />}
                                 {step.status === 'error' && <XCircleIcon className="w-4 h-4 text-red-500" />}
-                                {step.status === 'pending' && <span className="w-4 h-4 block"></span>}
+                                {step.status === 'pending' && <span className="w-4 h-4 block border border-slate-800 rounded-full"></span>}
                             </div>
                         </div>
                     ))}

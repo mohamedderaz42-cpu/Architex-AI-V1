@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import { GlassPanel } from './GlassPanel';
 import { ArchitexLogo } from './icons/ArchitexLogo';
-import { ExternalLinkIcon } from './icons/ExternalLinkIcon'; // New icon needed below
 
 // Inline simple icons to avoid dependency issues if not present
 const WarningIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -18,6 +17,12 @@ const LinkIcon = (props: React.SVGProps<SVGSVGElement>) => (
         <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
         <polyline points="15 3 21 3 21 9"></polyline>
         <line x1="10" y1="14" x2="21" y2="3"></line>
+    </svg>
+);
+
+const WrenchIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
     </svg>
 );
 
@@ -57,7 +62,7 @@ export const PiBrowserGate: React.FC<{ children: React.ReactNode }> = ({ childre
             To access the decentralized features, wallet, and secure marketplace, this application is designed to run within the <span className="text-pi-gold font-bold">Pi Browser</span>.
         </p>
 
-        <div className="bg-slate-900/60 p-4 rounded-xl border border-white/10 mb-8 text-left flex items-start">
+        <div className="bg-slate-900/60 p-4 rounded-xl border border-white/10 mb-6 text-left flex items-start">
             <WarningIcon className="w-6 h-6 text-pi-gold mr-3 flex-shrink-0" />
             <div>
                 <h3 className="text-sm font-bold text-white">Environment Check</h3>
@@ -67,29 +72,32 @@ export const PiBrowserGate: React.FC<{ children: React.ReactNode }> = ({ childre
             </div>
         </div>
 
-        <div className="relative group mb-4">
-            <div className="absolute -inset-1 bg-gradient-to-r from-pi-gold to-orange-600 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+        <div className="space-y-3">
+            <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-pi-gold to-orange-600 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                <button 
+                    onClick={() => {
+                        // Try to open deep link, fallback to copy
+                        window.location.href = "pi://architex.app"; 
+                        navigator.clipboard.writeText("pi://architex.app");
+                        alert("Deep link copied! Paste it in Pi Browser.");
+                    }}
+                    className="relative w-full py-4 bg-slate-900 ring-1 ring-white/10 rounded-lg leading-none flex items-center justify-center space-x-2"
+                >
+                    <span className="text-white font-bold">Open in Pi Browser</span>
+                    <LinkIcon className="w-4 h-4 text-pi-gold" />
+                </button>
+            </div>
+            
+            {/* Enhanced Developer Bypass Button */}
             <button 
-                onClick={() => {
-                    // Try to open deep link, fallback to copy
-                    window.location.href = "pi://architex.app"; 
-                    navigator.clipboard.writeText("pi://architex.app");
-                    alert("Deep link copied! Paste it in Pi Browser.");
-                }}
-                className="relative w-full py-4 bg-slate-900 ring-1 ring-white/10 rounded-lg leading-none flex items-center justify-center space-x-2"
+                onClick={() => setBypass(true)}
+                className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg flex items-center justify-center space-x-2 text-slate-300 transition-colors"
             >
-                <span className="text-white font-bold">Open in Pi Browser</span>
-                <LinkIcon className="w-4 h-4 text-pi-gold" />
+                <WrenchIcon className="w-4 h-4" />
+                <span className="text-xs font-bold">Developer Mode: Continue in Standard Browser</span>
             </button>
         </div>
-        
-        {/* Developer Bypass Button */}
-        <button 
-            onClick={() => setBypass(true)}
-            className="text-xs text-slate-500 hover:text-white transition-colors font-medium border-b border-transparent hover:border-white pb-0.5"
-        >
-            Developer Mode: Continue in Standard Browser
-        </button>
         
       </GlassPanel>
     </div>
