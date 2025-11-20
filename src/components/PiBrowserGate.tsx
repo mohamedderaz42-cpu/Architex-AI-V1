@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import { GlassPanel } from './GlassPanel';
 import { ArchitexLogo } from './icons/ArchitexLogo';
-import { QRCodeIcon } from './icons/QRCodeIcon'; // Assuming you might want a QR icon, or use a generic one
 import { ExternalLinkIcon } from './icons/ExternalLinkIcon'; // New icon needed below
 
 // Inline simple icons to avoid dependency issues if not present
@@ -24,10 +23,12 @@ const LinkIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 export const PiBrowserGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isPiBrowser, setIsPiBrowser] = useState<boolean | null>(null);
+  const [bypass, setBypass] = useState(false);
 
   useEffect(() => {
     // Check if Pi SDK is loaded or if user agent suggests Pi Browser
     const checkEnvironment = () => {
+      // We consider it Pi Browser if window.Pi exists OR if we are bypassing check
       const isPi = window.Pi !== undefined || navigator.userAgent.includes('PiBrowser');
       setIsPiBrowser(isPi);
     };
@@ -37,7 +38,8 @@ export const PiBrowserGate: React.FC<{ children: React.ReactNode }> = ({ childre
 
   if (isPiBrowser === null) return null; // Loading state
 
-  if (isPiBrowser) {
+  // If it's Pi Browser OR the user has clicked "Developer Bypass"
+  if (isPiBrowser || bypass) {
     return <>{children}</>;
   }
 
@@ -52,27 +54,27 @@ export const PiBrowserGate: React.FC<{ children: React.ReactNode }> = ({ childre
         
         <h1 className="text-2xl font-bold text-white mb-2">Welcome to Architex</h1>
         <p className="text-slate-400 mb-8">
-            To access the decentralized features, wallet, and secure marketplace, this application must be opened within the <span className="text-pi-gold font-bold">Pi Browser</span>.
+            To access the decentralized features, wallet, and secure marketplace, this application is designed to run within the <span className="text-pi-gold font-bold">Pi Browser</span>.
         </p>
 
         <div className="bg-slate-900/60 p-4 rounded-xl border border-white/10 mb-8 text-left flex items-start">
             <WarningIcon className="w-6 h-6 text-pi-gold mr-3 flex-shrink-0" />
             <div>
-                <h3 className="text-sm font-bold text-white">Environment Check Failed</h3>
+                <h3 className="text-sm font-bold text-white">Environment Check</h3>
                 <p className="text-xs text-slate-400 mt-1">
-                    We could not detect the Pi Network SDK. Please copy the link below and paste it into the Pi Browser address bar.
+                    Pi Network SDK not detected. If you are a user, please open this page in the Pi Browser.
                 </p>
             </div>
         </div>
 
-        <div className="relative group">
+        <div className="relative group mb-4">
             <div className="absolute -inset-1 bg-gradient-to-r from-pi-gold to-orange-600 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
             <button 
                 onClick={() => {
-                    window.location.href = "pi://architex.app"; // Deep link attempt
-                    // Fallback copy
-                    navigator.clipboard.writeText(window.location.href);
-                    alert("Link copied! Open Pi Browser and paste it.");
+                    // Try to open deep link, fallback to copy
+                    window.location.href = "pi://architex.app"; 
+                    navigator.clipboard.writeText("pi://architex.app");
+                    alert("Deep link copied! Paste it in Pi Browser.");
                 }}
                 className="relative w-full py-4 bg-slate-900 ring-1 ring-white/10 rounded-lg leading-none flex items-center justify-center space-x-2"
             >
@@ -81,9 +83,14 @@ export const PiBrowserGate: React.FC<{ children: React.ReactNode }> = ({ childre
             </button>
         </div>
         
-        <p className="text-[10px] text-slate-600 mt-6">
-            If you are a developer testing in a standard browser, ensure Sandbox mode is active.
-        </p>
+        {/* Developer Bypass Button */}
+        <button 
+            onClick={() => setBypass(true)}
+            className="text-xs text-slate-500 hover:text-white transition-colors font-medium border-b border-transparent hover:border-white pb-0.5"
+        >
+            Developer Mode: Continue in Standard Browser
+        </button>
+        
       </GlassPanel>
     </div>
   );
