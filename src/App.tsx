@@ -171,7 +171,7 @@ const App: React.FC = () => {
   return (
     <PiBrowserGate>
         <OfflineNotice />
-        <div dir={dir} className="min-h-screen w-full bg-brand-dark text-slate-100 flex flex-col items-center overflow-hidden antialiased relative">
+        <div dir={dir} className="h-[100dvh] w-full bg-brand-dark text-slate-100 flex flex-col items-center overflow-hidden antialiased relative">
         <AmbientBackground />
         <CommandPalette isOpen={isCommandPaletteOpen} onClose={toggleCommandPalette} onNavigate={(tab) => setActiveTab(tab as any)} onOpenWhitePaper={openWhitePaper} />
 
