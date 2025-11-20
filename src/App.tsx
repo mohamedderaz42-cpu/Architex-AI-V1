@@ -1,3 +1,4 @@
+
 import React, { Suspense, useState } from 'react';
 import { GlassPanel } from './components/GlassPanel';
 import { IconButton } from './components/IconButton';
@@ -43,6 +44,7 @@ import { useLanguage } from './core/i18n/LanguageContext';
 import { PiBrowserGate } from './components/PiBrowserGate';
 import { OfflineNotice } from './components/OfflineNotice';
 import { SystemBootLoader } from './components/SystemBootLoader'; // New Import
+import { ScanAnalysisView } from './components/ScanAnalysisView'; // We will create this inline for now or simple div
 
 // Lazy Loaded Heavy Components
 const ScannerInterface = React.lazy(() => import('./components/ScannerInterface').then(module => ({ default: module.ScannerInterface })));
@@ -52,13 +54,13 @@ const PublicGallery = React.lazy(() => import('./components/PublicGallery').then
 
 const App: React.FC = () => {
   const { setUser } = useAppStore();
-  const { t, dir } = useLanguage(); // Use translation hook
+  const { t, dir } = useLanguage(); 
   const [showLangModal, setShowLangModal] = useState(false);
 
   const {
     phase, isMounted, activeTab, projects, publicProjects, bounties, arbitrators, availableArbitrators, uxTip, user, orders, serviceProviders, serviceAgreements, proposals, designChallenges,
-    bootSteps, initialize, setActiveTab, isScanning, scanProgress, currentScanInstruction, startScan, cancelScan,
-    showPaymentModal, confirmPayment, cancelPayment, isProcessingPayment, isProfileVisible, toggleProfile,
+    bootSteps, initialize, setActiveTab, isScanning, scanFinished, scanAnalysis, scanProgress, currentScanInstruction, startScan, cancelScan,
+    showPaymentModal, confirmPayment, cancelPayment, isProcessingPayment, paymentError, isProfileVisible, toggleProfile,
     handleProjectInteraction, showUpsellModal, closeUpsellModal, showCreateBountyModal, openCreateBountyModal,
     closeCreateBountyModal, handleCreateBounty, showMintNftModal, projectToMint, openMintNftModal,
     closeMintNftModal, handleMintNft, selectedBounty, handleSelectBounty, closeBountyDetailsModal,
@@ -88,9 +90,37 @@ const App: React.FC = () => {
   const renderDashboardContent = () => {
     switch (activeTab) {
       case 'scan':
-        return isScanning ? (
-            <Suspense fallback={<Loader />}><ScannerInterface instruction={currentScanInstruction} progress={scanProgress} onCancel={cancelScan} /></Suspense>
-        ) : (
+        if (isScanning) {
+            return <Suspense fallback={<Loader />}><ScannerInterface instruction={currentScanInstruction} progress={scanProgress} onCancel={cancelScan} /></Suspense>;
+        }
+        if (scanFinished && scanAnalysis) {
+            return (
+                <div className="w-full h-full flex items-center justify-center p-4 animate-fade-in">
+                     <GlassPanel className="w-full max-w-md p-6">
+                         <h2 className="text-xl font-bold text-white mb-4 text-center">Analysis Complete</h2>
+                         <div className="space-y-3 mb-6">
+                             <div className="flex justify-between border-b border-white/10 pb-2">
+                                 <span className="text-slate-400">Detected Size</span>
+                                 <span className="text-white font-mono">{scanAnalysis.dimensions}</span>
+                             </div>
+                             <div className="flex justify-between border-b border-white/10 pb-2">
+                                 <span className="text-slate-400">Current Style</span>
+                                 <span className="text-white">{scanAnalysis.style}</span>
+                             </div>
+                             <div className="flex justify-between border-b border-white/10 pb-2">
+                                 <span className="text-slate-400">Lighting</span>
+                                 <span className="text-white">{scanAnalysis.lighting}</span>
+                             </div>
+                             <p className="text-xs text-slate-400 italic mt-2 text-center">"{scanAnalysis.summary}"</p>
+                         </div>
+                         <div className="text-center text-sm text-pi-gold animate-pulse">
+                             Initializing Design Studio...
+                         </div>
+                     </GlassPanel>
+                </div>
+            );
+        }
+        return (
           <div className="text-center flex flex-col items-center w-full h-full justify-center pb-20 animate-fade-in">
             <ScanIcon className="w-20 h-20 text-pi-gold mb-4 opacity-80 animate-pulse" />
             <h2 className="text-3xl font-bold text-white tracking-tight">{t('scan.title')}</h2>
@@ -214,7 +244,7 @@ const App: React.FC = () => {
 
         {/* Modals */}
         {showLangModal && <LanguageSelectorModal onClose={() => setShowLangModal(false)} />}
-        {showPaymentModal && <PaymentModal onConfirm={confirmPayment} onCancel={cancelPayment} isProcessing={isProcessingPayment} />}
+        {showPaymentModal && <PaymentModal onConfirm={confirmPayment} onCancel={cancelPayment} isProcessing={isProcessingPayment} error={paymentError} analysis={scanAnalysis} />}
         {isProfileVisible && user && <ProfileScreen user={user} projects={projects} orders={orders} serviceAgreements={serviceAgreements} userTokens={[]} onConfirmDelivery={handleConfirmDelivery} onRequestReturn={handleRequestReturn} onConfirmServiceCompletion={handleConfirmServiceCompletion} onClaimVestedTokens={async () => {}} onSubscribe={() => {}} onClose={toggleProfile} onBecomeProvider={() => {}} onBecomeArbitrator={() => {}} onOpenEnterprise={() => {}} onOpenWhitePaper={openWhitePaper} onOpenAbout={openAboutModal} onOpenLegal={openLegalModal} />}
         {showUpsellModal && <UpsellModal onConfirm={() => { setActiveTab('market'); closeUpsellModal(); }} onCancel={closeUpsellModal}/>}
         {showCreateBountyModal && <CreateBountyModal user={user} onConfirm={handleCreateBounty} onCancel={closeCreateBountyModal}/>}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity, ProductEntity } from '../core/schemas/entities';
+import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity, ProductEntity, ScanAnalysis } from '../core/schemas/entities';
 import * as api from '../core/api/contract';
 import { getProactiveTip, guidedScanInstructions, UXContext } from '../core/ux-engine/engine';
 import { useAppStore } from '../store/useAppStore';
@@ -52,6 +52,11 @@ export const useArchitex = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const scanIntervalRef = useRef<number | null>(null);
+
+  // Analysis & Payment State
+  const [scanFinished, setScanFinished] = useState(false);
+  const [scanAnalysis, setScanAnalysis] = useState<ScanAnalysis | null>(null);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   
   // Upsell & Bounty Flow
   const [showUpsellModal, setShowUpsellModal] = useState(false);
@@ -200,9 +205,62 @@ export const useArchitex = () => {
   const closeUpsellModal = () => setShowUpsellModal(false);
 
   // --- Scanning & Payment ---
-  const startScan = () => { setIsScanning(true); setCurrentScanStep(0); setScanProgress(0); const totalDuration = 8000; const stepDuration = totalDuration / guidedScanInstructions.length; scanIntervalRef.current = window.setInterval(() => { setCurrentScanStep(prevStep => { const nextStep = prevStep + 1; if (nextStep >= guidedScanInstructions.length) { clearInterval(scanIntervalRef.current!); setIsScanning(false); setShowPaymentModal(true); return prevStep; } return nextStep; }); setScanProgress(prev => prev + (100 / guidedScanInstructions.length)); }, stepDuration); };
-  const cancelScan = () => { if (scanIntervalRef.current) { clearInterval(scanIntervalRef.current); } setIsScanning(false); setScanProgress(0); setCurrentScanStep(0); };
-  const confirmPayment = async () => { setIsProcessingPayment(true); await api.generateModelFromScan(); const updatedProjects = await api.listProjects(); setProjects(updatedProjects); setIsProcessingPayment(false); setShowPaymentModal(false); setActiveTab('design'); };
+  const startScan = () => { 
+      setIsScanning(true); 
+      setScanFinished(false);
+      setScanAnalysis(null);
+      setPaymentError(null);
+      setCurrentScanStep(0); 
+      setScanProgress(0); 
+      const totalDuration = 8000; 
+      const stepDuration = totalDuration / guidedScanInstructions.length; 
+      scanIntervalRef.current = window.setInterval(() => { 
+          setCurrentScanStep(prevStep => { 
+              const nextStep = prevStep + 1; 
+              if (nextStep >= guidedScanInstructions.length) { 
+                  if (scanIntervalRef.current) { clearInterval(scanIntervalRef.current); } 
+                  setIsScanning(false);
+                  setScanFinished(true);
+                  setScanAnalysis({
+                      dimensions: '4.5m x 3.2m',
+                      style: 'Contemporary',
+                      lighting: 'Natural (West Facing)',
+                      summary: 'Room structure captured. Surfaces detected. Ready for style transfer.'
+                  });
+                  setTimeout(() => setShowPaymentModal(true), 3000);
+                  return prevStep; 
+              } 
+              return nextStep; 
+          }); 
+          setScanProgress(prev => prev + (100 / guidedScanInstructions.length)); 
+      }, stepDuration); 
+  };
+
+  const cancelScan = () => { 
+      if (scanIntervalRef.current) { clearInterval(scanIntervalRef.current); } 
+      setIsScanning(false); 
+      setScanFinished(false); 
+      setScanProgress(0); 
+      setCurrentScanStep(0); 
+  };
+
+  const confirmPayment = async () => { 
+      setIsProcessingPayment(true); 
+      setPaymentError(null);
+      try {
+          await api.generateModelFromScan(); 
+          const updatedProjects = await api.listProjects(); 
+          setProjects(updatedProjects); 
+          setIsProcessingPayment(false); 
+          setShowPaymentModal(false); 
+          setScanFinished(false); 
+          setActiveTab('design'); 
+      } catch(e) {
+          setIsProcessingPayment(false);
+          setPaymentError("Payment verification failed. Please try again.");
+      }
+  };
+  
   const cancelPayment = () => setShowPaymentModal(false);
 
   // --- Modal Wrappers ---
@@ -272,7 +330,7 @@ export const useArchitex = () => {
     phase, isMounted, activeTab, projects, publicProjects, bounties, arbitrators, availableArbitrators, user, isLoading, uxTip, orders, serviceProviders, serviceAgreements, proposals, designChallenges,
     bootSteps, // Export boot steps
     initialize, setActiveTab, toggleProfile, isProfileVisible,
-    isScanning, scanProgress, currentScanInstruction, startScan, cancelScan, showPaymentModal, confirmPayment, cancelPayment, isProcessingPayment,
+    isScanning, scanFinished, scanAnalysis, scanProgress, currentScanInstruction, startScan, cancelScan, showPaymentModal, confirmPayment, cancelPayment, isProcessingPayment, paymentError,
     handleProjectInteraction, showUpsellModal, closeUpsellModal, showProjectDetailsModal, selectedProject, setShowProjectDetailsModal, handleGetQuotes,
     showCreateBountyModal, openCreateBountyModal, closeCreateBountyModal, handleCreateBounty, selectedBounty, handleSelectBounty, closeBountyDetailsModal,
     showAgreementModal, agreementText, handleInitiateFunding, handleConfirmFunding, closeAgreementModal, handleRaiseDispute, handleReleaseFunds, handleSelectArbitrator,

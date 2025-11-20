@@ -1,3 +1,4 @@
+
 import { useState, useRef } from 'react';
 import { ProjectEntity, ScanAnalysis } from '../../core/schemas/entities';
 import * as api from '../../core/api/contract';
@@ -16,6 +17,7 @@ export const useDesignStudio = (
     
     // Scanning
     const [isScanning, setIsScanning] = useState(false);
+    const [scanFinished, setScanFinished] = useState(false); // New state for post-scan view
     const [scanProgress, setScanProgress] = useState(0);
     const [currentScanStep, setCurrentScanStep] = useState(0);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -43,18 +45,20 @@ export const useDesignStudio = (
     // Scanning Logic
     const startScan = () => { 
         setIsScanning(true); 
+        setScanFinished(false);
         setCurrentScanStep(0); 
         setScanProgress(0); 
+        setScanAnalysis(null); // Reset analysis
+        
         const totalDuration = 8000; 
         const stepDuration = totalDuration / guidedScanInstructions.length; 
+        
         scanIntervalRef.current = window.setInterval(() => { 
             setCurrentScanStep(prevStep => { 
                 const nextStep = prevStep + 1; 
                 if (nextStep >= guidedScanInstructions.length) { 
                     if (scanIntervalRef.current) clearInterval(scanIntervalRef.current); 
-                    setIsScanning(false); 
-                    setScanAnalysis({ dimensions: '15x20ft', style: 'Modern', lighting: 'Natural (South)', summary: 'Spacious room with good potential for open-plan living.' }); 
-                    setShowPaymentModal(true); 
+                    finishScan(); // Trigger finish sequence
                     return prevStep; 
                 } 
                 return nextStep; 
@@ -63,9 +67,29 @@ export const useDesignStudio = (
         }, stepDuration); 
     };
     
+    const finishScan = () => {
+        setIsScanning(false);
+        setScanFinished(true);
+        
+        // Mock Analysis Data generated from scan
+        const mockAnalysis: ScanAnalysis = { 
+            dimensions: '4.5m x 3.2m', 
+            style: 'Contemporary', 
+            lighting: 'Natural (West Facing)', 
+            summary: 'Room structure captured. Surfaces detected. Ready for style transfer.' 
+        };
+        setScanAnalysis(mockAnalysis);
+
+        // 3 Second Delay before Payment Wall
+        setTimeout(() => {
+            setShowPaymentModal(true);
+        }, 3000);
+    };
+    
     const cancelScan = () => { 
         if (scanIntervalRef.current) { clearInterval(scanIntervalRef.current); } 
         setIsScanning(false); 
+        setScanFinished(false);
         setScanProgress(0); 
         setCurrentScanStep(0); 
     };
@@ -75,17 +99,24 @@ export const useDesignStudio = (
         setPaymentError(null);
         try {
           const newProject = await api.generateModelFromScan(); 
-          addProject(newProject); // Update Global Store
+          // Inject analysis data if needed
+          addProject(newProject); 
           setIsProcessingPayment(false); 
           setShowPaymentModal(false); 
-          setActiveTab('design');
-          addToast("Scan processed successfully!", "success");
+          setScanFinished(false); // Reset scan flow
+          setActiveTab('design'); // Redirect to studio
+          addToast("Features Unlocked! Project Saved.", "success");
         } catch (e) {
-            setPaymentError("Transaction failed. Please ensure you have sufficient Test-Pi.");
+            setPaymentError("Transaction failed. Please check your wallet.");
             setIsProcessingPayment(false);
         }
     };
-    const cancelPayment = () => setShowPaymentModal(false);
+    
+    const cancelPayment = () => {
+        setShowPaymentModal(false);
+        // Optional: Decide if cancelling payment keeps them on the analysis screen or resets
+        // For now, let's keep them on analysis so they can click "Pay" again manually if we add a button
+    };
 
     // Project Interaction
     const handleProjectInteraction = async (project: ProjectEntity) => { 
@@ -96,7 +127,7 @@ export const useDesignStudio = (
     const handleModifyProject = async (project: ProjectEntity) => {
         const updated = await api.incrementProjectModification(project.id);
         const merged = { ...updated, ...project }; 
-        updateProject(merged); // Update Global Store
+        updateProject(merged); 
         setSelectedProject(merged);
     };
 
@@ -104,9 +135,9 @@ export const useDesignStudio = (
     const openCreateProjectModal = () => setShowCreateProjectModal(true);
     const closeCreateProjectModal = () => setShowCreateProjectModal(false);
     const handleCreateProject = async (data: any) => {
-        const newProject = await api.generateModelFromScan(); // Reuse mock generator
+        const newProject = await api.generateModelFromScan(); 
         newProject.name = `${data.roomType} - ${data.style}`;
-        addProject(newProject); // Update Global Store
+        addProject(newProject); 
         addToast("New design generated!", "success");
     };
 
@@ -115,7 +146,7 @@ export const useDesignStudio = (
     const closeMintNftModal = () => { setProjectToMint(null); setShowMintNftModal(false); };
     const handleMintNft = async (projectId: string) => { 
         const updatedProject = await api.mintProjectAsNft(projectId); 
-        updateProject(updatedProject); // Update Global Store
+        updateProject(updatedProject); 
         addToast("NFT Minted!", "success"); 
     };
 
@@ -139,7 +170,7 @@ export const useDesignStudio = (
         selectedProject, setSelectedProject,
         showProjectDetailsModal, setShowProjectDetailsModal,
         handleProjectInteraction, handleModifyProject,
-        isScanning, scanProgress, currentScanInstruction, startScan, cancelScan,
+        isScanning, scanFinished, scanProgress, currentScanInstruction, startScan, cancelScan,
         showPaymentModal, confirmPayment, cancelPayment, isProcessingPayment, paymentError, scanAnalysis,
         showCreateProjectModal, openCreateProjectModal, closeCreateProjectModal, handleCreateProject,
         showMintNftModal, projectToMint, openMintNftModal, closeMintNftModal, handleMintNft,
