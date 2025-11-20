@@ -36,6 +36,7 @@ import { ProjectCard } from './components/ProjectCard'; // Import for Design Tab
 import { Loader } from './components/Loader';
 import { useAppStore } from './store/useAppStore';
 import { WhitePaperModal } from './components/WhitePaperModal';
+import { AboutModal } from './components/AboutModal';
 
 // Lazy Loaded Heavy Components
 const ScannerInterface = React.lazy(() => import('./components/ScannerInterface').then(module => ({ default: module.ScannerInterface })));
@@ -72,7 +73,8 @@ const App: React.FC = () => {
     // Shop & Common Props
     products, cart, addToCart, openShoppingCart, openVendorProfile, 
     votingPower, handleClaimStakingRewards, openCreateChallengeModal, handleJoinFounderProgram,
-    showWhitePaper, openWhitePaper, closeWhitePaper
+    showWhitePaper, openWhitePaper, closeWhitePaper,
+    showAboutModal, openAboutModal, closeAboutModal
   } = useArchitex();
 
   const renderDashboardContent = () => {
@@ -196,7 +198,7 @@ const App: React.FC = () => {
 
       {/* Modals */}
       {showPaymentModal && <PaymentModal onConfirm={confirmPayment} onCancel={cancelPayment} isProcessing={isProcessingPayment} />}
-      {isProfileVisible && user && <ProfileScreen user={user} projects={projects} orders={orders} serviceAgreements={serviceAgreements} onConfirmDelivery={handleConfirmDelivery} onRequestReturn={handleRequestReturn} onConfirmServiceCompletion={handleConfirmServiceCompletion} onClose={toggleProfile} userTokens={[]} onClaimVestedTokens={async () => {}} onSubscribe={() => {}} onBecomeProvider={() => {}} onBecomeArbitrator={() => {}} onOpenEnterprise={() => {}} onOpenWhitePaper={openWhitePaper} />}
+      {isProfileVisible && user && <ProfileScreen user={user} projects={projects} orders={orders} serviceAgreements={serviceAgreements} onConfirmDelivery={handleConfirmDelivery} onRequestReturn={handleRequestReturn} onConfirmServiceCompletion={handleConfirmServiceCompletion} onClose={toggleProfile} userTokens={[]} onClaimVestedTokens={async () => {}} onSubscribe={() => {}} onBecomeProvider={() => {}} onBecomeArbitrator={() => {}} onOpenEnterprise={() => {}} onOpenWhitePaper={openWhitePaper} onOpenAbout={openAboutModal} />}
       {showUpsellModal && <UpsellModal onConfirm={() => { setActiveTab('market'); closeUpsellModal(); }} onCancel={closeUpsellModal}/>}
       {showCreateBountyModal && <CreateBountyModal user={user} onConfirm={handleCreateBounty} onCancel={closeCreateBountyModal}/>}
       {showMintNftModal && projectToMint && <MintNftModal project={projectToMint} onConfirm={() => handleMintNft(projectToMint.id)} onCancel={closeMintNftModal}/>}
@@ -213,6 +215,7 @@ const App: React.FC = () => {
       {selectedChallenge && <ChallengeDetailsModal challenge={selectedChallenge} submissions={submissions} onVote={handleVoteOnSubmission} onClose={closeChallengeDetailsModal} />}
       {showSubmitToChallengeModal && projectToSubmit && <SubmitToChallengeModal project={projectToSubmit} challenges={designChallenges} onSubmit={handleSubmitProjectToChallenge} onCancel={closeSubmitToChallengeModal} />}
       {showWhitePaper && <WhitePaperModal onClose={closeWhitePaper} />}
+      {showAboutModal && <AboutModal onClose={closeAboutModal} />}
     </div>
   );
 };

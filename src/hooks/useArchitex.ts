@@ -23,7 +23,8 @@ export const useArchitex = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isProfileVisible, setIsProfileVisible] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-  const [showWhitePaper, setShowWhitePaper] = useState(false); // New State
+  const [showWhitePaper, setShowWhitePaper] = useState(false); 
+  const [showAboutModal, setShowAboutModal] = useState(false); // New State
   
   // Shop State
   const [products, setProducts] = useState<ProductEntity[]>([]);
@@ -128,6 +129,10 @@ export const useArchitex = () => {
   const openWhitePaper = () => setShowWhitePaper(true);
   const closeWhitePaper = () => setShowWhitePaper(false);
 
+  // About Handlers
+  const openAboutModal = () => setShowAboutModal(true);
+  const closeAboutModal = () => setShowAboutModal(false);
+
   const handleProjectInteraction = async (project: ProjectEntity) => { setSelectedProject(project); setShowProjectDetailsModal(true); };
   const closeUpsellModal = () => setShowUpsellModal(false);
 
@@ -216,7 +221,8 @@ export const useArchitex = () => {
     // Added for App.tsx compatibility
     products, cart, addToCart, openShoppingCart, openVendorProfile, 
     votingPower, handleClaimStakingRewards, openCreateChallengeModal, handleJoinFounderProgram,
-    // White Paper
-    showWhitePaper, openWhitePaper, closeWhitePaper
+    // White Paper & About
+    showWhitePaper, openWhitePaper, closeWhitePaper,
+    showAboutModal, openAboutModal, closeAboutModal
   };
 };

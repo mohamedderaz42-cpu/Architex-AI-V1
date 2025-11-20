@@ -12,7 +12,7 @@ import { FileTextIcon } from './icons/FileTextIcon';
 import { ShieldCheckIcon } from './icons/ShieldCheckIcon';
 import { WrenchIcon } from './icons/WrenchIcon';
 import { GavelIcon } from './icons/GavelIcon';
-import { LayoutIcon } from './icons/LayoutIcon'; // Using LayoutIcon for Enterprise
+import { LayoutIcon } from './icons/LayoutIcon'; 
 import * as api from '../core/api/contract';
 
 interface ProfileScreenProps {
@@ -31,11 +31,12 @@ interface ProfileScreenProps {
     onBecomeArbitrator: () => void;
     onOpenEnterprise: () => void;
     onOpenWhitePaper: () => void;
+    onOpenAbout: () => void; // New Prop
 }
 
 type ProfileTab = 'gallery' | 'orders' | 'services' | 'wallet' | 'contracts';
 
-export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, projects, orders, serviceAgreements, userTokens, onConfirmDelivery, onRequestReturn, onConfirmServiceCompletion, onClaimVestedTokens, onSubscribe, onClose, onBecomeProvider, onBecomeArbitrator, onOpenEnterprise, onOpenWhitePaper }) => {
+export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, projects, orders, serviceAgreements, userTokens, onConfirmDelivery, onRequestReturn, onConfirmServiceCompletion, onClaimVestedTokens, onSubscribe, onClose, onBecomeProvider, onBecomeArbitrator, onOpenEnterprise, onOpenWhitePaper, onOpenAbout }) => {
     const publicProjects = projects.filter(p => p.isPublic);
     const [activeTab, setActiveTab] = useState<ProfileTab>('gallery');
     const [agreements, setAgreements] = useState<SignedAgreement[]>([]);
@@ -244,9 +245,9 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, projects, or
                     </div>
 
                     <div className="flex-shrink-0 pt-4 mt-2 border-t border-white/10 flex justify-center space-x-6 text-xs text-slate-500">
+                         <button onClick={onOpenAbout} className="hover:text-white transition-colors font-medium">About Architex</button>
                         <button onClick={onOpenWhitePaper} className="hover:text-white transition-colors font-bold">White Paper</button>
                         <a href="#" className="hover:text-slate-300 transition-colors">Terms</a>
-                        <a href="#" className="hover:text-slate-300 transition-colors">Support</a>
                     </div>
                 </div>
             </GlassPanel>
