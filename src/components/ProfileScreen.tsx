@@ -1,10 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { UserEntity, ProjectEntity, OrderEntity, ServiceAgreementEntity, TokenEntity, SignedAgreement } from '../core/schemas/entities';
 import { GlassPanel } from './GlassPanel';
-import { SystemStatus } from './SystemStatus';
 import { AcceleratorSubscription } from './AcceleratorSubscription';
-import { AdBanner } from './AdBanner';
 import { OrderCard } from './OrderCard';
 import { ServiceAgreementCard } from './ServiceAgreementCard';
 import { WalletPanel } from './WalletPanel'; 
@@ -13,6 +10,7 @@ import { ShieldCheckIcon } from './icons/ShieldCheckIcon';
 import { WrenchIcon } from './icons/WrenchIcon';
 import { GavelIcon } from './icons/GavelIcon';
 import { LayoutIcon } from './icons/LayoutIcon'; 
+import { AlertTriangleIcon } from './icons/AlertTriangleIcon';
 import * as api from '../core/api/contract';
 
 interface ProfileScreenProps {
@@ -32,7 +30,7 @@ interface ProfileScreenProps {
     onOpenEnterprise: () => void;
     onOpenWhitePaper: () => void;
     onOpenAbout: () => void;
-    onOpenLegal: (tab: 'privacy' | 'terms') => void; // New prop
+    onOpenLegal: (tab: 'privacy' | 'terms') => void; 
 }
 
 type ProfileTab = 'gallery' | 'orders' | 'services' | 'wallet' | 'contracts';
@@ -47,6 +45,10 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, projects, or
             api.listSignedAgreements().then(setAgreements);
         }
     }, [activeTab]);
+
+    const handleReportBug = () => {
+        window.open('mailto:support@architex.app?subject=Beta Feedback - Architex App');
+    };
 
     const renderTabContent = () => {
         switch (activeTab) {
@@ -102,7 +104,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, projects, or
                             </div>
                         )}
                         
-                        {/* Onboarding CTAs */}
                         <div className="pt-4 mt-4 border-t border-white/10 space-y-3">
                              <button 
                                 onClick={onBecomeProvider}
@@ -178,9 +179,15 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, projects, or
 
     return (
         <div className="fixed inset-0 bg-brand-dark/80 backdrop-blur-md flex items-center justify-center z-[60] p-4">
-            <GlassPanel className="w-full max-w-md h-[90vh] flex flex-col p-6 animate-fade-in">
+            <GlassPanel className="w-full max-w-md h-[90vh] flex flex-col p-6 animate-fade-in relative">
                 <div className="flex-shrink-0 text-center relative">
                     <button onClick={onClose} className="absolute top-0 left-0 text-slate-400 hover:text-white text-2xl font-mono">&times;</button>
+                    
+                    {/* Report Bug Button */}
+                    <button onClick={handleReportBug} className="absolute top-0 right-0 text-red-400 hover:text-red-300" title="Report a Bug">
+                        <AlertTriangleIcon className="w-5 h-5" />
+                    </button>
+
                     {user.avatarUrl && (
                         <img src={user.avatarUrl} alt="User Avatar" className="w-24 h-24 rounded-full mx-auto border-2 border-ai-violet" />
                     )}
@@ -198,8 +205,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, projects, or
                         <div className="group relative inline-flex items-center bg-eco-green/20 text-eco-green px-4 py-2 rounded-full text-sm font-semibold border border-eco-green/30 cursor-help">
                             <ShieldCheckIcon className="w-4 h-4 mr-1" />
                             Trust Score: {user.trustScore}
-                            
-                            {/* Trust Score Breakdown Tooltip */}
                             <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-48 bg-black p-3 rounded-xl border border-white/20 hidden group-hover:block z-20 text-[10px] text-left">
                                 <div className="font-bold text-white mb-1 border-b border-white/10 pb-1">Score Components</div>
                                 <div className="flex justify-between text-slate-400"><span>Base</span> <span>50</span></div>
@@ -209,7 +214,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, projects, or
                             </div>
                         </div>
                         
-                        {/* Enterprise Access Button */}
                         {user.subscriptionTier === 'Enterprise' && (
                              <button 
                                 onClick={onOpenEnterprise}
@@ -246,7 +250,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, projects, or
                     </div>
 
                     <div className="flex-shrink-0 pt-4 mt-2 border-t border-white/10 flex justify-center space-x-4 text-xs text-slate-500">
-                         <button onClick={onOpenAbout} className="hover:text-white transition-colors font-medium">About Architex</button>
+                         <button onClick={onOpenAbout} className="hover:text-white transition-colors font-medium">About</button>
                         <button onClick={onOpenWhitePaper} className="hover:text-white transition-colors font-bold">White Paper</button>
                         <button onClick={() => onOpenLegal('terms')} className="hover:text-slate-300 transition-colors">Terms</button>
                         <button onClick={() => onOpenLegal('privacy')} className="hover:text-slate-300 transition-colors">Privacy</button>

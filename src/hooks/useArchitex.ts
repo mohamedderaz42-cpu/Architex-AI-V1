@@ -1,11 +1,11 @@
-
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity, ProductEntity } from '../core/schemas/entities';
 import * as api from '../core/api/contract';
 import { getProactiveTip, guidedScanInstructions, UXContext } from '../core/ux-engine/engine';
 import { useAppStore } from '../store/useAppStore';
+import { BootStep } from '../components/SystemBootLoader';
 
-export type Phase = 'intro' | 'dashboard';
+export type Phase = 'intro' | 'booting' | 'dashboard';
 export type ActiveTab = 'scan' | 'design' | 'market' | 'challenges' | 'explore';
 
 export const useArchitex = () => {
@@ -13,6 +13,14 @@ export const useArchitex = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('explore');
   const [isMounted, setIsMounted] = useState(false);
   
+  // Boot Sequence State
+  const [bootSteps, setBootSteps] = useState<BootStep[]>([
+      { id: 'auth', label: 'Authenticating User', status: 'pending' },
+      { id: 'ledger', label: 'Syncing Ledger Data', status: 'pending' },
+      { id: 'assets', label: 'Loading Assets', status: 'pending' },
+      { id: 'ready', label: 'Finalizing Handshake', status: 'pending' },
+  ]);
+
   // Data State
   const [projects, setProjects] = useState<ProjectEntity[]>([]);
   const [publicProjects, setPublicProjects] = useState<ProjectEntity[]>([]);
@@ -33,7 +41,7 @@ export const useArchitex = () => {
   // Shop State
   const [products, setProducts] = useState<ProductEntity[]>([]);
   const { cart, addToCart } = useAppStore();
-  const [showShoppingCartModal, setShowShoppingCartModal] = useState(false); // Used by UI potentially
+  const [showShoppingCartModal, setShowShoppingCartModal] = useState(false); 
   const [showVendorProfileModal, setShowVendorProfileModal] = useState(false);
   const [showCreateChallengeModal, setShowCreateChallengeModal] = useState(false);
 
@@ -92,52 +100,96 @@ export const useArchitex = () => {
 
   useEffect(() => { setIsMounted(true); }, []);
   
-  const refreshUserData = async () => {
-      const [userData, userProjects, pubProjects, userBounties, arbitratorsData, ordersData, serviceProvidersData, proposalsData, agreementsData, challengesData, productsData] = await Promise.all([
-        api.authenticateWithPi(), 
-        api.listProjects(), 
-        api.listPublicProjects(),
-        api.listBounties(), 
-        api.listArbitrators(), 
-        api.listOrders(), 
-        api.listServiceProviders(), 
-        api.listProposals(), 
-        api.listServiceAgreements(), 
-        api.listDesignChallenges(),
-        api.listVendorProducts()
-      ]);
-      setUser(userData);
-      setProjects(userProjects);
-      setPublicProjects(pubProjects);
-      setBounties(userBounties);
-      setArbitrators(arbitratorsData);
-      setOrders(ordersData);
-      setServiceProviders(serviceProvidersData);
-      setProposals(proposalsData);
-      setServiceAgreements(agreementsData);
-      setDesignChallenges(challengesData);
-      setProducts(productsData);
+  // Helper to delay for effect
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+  const updateBootStep = (id: string, status: BootStep['status']) => {
+      setBootSteps(prev => prev.map(s => s.id === id ? { ...s, status } : s));
   };
 
   const initialize = async () => {
-    setPhase('dashboard');
+    setPhase('booting');
     setIsLoading(true);
-    await refreshUserData();
-    setIsLoading(false);
+    
+    // Reset steps if retrying
+    setBootSteps(prev => prev.map(s => ({ ...s, status: 'pending' })));
+
+    try {
+        // Step 1: Auth
+        updateBootStep('auth', 'active');
+        const userData = await api.authenticateWithPi();
+        await delay(800); 
+        updateBootStep('auth', 'complete');
+        setUser(userData);
+
+        // Step 2: Ledger (Critical Data)
+        updateBootStep('ledger', 'active');
+        const [userProjects, userBounties, ordersData, agreementsData] = await Promise.all([
+            api.listProjects(),
+            api.listBounties(),
+            api.listOrders(),
+            api.listServiceAgreements(),
+        ]);
+        await delay(600);
+        updateBootStep('ledger', 'complete');
+        setProjects(userProjects);
+        setBounties(userBounties);
+        setOrders(ordersData);
+        setServiceAgreements(agreementsData);
+
+        // Step 3: Assets (Public Data)
+        updateBootStep('assets', 'active');
+        const [pubProjects, arbitratorsData, serviceProvidersData, proposalsData, challengesData, productsData] = await Promise.all([
+            api.listPublicProjects(),
+            api.listArbitrators(),
+            api.listServiceProviders(),
+            api.listProposals(),
+            api.listDesignChallenges(),
+            api.listVendorProducts()
+        ]);
+        await delay(500);
+        updateBootStep('assets', 'complete');
+        setPublicProjects(pubProjects);
+        setArbitrators(arbitratorsData);
+        setServiceProviders(serviceProvidersData);
+        setProposals(proposalsData);
+        setDesignChallenges(challengesData);
+        setProducts(productsData);
+
+        // Step 4: Ready
+        updateBootStep('ready', 'active');
+        await delay(400);
+        updateBootStep('ready', 'complete');
+
+        // Transition
+        await delay(500);
+        setIsLoading(false);
+        setPhase('dashboard');
+
+    } catch (error) {
+        console.error("Boot failed:", error);
+        // Find the active step and set it to error
+        setBootSteps(prev => {
+            const activeIndex = prev.findIndex(s => s.status === 'active' || s.status === 'pending');
+            if (activeIndex !== -1) {
+                const newSteps = [...prev];
+                newSteps[activeIndex].status = 'error';
+                return newSteps;
+            }
+            return prev;
+        });
+    }
   };
   
   const toggleProfile = () => setIsProfileVisible(prev => !prev);
   const toggleCommandPalette = () => setIsCommandPaletteOpen(prev => !prev);
   
-  // White Paper Handlers
   const openWhitePaper = () => setShowWhitePaper(true);
   const closeWhitePaper = () => setShowWhitePaper(false);
 
-  // About Handlers
   const openAboutModal = () => setShowAboutModal(true);
   const closeAboutModal = () => setShowAboutModal(false);
 
-  // Legal Handlers
   const openLegalModal = (tab: 'privacy' | 'terms' = 'terms') => {
     setLegalActiveTab(tab);
     setShowLegalModal(true);
@@ -153,7 +205,7 @@ export const useArchitex = () => {
   const confirmPayment = async () => { setIsProcessingPayment(true); await api.generateModelFromScan(); const updatedProjects = await api.listProjects(); setProjects(updatedProjects); setIsProcessingPayment(false); setShowPaymentModal(false); setActiveTab('design'); };
   const cancelPayment = () => setShowPaymentModal(false);
 
-  // Wrappers for missing logic
+  // --- Modal Wrappers ---
   const openCreateBountyModal = () => setShowCreateBountyModal(true);
   const closeCreateBountyModal = () => setShowCreateBountyModal(false);
   const handleCreateBounty = async (bountyDetails: Omit<BountyEntity, 'id' | 'createdAt' | 'status' | 'escrowState'>) => { await api.createBounty(bountyDetails); const updatedBounties = await api.listBounties(); setBounties(updatedBounties); };
@@ -194,8 +246,6 @@ export const useArchitex = () => {
   const closeSubmitToChallengeModal = () => { setProjectToSubmit(null); setShowSubmitToChallengeModal(false); };
   const handleSubmitProjectToChallenge = async (challengeId: string) => { if (!projectToSubmit) return; await api.submitProjectToChallenge(projectToSubmit.id, challengeId); closeSubmitToChallengeModal(); };
   const handleVoteOnSubmission = async (submissionId: string) => { if (!user || !selectedChallenge) return; const votingPower = (user.stakedArchi || 0) + user.trustScore; await api.voteOnChallengeSubmission(submissionId, votingPower); const challengeSubmissions = await api.getChallengeSubmissions(selectedChallenge.id); setSubmissions(challengeSubmissions); };
-
-  // New Handlers for App.tsx
   const openShoppingCart = () => setShowShoppingCartModal(true);
   const openVendorProfile = () => setShowVendorProfileModal(true);
   const handleClaimStakingRewards = async () => { await api.claimMiningRewards(); };
@@ -220,6 +270,7 @@ export const useArchitex = () => {
 
   return {
     phase, isMounted, activeTab, projects, publicProjects, bounties, arbitrators, availableArbitrators, user, isLoading, uxTip, orders, serviceProviders, serviceAgreements, proposals, designChallenges,
+    bootSteps, // Export boot steps
     initialize, setActiveTab, toggleProfile, isProfileVisible,
     isScanning, scanProgress, currentScanInstruction, startScan, cancelScan, showPaymentModal, confirmPayment, cancelPayment, isProcessingPayment,
     handleProjectInteraction, showUpsellModal, closeUpsellModal, showProjectDetailsModal, selectedProject, setShowProjectDetailsModal, handleGetQuotes,
@@ -240,13 +291,10 @@ export const useArchitex = () => {
     selectedChallenge, submissions, handleSelectChallenge, closeChallengeDetailsModal, handleVoteOnSubmission,
     showSubmitToChallengeModal, projectToSubmit, openSubmitToChallengeModal, closeSubmitToChallengeModal, handleSubmitProjectToChallenge,
     isCommandPaletteOpen, toggleCommandPalette,
-    // Added for App.tsx compatibility
     products, cart, addToCart, openShoppingCart, openVendorProfile, 
     votingPower, handleClaimStakingRewards, openCreateChallengeModal, handleJoinFounderProgram,
-    // White Paper, About, Legal
     showWhitePaper, openWhitePaper, closeWhitePaper,
     showAboutModal, openAboutModal, closeAboutModal,
     showLegalModal, openLegalModal, closeLegalModal, legalActiveTab
   };
 };
-    

@@ -1,4 +1,3 @@
-
 import React, { Suspense, useState } from 'react';
 import { GlassPanel } from './components/GlassPanel';
 import { IconButton } from './components/IconButton';
@@ -43,6 +42,7 @@ import { GlobeIcon } from './components/icons/GlobeIcon';
 import { useLanguage } from './core/i18n/LanguageContext';
 import { PiBrowserGate } from './components/PiBrowserGate';
 import { OfflineNotice } from './components/OfflineNotice';
+import { SystemBootLoader } from './components/SystemBootLoader'; // New Import
 
 // Lazy Loaded Heavy Components
 const ScannerInterface = React.lazy(() => import('./components/ScannerInterface').then(module => ({ default: module.ScannerInterface })));
@@ -57,7 +57,7 @@ const App: React.FC = () => {
 
   const {
     phase, isMounted, activeTab, projects, publicProjects, bounties, arbitrators, availableArbitrators, uxTip, user, orders, serviceProviders, serviceAgreements, proposals, designChallenges,
-    initialize, setActiveTab, isScanning, scanProgress, currentScanInstruction, startScan, cancelScan,
+    bootSteps, initialize, setActiveTab, isScanning, scanProgress, currentScanInstruction, startScan, cancelScan,
     showPaymentModal, confirmPayment, cancelPayment, isProcessingPayment, isProfileVisible, toggleProfile,
     handleProjectInteraction, showUpsellModal, closeUpsellModal, showCreateBountyModal, openCreateBountyModal,
     closeCreateBountyModal, handleCreateBounty, showMintNftModal, projectToMint, openMintNftModal,
@@ -175,6 +175,11 @@ const App: React.FC = () => {
             <GlassPanel className="p-10 text-center bg-black/40 border-white/5"><ArchitexLogo className="w-24 h-24 mx-auto mb-6" /><h1 className="text-5xl font-bold text-white tracking-tighter">{t('app.title')}</h1><p className="mt-2 text-slate-300 font-light text-lg">{t('app.subtitle')}</p></GlassPanel>
             </div>
             <button onClick={initialize} className={`group mt-12 flex items-center justify-center px-8 py-3 bg-white/10 border border-white/20 rounded-full text-lg font-semibold text-white backdrop-blur-md hover:bg-white hover:text-brand-dark hover:shadow-glow-violet transition-all duration-300 ${isMounted ? 'opacity-100 translate-y-0 delay-300' : 'opacity-0 translate-y-10'}`}>{t('app.init')} <ChevronRightIcon className={`w-6 h-6 ml-2 group-hover:translate-x-1 transition-transform duration-300 ${dir === 'rtl' ? 'rotate-180' : ''}`} /></button>
+        </div>
+
+        {/* Booting Screen */}
+        <div className={`absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-500 z-[60] ${phase === 'booting' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+             <SystemBootLoader steps={bootSteps} onRetry={initialize} />
         </div>
 
         {/* Dashboard Container */}
