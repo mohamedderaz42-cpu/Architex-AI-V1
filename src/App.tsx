@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { Suspense } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { GlassPanel } from './components/GlassPanel';
 import { IconButton } from './components/IconButton';
@@ -10,11 +11,17 @@ import { ChevronRightIcon } from './components/icons/ChevronRightIcon';
 import { ProjectCard } from './components/ProjectCard';
 import { useArchitex } from './hooks/useArchitex';
 import { PlusCircleIcon } from './components/icons/PlusCircleIcon';
-import { ScannerInterface } from './components/ScannerInterface';
+// Heavy components loaded via Lazy
+// Note: Using a helper to map named exports to default for React.lazy
+const ScannerInterface = React.lazy(() => import('./components/ScannerInterface').then(module => ({ default: module.ScannerInterface })));
+const DeFiGateway = React.lazy(() => import('./components/DeFiGateway').then(module => ({ default: module.DeFiGateway })));
+const AdminPortal = React.lazy(() => import('./components/AdminPortal').then(module => ({ default: module.AdminPortal })));
+const EnterprisePortal = React.lazy(() => import('./components/EnterprisePortal').then(module => ({ default: module.EnterprisePortal })));
+const PublicGallery = React.lazy(() => import('./components/PublicGallery').then(module => ({ default: module.PublicGallery })));
+
 import { PaymentModal } from './components/PaymentModal';
 import { ProfileScreen } from './components/ProfileScreen';
 import { UserIcon } from './components/icons/UserIcon';
-import { DeFiGateway } from './components/DeFiGateway';
 import { UpsellModal } from './components/UpsellModal';
 import { CreateBountyModal } from './components/CreateBountyModal';
 import { MintNftModal } from './components/MintNftModal';
@@ -40,16 +47,14 @@ import { OnboardingTour } from './components/OnboardingTour';
 import { ShoppingCartModal } from './components/ShoppingCartModal';
 import { VendorProfileModal } from './components/VendorProfileModal';
 import { ProposalDetailsModal } from './components/ProposalDetailsModal';
-import { AdminPortal } from './components/AdminPortal';
 import { ChatInterface } from './components/ChatInterface';
-import { PublicGallery } from './components/PublicGallery';
 import { SearchIcon } from './components/icons/SearchIcon';
 import { ArchieBotWidget } from './components/ArchieBotWidget';
 import { ServiceProviderOnboarding } from './components/ServiceProviderOnboarding';
 import { ArbitratorOnboarding } from './components/ArbitratorOnboarding';
 import { ShareModal } from './components/ShareModal';
 import { CreateChallengeModal } from './components/CreateChallengeModal';
-import { EnterprisePortal } from './components/EnterprisePortal';
+import { Loader } from './components/Loader';
 
 const AppContent: React.FC = () => {
   const {
@@ -93,7 +98,11 @@ const AppContent: React.FC = () => {
   const renderDashboardContent = () => {
     switch (activeTab) {
       case 'scan':
-        return isScanning ? <ScannerInterface instruction={currentScanInstruction} progress={scanProgress} onCancel={cancelScan} /> : (
+        return isScanning ? (
+            <Suspense fallback={<Loader />}>
+                <ScannerInterface instruction={currentScanInstruction} progress={scanProgress} onCancel={cancelScan} />
+            </Suspense>
+        ) : (
           <div className="text-center flex flex-col items-center justify-center h-full w-full p-6">
             <motion.div initial={{scale: 0.9, opacity: 0}} animate={{scale: 1, opacity: 1}} className="relative w-48 h-48 mb-8">
                  <div className="absolute inset-0 bg-pi-gold/20 rounded-full blur-3xl animate-pulse"></div>
@@ -144,33 +153,41 @@ const AppContent: React.FC = () => {
           </div>
         );
       case 'explore':
-        return <PublicGallery projects={publicProjects} activeChallenges={designChallenges} onViewProject={handleProjectInteraction} />;
+        return (
+            <Suspense fallback={<Loader />}>
+                <PublicGallery projects={publicProjects} activeChallenges={designChallenges} onViewProject={handleProjectInteraction} />
+            </Suspense>
+        );
       case 'market':
-        return <DeFiGateway 
-          bounties={bounties} 
-          onBountySelect={handleSelectBounty} 
-          onCreateBounty={openCreateBountyModal}
-          serviceProviders={serviceProviders}
-          onHireProvider={handleInitiateHiring}
-          arbitrators={arbitrators}
-          proposals={proposals}
-          user={user}
-          onStake={handleStake}
-          onUnstake={handleUnstake}
-          onVote={handleVote}
-          onExecuteProposal={handleExecuteProposal}
-          onViewTos={openGovernanceTosModal}
-          products={products}
-          cartCount={cart.length}
-          onAddToCart={addToCart}
-          onOpenCart={openShoppingCart}
-          onVendorClick={openVendorProfile}
-          onOpenDetails={openProposalDetails}
-          onJoinFounderProgram={handleJoinFounderProgram}
-          handleClaimStakingRewards={handleClaimStakingRewards}
-          votingPower={votingPower}
-          onCreateChallenge={openCreateChallengeModal}
-        />;
+        return (
+            <Suspense fallback={<Loader />}>
+                <DeFiGateway 
+                  bounties={bounties} 
+                  onBountySelect={handleSelectBounty} 
+                  onCreateBounty={openCreateBountyModal}
+                  serviceProviders={serviceProviders}
+                  onHireProvider={handleInitiateHiring}
+                  arbitrators={arbitrators}
+                  proposals={proposals}
+                  user={user}
+                  onStake={handleStake}
+                  onUnstake={handleUnstake}
+                  onVote={handleVote}
+                  onExecuteProposal={handleExecuteProposal}
+                  onViewTos={openGovernanceTosModal}
+                  products={products}
+                  cartCount={cart.length}
+                  onAddToCart={addToCart}
+                  onOpenCart={openShoppingCart}
+                  onVendorClick={openVendorProfile}
+                  onOpenDetails={openProposalDetails}
+                  onJoinFounderProgram={handleJoinFounderProgram}
+                  handleClaimStakingRewards={handleClaimStakingRewards}
+                  votingPower={votingPower}
+                  onCreateChallenge={openCreateChallengeModal}
+                />
+            </Suspense>
+        );
       case 'challenges':
         return <ChallengesGallery challenges={designChallenges} onSelectChallenge={handleSelectChallenge} />;
       default: return null;
@@ -373,9 +390,17 @@ const AppContent: React.FC = () => {
       {showProviderOnboarding && <ServiceProviderOnboarding onRegister={handleProviderRegistration} onClose={() => setShowProviderOnboarding(false)} />}
       {showArbitratorOnboarding && <ArbitratorOnboarding onRegister={handleArbitratorRegistration} onClose={() => setShowArbitratorOnboarding(false)} />}
       
-      {showEnterprisePortal && <EnterprisePortal onClose={closeEnterprisePortal} />}
+      {showEnterprisePortal && (
+        <Suspense fallback={<Loader />}>
+          <EnterprisePortal onClose={closeEnterprisePortal} />
+        </Suspense>
+      )}
 
-      {isAdminModalOpen && <AdminPortal onClose={closeAdminModal} />}
+      {isAdminModalOpen && (
+        <Suspense fallback={<Loader />}>
+          <AdminPortal onClose={closeAdminModal} />
+        </Suspense>
+      )}
       {isChatOpen && chatContextId && user && (
           <ChatInterface 
             contextId={chatContextId} 

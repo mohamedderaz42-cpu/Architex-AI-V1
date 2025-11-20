@@ -1,6 +1,5 @@
 
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { ProjectEntity, SustainabilityReport } from '../core/schemas/entities';
 import { GlassPanel } from './GlassPanel';
 import { SunMoonIcon } from './icons/SunMoonIcon';
@@ -13,6 +12,8 @@ import { PiCoinIcon } from './icons/PiCoinIcon';
 import { LeafIcon } from './icons/LeafIcon';
 import { useToast } from './Toast';
 import { requestServiceQuote, generateSustainabilityReport, optimizeProjectForSustainability } from '../core/api/contract';
+import { Loader } from './Loader';
+import { RoomViewer3D } from './RoomViewer3D';
 
 interface ProjectDetailsModalProps {
     project: ProjectEntity;
@@ -71,61 +72,33 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ projec
         }
     };
 
-    const getLightingStyle = () => {
-        const brightness = 0.4 + 0.7 * Math.sin((timeOfDay / 24) * Math.PI);
-        let overlayColor = 'transparent';
-        let overlayOpacity = 0;
-
-        if (timeOfDay < 5 || timeOfDay > 20) {
-            overlayColor = '#0f172a'; 
-            overlayOpacity = 0.4;
-        } else if (timeOfDay >= 5 && timeOfDay < 9) {
-            overlayColor = '#f97316'; 
-            overlayOpacity = 0.2;
-        } else if (timeOfDay >= 17 && timeOfDay <= 20) {
-            overlayColor = '#ef4444'; 
-            overlayOpacity = 0.25;
-        }
-
-        return {
-            filter: `brightness(${brightness})`,
-            overlay: { backgroundColor: overlayColor, opacity: overlayOpacity }
-        };
-    };
-
-    const lighting = getLightingStyle();
+    // Determine Night Mode based on slider
+    const isNightMode = timeOfDay < 6 || timeOfDay > 19;
 
     // --- Renderers ---
 
     const renderVisuals = () => (
         <>
             <div className="relative w-full aspect-video bg-slate-900/50 rounded-lg border border-white/10 flex items-center justify-center overflow-hidden group">
-                <img 
-                    src={project.thumbnailUrl} 
-                    alt={project.name} 
-                    className="w-full h-full object-cover transition-all duration-500"
-                    style={{ filter: lighting.filter }} 
-                />
-                <div 
-                    className="absolute inset-0 transition-all duration-500 pointer-events-none"
-                    style={lighting.overlay}
-                ></div>
-                <div className="absolute inset-0 bg-grid-ai-violet opacity-10 pointer-events-none" style={{
-                    backgroundImage: 'linear-gradient(to right, #8B5CF6 1px, transparent 1px), linear-gradient(to bottom, #8B5CF6 1px, transparent 1px)',
-                    backgroundSize: '30px 30px',
-                }}></div>
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
+                {/* 3D Viewer Integration */}
+                <Suspense fallback={<div className="flex items-center justify-center w-full h-full text-slate-500"><Loader /></div>}>
+                    <RoomViewer3D isNightMode={isNightMode} color={project.isNft ? '#FDB300' : '#8B5CF6'} />
+                </Suspense>
+                
+                <div className="absolute inset-0 pointer-events-none z-10 border-inset border-4 border-transparent group-hover:border-white/5 transition-all"></div>
+
+                {/* Regenerate Button Overlay */}
+                <div className="absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity z-20">
                     <button 
                         onClick={handleRegenerate}
                         disabled={isRegenerating}
-                        className="flex flex-col items-center text-white hover:text-ai-violet transition-colors transform hover:scale-110"
+                        className="p-2 bg-black/60 backdrop-blur-md rounded-full text-white hover:text-ai-violet border border-white/20 transition-all"
+                        title="Regenerate Design"
                     >
-                        <div className={`p-3 bg-black/50 rounded-full backdrop-blur-sm border border-white/20 ${isRegenerating ? 'animate-spin' : ''}`}>
-                            <RefreshIcon className="w-8 h-8" />
-                        </div>
-                        <span className="text-xs font-bold mt-2 bg-black/50 px-2 py-1 rounded backdrop-blur-sm">Regenerate AI</span>
+                        <RefreshIcon className={`w-5 h-5 ${isRegenerating ? 'animate-spin' : ''}`} />
                     </button>
                 </div>
+
                 {onOpenChat && (
                     <button 
                         onClick={onOpenChat}
@@ -139,8 +112,10 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ projec
             <div className="mt-4 bg-slate-800/50 p-3 rounded-xl border border-white/5">
                 <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-2">
-                        <SunMoonIcon className="w-5 h-5 text-pi-gold" />
-                        <span className="text-xs font-bold text-slate-300 uppercase">Time of Day Simulation</span>
+                        <SunMoonIcon className={`w-5 h-5 ${isNightMode ? 'text-ai-violet' : 'text-pi-gold'}`} />
+                        <span className="text-xs font-bold text-slate-300 uppercase">
+                            {isNightMode ? 'Night Simulation' : 'Daylight Simulation'}
+                        </span>
                     </div>
                     <span className="text-xs font-mono text-white">{timeOfDay}:00</span>
                 </div>
