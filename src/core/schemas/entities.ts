@@ -11,6 +11,7 @@ export type ProofOfInstallationStatus = 'none' | 'pending' | 'submitted' | 'veri
 export type ProposalStatus = 'Voting' | 'Passed' | 'Failed' | 'Executing' | 'Executed';
 export type ReputationEventType = 'BountyCompleted' | 'DisputeWon' | 'RatingReceived' | 'ProofOfInstallation';
 export type DesignChallengeStatus = 'Open' | 'Voting' | 'Complete';
+export type GigCategory = 'Plumbing' | 'Electrical' | 'Carpentry' | 'Painting' | 'HVAC' | 'General';
 
 
 export interface VendorProfile {
@@ -23,8 +24,14 @@ export interface ServiceProviderProfile {
     portfolioUrl: string;
     serviceZones: string[]; // e.g., ['USA-CA', 'USA-NV']
     hasLiabilityInsurance: boolean;
-    verificationStatus?: string; // Added
-    insuranceDocUrl?: string; // Added
+    verificationStatus?: string;
+    insuranceDocUrl?: string;
+    // Gig Worker Specifics
+    isGigWorker?: boolean;
+    gigCategories?: GigCategory[];
+    hourlyRate?: number;
+    isAvailable?: boolean;
+    distance?: string; // Simulated distance string e.g., "0.5 km"
 }
 
 export interface ArbitratorProfile {
@@ -43,31 +50,31 @@ export interface UserEntity {
   walletAddress: string;
   trustScore: number; 
   avatarUrl?: string;
-  subscriptionTier: 'Free' | 'Accelerator' | 'Enterprise'; // Added Enterprise
+  subscriptionTier: 'Free' | 'Accelerator' | 'Enterprise';
   vendorProfile?: VendorProfile;
   serviceProviderProfile?: ServiceProviderProfile;
-  arbitratorProfile?: ArbitratorProfile; // Added
+  arbitratorProfile?: ArbitratorProfile;
   role: 'user' | 'vendor' | 'service-provider' | 'arbitrator';
   stakedArchi?: number;
-  isFounder?: boolean; // Added
-  stakingPosition?: { unclaimedRewards: number }; // Added
-  subscriptionExpiry?: string; // Added
+  isFounder?: boolean;
+  stakingPosition?: { unclaimedRewards: number };
+  subscriptionExpiry?: string;
 }
 
 export interface BillOfMaterialsEntry {
   materialId: string;
   quantity: number;
   status: MaterialStatus;
-  name?: string; // Added for UI convenience
-  estimatedCost?: number; // Added for UI convenience
-  imageUrl?: string; // Added for UI convenience
-  isSustainable?: boolean; // Added
+  name?: string;
+  estimatedCost?: number;
+  imageUrl?: string;
+  isSustainable?: boolean;
 }
 
 export interface ProjectEntity {
   id: string;
   ownerId: string;
-  ownerName?: string; // Added
+  ownerName?: string;
   name: string;
   roomScanUrl?: string; 
   status: ProjectStatus;
@@ -79,7 +86,7 @@ export interface ProjectEntity {
   unreadMessages?: number;
   modificationCount?: number;
   isNft?: boolean;
-  likes?: number; // Added
+  likes?: number;
 }
 
 export interface MaterialEntity {
@@ -104,7 +111,7 @@ export interface LiquidityPoolEntity {
     pair: [TokenEntity, TokenEntity];
     userShare: number;
     totalValueLocked: number;
-    protocolLiquidity?: number; // Added
+    protocolLiquidity?: number;
 }
 
 export interface BountyEntity {
@@ -140,8 +147,8 @@ export interface ProductEntity {
     inStock: number;
     imageUrl: string;
     tags?: string[];
-    isEcoFriendly?: boolean; // Added
-    sustainabilityCertifications?: string[]; // Added
+    isEcoFriendly?: boolean;
+    sustainabilityCertifications?: string[];
 }
 
 export interface CartItem {
@@ -205,7 +212,7 @@ export interface ReputationEvent {
     id: string;
     userId: string;
     type: ReputationEventType;
-    value: number; // e.g., +10 for bounty, -5 for dispute lost
+    value: number;
     description: string;
     timestamp: string;
 }
@@ -218,7 +225,7 @@ export interface MessageEntity {
     text: string;
     timestamp: string;
     isSystem?: boolean;
-    authorName?: string; // For comments
+    authorName?: string;
 }
 
 export interface ProposalEntity {
@@ -227,13 +234,13 @@ export interface ProposalEntity {
     description: string;
     proposerId: string;
     status: ProposalStatus;
-    forVotes: number; // Sum of voting power
-    againstVotes: number; // Sum of voting power
+    forVotes: number;
+    againstVotes: number;
     createdAt: string;
     endsAt: string;
-    quorum: number; // e.g., 0.20 for 20%
-    turnout: number; // Percentage of total voting power that voted
-    comments?: MessageEntity[]; // Added
+    quorum: number;
+    turnout: number;
+    comments?: MessageEntity[];
 }
 
 
@@ -243,7 +250,7 @@ export interface DesignChallengeEntity {
     id: string;
     title: string;
     description: string;
-    reward: number; // in ARCHI
+    reward: number;
     status: DesignChallengeStatus;
     endsAt: string;
     winnerId?: string;

@@ -178,6 +178,92 @@ const mockServiceProviders: Omit<UserEntity, 'role'>[] = [
     { id: 'sp_01', piUsername: 'InstallPro', walletAddress: 'GC...P1', trustScore: 98, avatarUrl: 'https://placehold.co/100x100/10B981/FFFFFF/png?text=IP', subscriptionTier: 'Accelerator', serviceProviderProfile: { specialty: 'General Construction', portfolioUrl: '#', serviceZones: ['USA-CA'], hasLiabilityInsurance: true } },
     { id: 'sp_02', piUsername: 'ElecTech', walletAddress: 'GC...P2', trustScore: 95, avatarUrl: 'https://placehold.co/100x100/FDB300/FFFFFF/png?text=ET', subscriptionTier: 'Accelerator', serviceProviderProfile: { specialty: 'Electrical & Automation', portfolioUrl: '#', serviceZones: ['USA-CA', 'USA-NV'], hasLiabilityInsurance: true } },
 ];
+
+// NEW: Mock Gig Workers (Micro-Services)
+const mockGigWorkers: UserEntity[] = [
+    {
+        id: 'gig_01',
+        piUsername: 'MarioPlumb',
+        walletAddress: 'GC...GP1',
+        trustScore: 92,
+        avatarUrl: 'https://placehold.co/100x100/FF0000/FFFFFF/png?text=MP',
+        subscriptionTier: 'Free',
+        role: 'service-provider',
+        serviceProviderProfile: {
+            specialty: 'Plumbing',
+            portfolioUrl: '#',
+            serviceZones: ['Local'],
+            hasLiabilityInsurance: false,
+            isGigWorker: true,
+            gigCategories: ['Plumbing'],
+            hourlyRate: 25,
+            isAvailable: true,
+            distance: '0.8 km'
+        }
+    },
+    {
+        id: 'gig_02',
+        piUsername: 'VoltMaster',
+        walletAddress: 'GC...GP2',
+        trustScore: 88,
+        avatarUrl: 'https://placehold.co/100x100/FDB300/000000/png?text=VM',
+        subscriptionTier: 'Free',
+        role: 'service-provider',
+        serviceProviderProfile: {
+            specialty: 'Electrician',
+            portfolioUrl: '#',
+            serviceZones: ['Local'],
+            hasLiabilityInsurance: true,
+            isGigWorker: true,
+            gigCategories: ['Electrical'],
+            hourlyRate: 30,
+            isAvailable: true,
+            distance: '1.5 km'
+        }
+    },
+    {
+        id: 'gig_03',
+        piUsername: 'WoodWorks',
+        walletAddress: 'GC...GP3',
+        trustScore: 95,
+        avatarUrl: 'https://placehold.co/100x100/8B4513/FFFFFF/png?text=WW',
+        subscriptionTier: 'Free',
+        role: 'service-provider',
+        serviceProviderProfile: {
+            specialty: 'Carpenter',
+            portfolioUrl: '#',
+            serviceZones: ['Local'],
+            hasLiabilityInsurance: false,
+            isGigWorker: true,
+            gigCategories: ['Carpentry'],
+            hourlyRate: 28,
+            isAvailable: false, // Busy
+            distance: '2.1 km'
+        }
+    },
+     {
+        id: 'gig_04',
+        piUsername: 'CoolBreeze',
+        walletAddress: 'GC...GP4',
+        trustScore: 90,
+        avatarUrl: 'https://placehold.co/100x100/00FFFF/000000/png?text=CB',
+        subscriptionTier: 'Free',
+        role: 'service-provider',
+        serviceProviderProfile: {
+            specialty: 'HVAC Technician',
+            portfolioUrl: '#',
+            serviceZones: ['Local'],
+            hasLiabilityInsurance: true,
+            isGigWorker: true,
+            gigCategories: ['HVAC'],
+            hourlyRate: 35,
+            isAvailable: true,
+            distance: '3.0 km'
+        }
+    }
+];
+
+
 const mockServiceAgreements: ServiceAgreementEntity[] = [
     { id: 'sa_01', clientId: 'user_01', providerId: 'sp_01', projectId: 'proj_01', scope: 'Installation of all materials for Living Room Remodel', price: 1500, status: 'funded', createdAt: new Date(Date.now() - 86400000 * 3).toISOString() }
 ];
@@ -238,6 +324,7 @@ export const listOrders = async (): Promise<OrderEntity[]> => { return [...mockO
 export const updateOrderStatus = async (orderId: string, status: OrderStatus): Promise<OrderEntity> => { const idx = mockOrders.findIndex(o => o.id === orderId); if (idx === -1) throw new Error('Order not found'); mockOrders[idx].status = status; const order = mockOrders[idx]; const orderContainsInstallableItems = order.items.some(item => mockProducts.find(p => p.id === item.productId)?.tags?.includes('requires-installation')); if (status === 'Delivered' && orderContainsInstallableItems) { mockOrders[idx].proofOfInstallationStatus = 'pending'; } return { ...mockOrders[idx] }; };
 export const getInstallationQuote = async (orderId: string): Promise<{ quote: number, providerId: string }> => { await new Promise(res => setTimeout(res, 800)); return { quote: 250, providerId: 'sp_01' }; };
 export const listServiceProviders = async (): Promise<UserEntity[]> => { return mockServiceProviders.map(sp => ({ ...sp, role: 'service-provider' })); };
+export const listGigWorkers = async (): Promise<UserEntity[]> => { return [...mockGigWorkers]; }; // New API
 export const getProjectDetails = async (projectId: string): Promise<ProjectEntity | undefined> => { return mockProjects.find(p => p.id === projectId); };
 export const createServiceAgreement = async (clientId: string, providerId: string, projectId: string, price: number): Promise<ServiceAgreementEntity> => { const newAgreement: ServiceAgreementEntity = { id: `sa_${Date.now()}`, clientId, providerId, projectId, price, scope: `Installation services for project ${projectId}`, status: 'pending', createdAt: new Date().toISOString() }; mockServiceAgreements.push(newAgreement); return newAgreement; };
 export const listServiceAgreements = async (): Promise<ServiceAgreementEntity[]> => { return [...mockServiceAgreements]; };

@@ -13,8 +13,9 @@ import { ServiceMarketplace } from './ServiceMarketplace';
 import { MarketplaceShop } from './MarketplaceShop';
 import { ArbitratorMarketplace } from './ArbitratorMarketplace';
 import { DaoInterface } from './DaoInterface';
+import { MicroServicesHub } from './MicroServicesHub'; // Import
 
-type DeFiTab = 'swap' | 'liquidity' | 'bounties' | 'data' | 'vendor' | 'services' | 'arbitrators' | 'dao' | 'shop';
+type DeFiTab = 'swap' | 'liquidity' | 'bounties' | 'data' | 'vendor' | 'services' | 'arbitrators' | 'dao' | 'shop' | 'quickfix'; // Added quickfix
 
 interface DeFiGatewayProps {
     bounties: BountyEntity[];
@@ -68,6 +69,7 @@ export const DeFiGateway: React.FC<DeFiGatewayProps> = ({
             case 'arbitrators': return <ArbitratorMarketplace arbitrators={arbitrators} />;
             case 'dao': return user && <DaoInterface user={user} proposals={proposals} onStake={onStake} onUnstake={onUnstake} onVote={onVote} onExecute={onExecuteProposal} onViewTos={onViewTos} onOpenDetails={onOpenDetails} handleClaimStakingRewards={handleClaimStakingRewards} votingPower={votingPower} onCreateChallenge={onCreateChallenge} />;
             case 'shop': return <MarketplaceShop products={products} cartCount={cartCount} onAddToCart={onAddToCart} onOpenCart={onOpenCart} onVendorClick={onVendorClick} />;
+            case 'quickfix': return <MicroServicesHub />; // New Case
             default: return null;
         }
     };
@@ -81,9 +83,10 @@ export const DeFiGateway: React.FC<DeFiGatewayProps> = ({
             
             <GlassPanel className="flex-grow p-2 flex flex-col min-h-0">
                 <div className="flex-shrink-0 flex items-center justify-center p-1 bg-slate-900/50 rounded-full mb-4 overflow-x-auto no-scrollbar">
+                    <button onClick={() => setActiveTab('quickfix')} className={`px-3 py-2 rounded-full font-semibold text-xs sm:text-sm transition-colors duration-300 whitespace-nowrap ${activeTab === 'quickfix' ? 'bg-pi-gold text-brand-dark' : 'text-slate-300'}`}>Quick Fix</button>
                     <button onClick={() => setActiveTab('bounties')} className={`px-3 py-2 rounded-full font-semibold text-xs sm:text-sm transition-colors duration-300 whitespace-nowrap ${activeTab === 'bounties' ? 'bg-eco-green/80 text-white' : 'text-slate-300'}`}>Bounties</button>
                     <button onClick={() => setActiveTab('shop')} className={`px-3 py-2 rounded-full font-semibold text-xs sm:text-sm transition-colors duration-300 whitespace-nowrap ${activeTab === 'shop' ? 'bg-eco-green/80 text-white' : 'text-slate-300'}`}>Materials</button>
-                    <button onClick={() => setActiveTab('services')} className={`px-3 py-2 rounded-full font-semibold text-xs sm:text-sm transition-colors duration-300 whitespace-nowrap ${activeTab === 'services' ? 'bg-eco-green/80 text-white' : 'text-slate-300'}`}>Services</button>
+                    <button onClick={() => setActiveTab('services')} className={`px-3 py-2 rounded-full font-semibold text-xs sm:text-sm transition-colors duration-300 whitespace-nowrap ${activeTab === 'services' ? 'bg-eco-green/80 text-white' : 'text-slate-300'}`}>Pro Services</button>
                     <button onClick={() => setActiveTab('vendor')} className={`px-3 py-2 rounded-full font-semibold text-xs sm:text-sm transition-colors duration-300 whitespace-nowrap ${activeTab === 'vendor' ? 'bg-eco-green/80 text-white' : 'text-slate-300'}`}>Vendor Hub</button>
                     <button onClick={() => setActiveTab('dao')} className={`px-3 py-2 rounded-full font-semibold text-xs sm:text-sm transition-colors duration-300 whitespace-nowrap ${activeTab === 'dao' ? 'bg-eco-green/80 text-white' : 'text-slate-300'}`}>DAO</button>
                     <button onClick={() => setActiveTab('arbitrators')} className={`px-3 py-2 rounded-full font-semibold text-xs sm:text-sm transition-colors duration-300 whitespace-nowrap ${activeTab === 'arbitrators' ? 'bg-eco-green/80 text-white' : 'text-slate-300'}`}>Arbitrators</button>
