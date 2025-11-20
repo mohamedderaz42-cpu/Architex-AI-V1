@@ -11,7 +11,7 @@ import { ProjectCard } from './components/ProjectCard';
 import { useArchitex } from './hooks/useArchitex';
 import { PlusCircleIcon } from './components/icons/PlusCircleIcon';
 import { AmbientBackground } from './components/AmbientBackground';
-import { CommandPalette } from './components/CommandPalette'; // NEW
+import { CommandPalette } from './components/CommandPalette'; 
 
 // Heavy components loaded via Lazy
 const ScannerInterface = React.lazy(() => import('./components/ScannerInterface').then(module => ({ default: module.ScannerInterface })));
@@ -125,7 +125,7 @@ const AppContent: React.FC = () => {
       case 'design':
         return (
           <div className="w-full h-full flex flex-col">
-            <div className="flex justify-between items-center mb-6 px-2">
+            <div className="flex justify-between items-end mb-8 px-2">
                 <div>
                     <h2 className="text-3xl font-bold text-white tracking-tight font-sans">Design Studio</h2>
                     <p className="text-sm text-slate-400 font-mono mt-1">WORKSPACE // {user?.piUsername.toUpperCase()}</p>
@@ -134,12 +134,16 @@ const AppContent: React.FC = () => {
                     <motion.button 
                         whileHover={{scale: 1.05}} 
                         onClick={toggleCommandPalette} 
-                        className="p-3 bg-white/5 backdrop-blur-md rounded-full text-slate-300 hover:text-white hover:bg-white/10 border border-white/5 transition-all shadow-lg group" 
+                        className="p-3 bg-white/5 backdrop-blur-md rounded-full text-slate-300 hover:text-white hover:bg-white/10 border border-white/10 transition-all shadow-lg group" 
                         title="Command Palette (Cmd+K)"
                     >
                         <SearchIcon className="w-5 h-5 group-hover:text-ai-violet transition-colors" />
                     </motion.button>
-                    <motion.button whileHover={{scale: 1.05}} onClick={openCreateProjectModal} className="flex items-center px-5 py-2 bg-gradient-to-r from-ai-violet to-purple-600 text-white rounded-full font-bold shadow-glow-violet hover:shadow-lg transition-all border border-white/10">
+                    <motion.button 
+                      whileHover={{scale: 1.05}} 
+                      onClick={openCreateProjectModal} 
+                      className="flex items-center px-5 py-2 bg-ai-violet/80 hover:bg-ai-violet text-white rounded-full font-bold shadow-glow-violet hover:shadow-lg transition-all border border-white/10 backdrop-blur-md"
+                    >
                         <PlusCircleIcon className="w-5 h-5 mr-2" /> New Project
                     </motion.button>
                 </div>
@@ -147,7 +151,7 @@ const AppContent: React.FC = () => {
             
             {/* Responsive Grid for Projects */}
             <div className="flex-grow overflow-y-auto pr-2 pb-20 no-scrollbar">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {projects.map((project, index) => (
                         <motion.div 
                             key={project.id}
@@ -158,6 +162,18 @@ const AppContent: React.FC = () => {
                             <ProjectCard project={project} onCardClick={() => handleProjectInteraction(project)} onMintClick={() => openMintNftModal(project)} />
                         </motion.div>
                     ))}
+                    
+                    {/* Empty State CTA */}
+                    {projects.length === 0 && (
+                        <motion.div 
+                            onClick={openCreateProjectModal}
+                            whileHover={{ scale: 1.02 }}
+                            className="border-2 border-dashed border-white/10 rounded-3xl flex flex-col items-center justify-center text-slate-500 hover:text-ai-violet hover:border-ai-violet/30 hover:bg-white/5 transition-all cursor-pointer h-64"
+                        >
+                            <PlusCircleIcon className="w-12 h-12 mb-4 opacity-50" />
+                            <span className="font-bold">Create First Design</span>
+                        </motion.div>
+                    )}
                 </div>
             </div>
           </div>
@@ -261,11 +277,11 @@ const AppContent: React.FC = () => {
 
             <div className="mt-auto pt-6 border-t border-white/5">
                 <div 
-                    className="flex items-center p-3 rounded-2xl bg-gradient-to-r from-white/5 to-transparent hover:from-white/10 cursor-pointer transition-all border border-white/5"
+                    className="flex items-center p-3 rounded-2xl bg-gradient-to-r from-white/5 to-transparent hover:from-white/10 cursor-pointer transition-all border border-white/5 group"
                     onClick={toggleProfile}
                 >
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center mr-3 border border-white/10 shadow-lg">
-                         <UserIcon className="w-5 h-5 text-slate-300" />
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center mr-3 border border-white/10 shadow-lg group-hover:border-white/30 transition-colors">
+                         <UserIcon className="w-5 h-5 text-slate-300 group-hover:text-white" />
                     </div>
                     <div>
                         <div className="text-sm font-bold text-white font-sans">{user?.piUsername || 'User'}</div>
@@ -309,14 +325,14 @@ const AppContent: React.FC = () => {
             </div>
         </main>
 
-        {/* MOBILE BOTTOM BAR */}
+        {/* MOBILE BOTTOM DOCK */}
         <footer className="md:hidden fixed bottom-6 left-4 right-4 z-50">
-          <GlassPanel className="p-2 rounded-full shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] border border-white/10 bg-brand-dark/70 backdrop-blur-xl">
+          <GlassPanel className="p-2 rounded-3xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.8)] border border-white/10 bg-black/60 backdrop-blur-2xl">
               <nav className="flex items-center justify-around">
                   <IconButton icon={<ScanIcon />} label="Scan" isActive={activeTab === 'scan'} onClick={() => setActiveTab('scan')} activeColor="pi-gold"/>
                   <IconButton icon={<DesignIcon />} label="Design" isActive={activeTab === 'design' || activeTab === 'explore'} onClick={() => setActiveTab('design')} activeColor="ai-violet"/>
                   <IconButton icon={<MarketIcon />} label="Market" isActive={activeTab === 'market'} onClick={() => setActiveTab('market')} activeColor="eco-green"/>
-                  <IconButton icon={<AwardIcon />} label="Challenges" isActive={activeTab === 'challenges'} onClick={() => setActiveTab('challenges')} activeColor="pi-gold"/>
+                  <IconButton icon={<AwardIcon />} label="Games" isActive={activeTab === 'challenges'} onClick={() => setActiveTab('challenges')} activeColor="pi-gold"/>
               </nav>
           </GlassPanel>
         </footer>

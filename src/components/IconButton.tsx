@@ -11,33 +11,55 @@ interface IconButtonProps {
 }
 
 export const IconButton: React.FC<IconButtonProps> = ({ icon, label, isActive, onClick, activeColor, isSidebar = false }) => {
-  const colorClasses = {
-    'eco-green': 'text-eco-green bg-eco-green/20 shadow-[0_0_15px_rgba(16,185,129,0.3)]',
-    'pi-gold': 'text-pi-gold bg-pi-gold/20 shadow-[0_0_15px_rgba(253,179,0,0.3)]',
-    'ai-violet': 'text-ai-violet bg-ai-violet/20 shadow-[0_0_15px_rgba(139,92,246,0.3)]',
+  
+  // Glow colors based on active state
+  const glowColors = {
+    'eco-green': 'shadow-[0_0_30px_-5px_rgba(16,185,129,0.6)] bg-eco-green/10 text-eco-green border-eco-green/30',
+    'pi-gold': 'shadow-[0_0_30px_-5px_rgba(253,179,0,0.6)] bg-pi-gold/10 text-pi-gold border-pi-gold/30',
+    'ai-violet': 'shadow-[0_0_30px_-5px_rgba(139,92,246,0.6)] bg-ai-violet/10 text-ai-violet border-ai-violet/30',
   };
+
+  const activeClass = glowColors[activeColor];
+  const inactiveClass = 'text-slate-400 hover:text-slate-200 hover:bg-white/5 border-transparent';
 
   return (
     <motion.button
       onClick={onClick}
-      whileHover={{ scale: 1.05 }}
+      whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.95 }}
-      className={`flex ${isSidebar ? 'flex-row space-x-3 w-full px-4 py-3 mb-2' : 'flex-col items-center justify-center w-16 h-16'} rounded-2xl transition-colors duration-300 ease-in-out focus:outline-none ${
-        isActive ? colorClasses[activeColor] : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
-      }`}
+      className={`
+        relative flex items-center justify-center rounded-2xl border transition-all duration-500 ease-out
+        ${isSidebar ? 'flex-row space-x-3 w-full px-4 py-3 mb-2' : 'flex-col w-16 h-16'} 
+        ${isActive ? activeClass : inactiveClass}
+      `}
       aria-label={label}
     >
-      <div className={`${isSidebar ? 'w-6 h-6' : 'w-7 h-7'}`}>{icon}</div>
-      <span className={`${isSidebar ? 'text-sm font-bold' : 'text-[10px] mt-1 font-medium'}`}>{label}</span>
+      {/* Active Indicator Line (Sidebar only) */}
       {isSidebar && isActive && (
-          <motion.div 
-            layoutId="sidebar-indicator"
-            className={`ml-auto w-1.5 h-1.5 rounded-full ${
+        <motion.div 
+            layoutId="sidebar-active-pill"
+            className={`absolute left-0 top-0 bottom-0 w-1 rounded-r-full ${
                 activeColor === 'eco-green' ? 'bg-eco-green' : 
                 activeColor === 'pi-gold' ? 'bg-pi-gold' : 'bg-ai-violet'
-            }`} 
-          />
+            }`}
+        />
       )}
+
+      {/* Background Glow Spot (Bottom Nav only) */}
+      {!isSidebar && isActive && (
+           <motion.div 
+             layoutId="bottom-nav-glow"
+             className={`absolute inset-0 rounded-2xl opacity-50 bg-gradient-to-tr from-transparent to-white/5`}
+           />
+      )}
+
+      <div className={`relative z-10 ${isSidebar ? 'w-6 h-6' : 'w-6 h-6'}`}>
+        {icon}
+      </div>
+      
+      <span className={`relative z-10 ${isSidebar ? 'text-sm font-bold tracking-wide' : 'text-[9px] mt-1.5 font-medium uppercase tracking-wider'}`}>
+        {label}
+      </span>
     </motion.button>
   );
 };
