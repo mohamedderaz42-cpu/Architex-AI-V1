@@ -11,6 +11,7 @@ import { LoaderIcon } from './icons/LoaderIcon';
 import { BellIcon } from './icons/BellIcon';
 import { CheckCircleIcon } from './icons/CheckCircleIcon';
 import { FileTextIcon } from './icons/FileTextIcon';
+import { ArchieBot } from './ArchieBot';
 import * as api from '../core/api/contract';
 
 interface ShoppingCartModalProps {
@@ -144,8 +145,7 @@ export const ShoppingCartModal: React.FC<ShoppingCartModalProps> = ({ cart, user
          <div className="flex flex-col h-full p-4 animate-fade-in">
             <div className="text-center mb-4">
                  <XCircleIcon className="w-12 h-12 text-red-400 mx-auto mb-2" />
-                 <h3 className="text-lg font-bold text-white">Inventory Conflict</h3>
-                 <p className="text-xs text-slate-400">Some items are low on stock.</p>
+                 <h3 className="text-lg font-bold text-white">Inventory Alert</h3>
             </div>
             
             <div className="flex-grow space-y-4 overflow-y-auto">
@@ -153,22 +153,28 @@ export const ShoppingCartModal: React.FC<ShoppingCartModalProps> = ({ cart, user
                     const item = cart.find(c => c.product.id === conflict.productId);
                     if (!item) return null;
                     return (
-                        <div key={conflict.productId} className="bg-slate-900/50 border border-red-500/30 p-4 rounded-xl">
-                            <h4 className="font-bold text-white text-sm">{item.product.name}</h4>
-                            <p className="text-xs text-red-300 mt-1">Wanted: {conflict.requested} | Available: {conflict.available}</p>
+                        <div key={conflict.productId} className="space-y-3">
+                            {conflict.alternativeProductId && (
+                                <ArchieBot message={`I found a stock issue with "${item.product.name}". However, my AI analysis suggests "Bamboo Composite" as a sustainable alternative with 98% spec match. Want to swap?`} />
+                            )}
                             
-                            <div className="mt-3 grid grid-cols-1 gap-2">
-                                {conflict.alternativeProductId && (
-                                    <button onClick={() => handleResolveConflict(conflict, 'alternative')} className="flex items-center justify-center py-2 bg-ai-violet/20 text-ai-violet rounded hover:bg-ai-violet/30 text-xs font-bold">
-                                        <SparklesIcon className="w-3 h-3 mr-1" /> Swap for Alternative
+                            <div className="bg-slate-900/50 border border-red-500/30 p-4 rounded-xl">
+                                <h4 className="font-bold text-white text-sm">{item.product.name}</h4>
+                                <p className="text-xs text-red-300 mt-1">Wanted: {conflict.requested} | Available: {conflict.available}</p>
+                                
+                                <div className="mt-3 grid grid-cols-1 gap-2">
+                                    {conflict.alternativeProductId && (
+                                        <button onClick={() => handleResolveConflict(conflict, 'alternative')} className="flex items-center justify-center py-2 bg-ai-violet/20 text-ai-violet rounded hover:bg-ai-violet/30 text-xs font-bold">
+                                            <SparklesIcon className="w-3 h-3 mr-1" /> Swap for Alternative
+                                        </button>
+                                    )}
+                                    <button onClick={() => handleResolveConflict(conflict, 'notify')} className="flex items-center justify-center py-2 bg-slate-700/50 text-slate-300 rounded hover:bg-slate-700 text-xs">
+                                        <BellIcon className="w-3 h-3 mr-1" /> Notify Me (Remove)
                                     </button>
-                                )}
-                                <button onClick={() => handleResolveConflict(conflict, 'notify')} className="flex items-center justify-center py-2 bg-slate-700/50 text-slate-300 rounded hover:bg-slate-700 text-xs">
-                                    <BellIcon className="w-3 h-3 mr-1" /> Notify Me (Remove)
-                                </button>
-                                <button onClick={() => handleResolveConflict(conflict, 'remove')} className="flex items-center justify-center py-2 bg-red-500/10 text-red-400 rounded hover:bg-red-500/20 text-xs">
-                                    Remove Item
-                                </button>
+                                    <button onClick={() => handleResolveConflict(conflict, 'remove')} className="flex items-center justify-center py-2 bg-red-500/10 text-red-400 rounded hover:bg-red-500/20 text-xs">
+                                        Remove Item
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     )

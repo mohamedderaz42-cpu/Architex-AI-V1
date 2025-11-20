@@ -15,12 +15,14 @@ import { PercentIcon } from './icons/PercentIcon';
 import { DatabaseIcon } from './icons/DatabaseIcon';
 import { BoxIcon } from './icons/BoxIcon';
 import { ChartBarIcon } from './icons/ChartBarIcon';
+import { UploadCloudIcon } from './icons/UploadCloudIcon';
+import { CheckCircleIcon } from './icons/CheckCircleIcon';
 
 type VendorTab = 'dashboard' | 'products' | 'orders' | 'shipping' | 'promotions' | 'api';
 
 export const VendorPortal: React.FC = () => {
     const [isVerified, setIsVerified] = useState(false);
-    const [hasInsurance, setHasInsurance] = useState(false);
+    const [insuranceFile, setInsuranceFile] = useState<File | null>(null);
     const [agreedToIndemnity, setAgreedToIndemnity] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<VendorTab>('dashboard');
@@ -29,12 +31,18 @@ export const VendorPortal: React.FC = () => {
     const [shippingZones, setShippingZones] = useState<ShippingZone[]>([]);
     const [promotions, setPromotions] = useState<PromotionEntity[]>([]);
 
-    const canProceed = hasInsurance && agreedToIndemnity;
+    const canProceed = insuranceFile && agreedToIndemnity;
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setInsuranceFile(e.target.files[0]);
+        }
+    };
 
     const handleProceed = async () => {
         setIsLoading(true);
-        // In a real app, you would sign a transaction to save this to the user's profile
-        console.log("Vendor has attested to insurance and indemnity.");
+        // In a real app, you would upload the file here
+        console.log("Vendor verification: File uploaded and indemnity agreed.");
         
         await refreshData();
 
@@ -91,18 +99,42 @@ export const VendorPortal: React.FC = () => {
                 <LockIcon className="w-16 h-16 text-slate-500 mb-4" />
                 <h3 className="font-semibold text-white text-xl">Vendor Verification Required</h3>
                 <p className="text-sm text-slate-400 mt-2 max-w-sm">
-                    To ensure marketplace integrity, please confirm the following before accessing the Vendor Hub.
+                    To ensure marketplace integrity, please complete the following mandatory verification steps.
                 </p>
+                
                 <div className="my-6 space-y-4 text-left max-w-sm w-full">
-                    <label className="flex items-start p-3 bg-slate-900/50 rounded-lg border border-white/10 cursor-pointer">
-                        <input type="checkbox" checked={hasInsurance} onChange={() => setHasInsurance(!hasInsurance)} className="mt-1 w-5 h-5 text-ai-violet bg-slate-700 border-slate-500 rounded focus:ring-ai-violet" />
-                        <span className="ml-3 text-sm text-slate-300">I confirm our business holds valid <span className="font-bold text-white">Product Liability Insurance</span>.</span>
-                    </label>
-                    <label className="flex items-start p-3 bg-slate-900/50 rounded-lg border border-white/10 cursor-pointer">
+                    
+                    {/* File Upload */}
+                    <div className="relative group">
+                        <div className={`p-4 bg-slate-900/50 rounded-xl border border-dashed transition-colors flex flex-col items-center justify-center text-center ${insuranceFile ? 'border-eco-green/50 bg-eco-green/5' : 'border-white/10 hover:border-ai-violet/50'}`}>
+                             <input 
+                                type="file" 
+                                accept=".pdf,.jpg,.png" 
+                                onChange={handleFileChange}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                            />
+                            {insuranceFile ? (
+                                <>
+                                    <CheckCircleIcon className="w-8 h-8 text-eco-green mb-2" />
+                                    <span className="text-sm text-white font-medium truncate max-w-xs">{insuranceFile.name}</span>
+                                    <span className="text-[10px] text-eco-green mt-1">Ready for verification</span>
+                                </>
+                            ) : (
+                                <>
+                                    <UploadCloudIcon className="w-8 h-8 text-slate-500 mb-2 group-hover:text-ai-violet transition-colors" />
+                                    <span className="text-sm text-slate-300">Upload Liability Insurance</span>
+                                    <span className="text-[10px] text-slate-500 mt-1">PDF, JPG or PNG (Max 5MB)</span>
+                                </>
+                            )}
+                        </div>
+                    </div>
+
+                    <label className="flex items-start p-3 bg-slate-900/50 rounded-lg border border-white/10 cursor-pointer hover:bg-slate-900 transition-colors">
                         <input type="checkbox" checked={agreedToIndemnity} onChange={() => setAgreedToIndemnity(!agreedToIndemnity)} className="mt-1 w-5 h-5 text-ai-violet bg-slate-700 border-slate-500 rounded focus:ring-ai-violet" />
-                        <span className="ml-3 text-sm text-slate-300">I have read and agree to the Architex <span className="font-bold text-white">Indemnification Clause</span>.</span>
+                        <span className="ml-3 text-sm text-slate-300">I have read and agree to the Architex <span className="font-bold text-white">Indemnification Clause</span> & Vendor Terms.</span>
                     </label>
                 </div>
+
                 <button
                     onClick={handleProceed}
                     disabled={!canProceed}

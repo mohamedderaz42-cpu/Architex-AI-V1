@@ -59,14 +59,27 @@ export const useMarketplace = (
         setProducts(productsData);
     };
 
-    // Upsell Logic
+    // Upsell Logic: Strict Check for Installation Tag
     useEffect(() => {
-        const shippedOrderWithInstallable = orders.find(o => o.status === 'Shipped' && o.items.some(i => i.productId === 'prod_01' || i.productId === 'prod_02'));
-        if (shippedOrderWithInstallable && !orderForUpsell) {
-          setOrderForUpsell(shippedOrderWithInstallable);
+        if (products.length === 0) return;
+
+        // Find shipped orders
+        const shippedOrders = orders.filter(o => o.status === 'Shipped');
+        
+        // Find one that hasn't been upsold yet (local state check) and has installable items
+        const targetOrder = shippedOrders.find(o => {
+            return o.items.some(item => {
+                const product = products.find(p => p.id === item.productId);
+                // Strictly check for lowercase 'requires-installation' as per data schema
+                return product?.tags?.map(t => t.toLowerCase()).includes('requires-installation');
+            });
+        });
+
+        if (targetOrder && !orderForUpsell) {
+          setOrderForUpsell(targetOrder);
           setShowInstallationUpsellModal(true);
         }
-    }, [orders, orderForUpsell]);
+    }, [orders, orderForUpsell, products]);
 
     const closeUpsellModal = () => setShowUpsellModal(false);
     const openCreateBountyModal = () => setShowCreateBountyModal(true);
