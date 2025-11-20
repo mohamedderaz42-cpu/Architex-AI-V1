@@ -3,8 +3,41 @@ import { ProjectEntity, UserEntity, MaterialEntity, TokenEntity, LiquidityPoolEn
 import { PiCoinIcon } from '../../components/icons/PiCoinIcon';
 import { ArchitexLogo } from '../../components/icons/ArchitexLogo';
 
-// --- MOCK DATA ---
-let mockProjects: ProjectEntity[] = [
+// --- PERSISTENCE LAYER (New) ---
+const STORAGE_KEY = 'architex_state_v1';
+
+const loadFromStorage = () => {
+    try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+            return JSON.parse(stored);
+        }
+    } catch (e) {
+        console.error("Failed to load state", e);
+    }
+    return null;
+};
+
+const saveToStorage = () => {
+    try {
+        const state = {
+            mockProjects,
+            mockBounties,
+            mockOrders,
+            mockServiceAgreements,
+            mockUser,
+            mockUserTokens
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+        console.error("Failed to save state", e);
+    }
+};
+
+// --- MOCK DATA INITIALIZATION ---
+// We define defaults, then override if storage exists
+
+let defaultProjects: ProjectEntity[] = [
   {
     id: 'proj_01',
     ownerId: 'user_01',
@@ -48,39 +81,37 @@ let mockProjects: ProjectEntity[] = [
   },
 ];
 
-// Mock Public Projects
-let mockPublicProjects: ProjectEntity[] = [
-    ...mockProjects,
-    {
-        id: 'proj_pub_01',
-        ownerId: 'user_99',
-        name: 'Zen Garden Loft',
-        status: 'Complete',
-        billOfMaterials: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        isPublic: true,
-        thumbnailUrl: 'https://placehold.co/400x300/334155/FFFFFF/png?text=Zen+Loft',
-        isNft: true
+let defaultUser: UserEntity = { 
+    id: 'user_01', 
+    piUsername: 'ArchieBot', 
+    walletAddress: 'GD...QW', 
+    trustScore: 95, 
+    avatarUrl: 'https://placehold.co/100x100/020617/8B5CF6/png?text=A', 
+    subscriptionTier: 'Free', 
+    role: 'user', 
+    vendorProfile: { hasInsurance: false, agreedToIndemnity: false }, 
+    stakedArchi: 5000, 
+    isFounder: false, 
+    stakingPosition: { unclaimedRewards: 0 },
+    affiliateProfile: {
+        referralCode: 'ARCHIE101',
+        totalReferrals: 12,
+        totalEarnings: 540,
+        pendingEarnings: 120,
+        tier: 'Scout',
+        campaigns: [
+            { id: 'cmp_1', name: 'Social Media', clicks: 150, conversions: 8 },
+            { id: 'cmp_2', name: 'Blog Post', clicks: 45, conversions: 4 }
+        ]
     }
-];
-
-export let mockUserTokens: TokenEntity[] = [
-    { symbol: 'PiUSD', name: 'Pi USD', balance: 150.75, icon: PiCoinIcon },
-    { symbol: 'ARCHI', name: 'Architex Token', balance: 15000, icon: ArchitexLogo },
-];
-
-export const mockLiquidityPool: LiquidityPoolEntity = {
-    pair: [mockUserTokens[0], mockUserTokens[1]],
-    userShare: 0.05,
-    totalValueLocked: 5000000,
-    protocolLiquidity: 2000000,
 };
 
-export const treasuryBalance = 1500000;
-export const escrowBalance = 500000;
+// Initialize variables
+const persistedState = loadFromStorage();
 
-let mockBounties: BountyEntity[] = [
+let mockProjects: ProjectEntity[] = persistedState?.mockProjects || defaultProjects;
+let mockUser: UserEntity = persistedState?.mockUser || defaultUser;
+let mockBounties: BountyEntity[] = persistedState?.mockBounties || [
     {
         id: 'bty_01',
         projectId: 'proj_01',
@@ -114,6 +145,45 @@ let mockBounties: BountyEntity[] = [
         winnerId: 'designer_02',
     }
 ];
+export let mockUserTokens: TokenEntity[] = persistedState?.mockUserTokens || [
+    { symbol: 'PiUSD', name: 'Pi USD', balance: 150.75, icon: PiCoinIcon },
+    { symbol: 'ARCHI', name: 'Architex Token', balance: 15000, icon: ArchitexLogo },
+];
+let mockOrders: OrderEntity[] = persistedState?.mockOrders || [
+    { id: 'ord_01', userId: 'user_01', items: [{productId: 'prod_01', quantity: 50}], total: 775, status: 'Shipped', createdAt: new Date(Date.now() - 86400000 * 2).toISOString(), proofOfInstallationStatus: 'none' },
+    { id: 'ord_02', userId: 'user_01', items: [{productId: 'prod_03', quantity: 5}], total: 225, status: 'Processing', createdAt: new Date().toISOString(), proofOfInstallationStatus: 'none' },
+];
+let mockServiceAgreements: ServiceAgreementEntity[] = persistedState?.mockServiceAgreements || [
+    { id: 'sa_01', clientId: 'user_01', providerId: 'sp_01', projectId: 'proj_01', scope: 'Installation of all materials for Living Room Remodel', price: 1500, status: 'funded', createdAt: new Date(Date.now() - 86400000 * 3).toISOString() }
+];
+
+// Non-persisted mocks (static reference data)
+// Mock Public Projects
+let mockPublicProjects: ProjectEntity[] = [
+    ...defaultProjects, // Base them on defaults for simplicity
+    {
+        id: 'proj_pub_01',
+        ownerId: 'user_99',
+        name: 'Zen Garden Loft',
+        status: 'Complete',
+        billOfMaterials: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        isPublic: true,
+        thumbnailUrl: 'https://placehold.co/400x300/334155/FFFFFF/png?text=Zen+Loft',
+        isNft: true
+    }
+];
+
+export const mockLiquidityPool: LiquidityPoolEntity = {
+    pair: [mockUserTokens[0], mockUserTokens[1]],
+    userShare: 0.05,
+    totalValueLocked: 5000000,
+    protocolLiquidity: 2000000,
+};
+
+export const treasuryBalance = 1500000;
+export const escrowBalance = 500000;
 
 let mockArbitrators: ArbitratorEntity[] = [
     {
@@ -174,11 +244,6 @@ let mockProducts: ProductEntity[] = [
     },
 ];
 
-let mockOrders: OrderEntity[] = [
-    { id: 'ord_01', userId: 'user_01', items: [{productId: 'prod_01', quantity: 50}], total: 775, status: 'Shipped', createdAt: new Date(Date.now() - 86400000 * 2).toISOString(), proofOfInstallationStatus: 'none' },
-    { id: 'ord_02', userId: 'user_01', items: [{productId: 'prod_03', quantity: 5}], total: 225, status: 'Processing', createdAt: new Date().toISOString(), proofOfInstallationStatus: 'none' },
-];
-
 let mockShippingZones: ShippingZone[] = [{ id: 'zone_na', name: 'North America', active: true },{ id: 'zone_eu', name: 'European Union', active: true },{ id: 'zone_asia', name: 'Asia-Pacific', active: false }];
 let mockPromotions: PromotionEntity[] = [{ id: 'promo_01', type: 'item', description: '15% off Eco-Timber', discountValue: 15, targetId: 'prod_01' },{ id: 'promo_02', type: 'invoice', description: '10% off orders over 200 PiUSD', discountValue: 10, minSpend: 200 }];
 
@@ -211,11 +276,6 @@ let mockGigWorkers: UserEntity[] = [
     },
 ];
 
-
-let mockServiceAgreements: ServiceAgreementEntity[] = [
-    { id: 'sa_01', clientId: 'user_01', providerId: 'sp_01', projectId: 'proj_01', scope: 'Installation of all materials for Living Room Remodel', price: 1500, status: 'funded', createdAt: new Date(Date.now() - 86400000 * 3).toISOString() }
-];
-
 let reputationEvents: ReputationEvent[] = [
     {id: 'rev_01', userId: 'user_01', type: 'BountyCompleted', value: 10, description: "Completed bounty 'Source Eco-Friendly Countertops'", timestamp: new Date().toISOString()}
 ];
@@ -224,31 +284,6 @@ let mockProposals: ProposalEntity[] = [
     { id: 'prop_01', title: 'Reduce Bounty Commission to 8%', description: 'Lowering the platform fee will attract more high-quality designers.', proposerId: 'user_01', status: 'Voting', forVotes: 125000, againstVotes: 30000, createdAt: new Date(Date.now() - 86400000 * 5).toISOString(), endsAt: new Date(Date.now() + 86400000 * 2).toISOString(), quorum: 0.20, turnout: 0.155 },
     { id: 'prop_02', title: 'Fund a new Eco-Grant Program', description: 'Allocate 1M ARCHI from the treasury to fund projects using sustainable materials.', proposerId: 'designer_01', status: 'Passed', forVotes: 550000, againstVotes: 100000, createdAt: new Date(Date.now() - 86400000 * 10).toISOString(), endsAt: new Date(Date.now() - 86400000 * 3).toISOString(), quorum: 0.20, turnout: 0.65 },
 ];
-
-let mockUser: UserEntity = { 
-    id: 'user_01', 
-    piUsername: 'ArchieBot', 
-    walletAddress: 'GD...QW', 
-    trustScore: 95, 
-    avatarUrl: 'https://placehold.co/100x100/020617/8B5CF6/png?text=A', 
-    subscriptionTier: 'Free', 
-    role: 'user', 
-    vendorProfile: { hasInsurance: false, agreedToIndemnity: false }, 
-    stakedArchi: 5000, 
-    isFounder: false, 
-    stakingPosition: { unclaimedRewards: 0 },
-    affiliateProfile: {
-        referralCode: 'ARCHIE101',
-        totalReferrals: 12,
-        totalEarnings: 540,
-        pendingEarnings: 120,
-        tier: 'Scout',
-        campaigns: [
-            { id: 'cmp_1', name: 'Social Media', clicks: 150, conversions: 8 },
-            { id: 'cmp_2', name: 'Blog Post', clicks: 45, conversions: 4 }
-        ]
-    }
-};
 
 const TOTAL_VOTING_POWER = 1000000; 
 
@@ -264,51 +299,52 @@ let mockChallengeSubmissions: ChallengeSubmissionEntity[] = [
 // --- Dropshipping Mocks ---
 let mockDropshipListings: DropshipListing[] = [];
 
-// --- API CONTRACT ---
+// --- API CONTRACT IMPL ---
+
 export const authenticateWithPi = async (): Promise<UserEntity> => { return { ...mockUser }; };
 export const listProjects = async (): Promise<ProjectEntity[]> => { return [...mockProjects]; };
 export const listPublicProjects = async (): Promise<ProjectEntity[]> => { return [...mockPublicProjects]; }; 
-export const incrementProjectModification = async (projectId: string): Promise<ProjectEntity> => { const p = mockProjects.find(p => p.id === projectId); if(p) { p.modificationCount = (p.modificationCount || 0) + 1; p.updatedAt = new Date().toISOString(); return {...p}; } throw new Error('P not found'); };
-export const generateModelFromScan = async (): Promise<ProjectEntity> => { const newProject: ProjectEntity = { id: `proj_${Date.now()}`, ownerId: 'user_01', name: 'New Scanned Room', status: 'Scanning', billOfMaterials: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), roomScanUrl: 'mock_scan_url', isPublic: false, thumbnailUrl: `https://placehold.co/400x300/020617/FFFFFF/png?text=New+Scan`, modificationCount: 0, isNft: false, }; mockProjects.unshift(newProject); return newProject; };
+export const incrementProjectModification = async (projectId: string): Promise<ProjectEntity> => { const p = mockProjects.find(p => p.id === projectId); if(p) { p.modificationCount = (p.modificationCount || 0) + 1; p.updatedAt = new Date().toISOString(); saveToStorage(); return {...p}; } throw new Error('P not found'); };
+export const generateModelFromScan = async (): Promise<ProjectEntity> => { const newProject: ProjectEntity = { id: `proj_${Date.now()}`, ownerId: 'user_01', name: 'New Scanned Room', status: 'Scanning', billOfMaterials: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), roomScanUrl: 'mock_scan_url', isPublic: false, thumbnailUrl: `https://placehold.co/400x300/020617/FFFFFF/png?text=New+Scan`, modificationCount: 0, isNft: false, }; mockProjects.unshift(newProject); saveToStorage(); return newProject; };
 export const listMaterials = async (): Promise<MaterialEntity[]> => { return []; };
 export const swapTokens = async (from: TokenEntity['symbol'], to: TokenEntity['symbol'], amount: number): Promise<boolean> => { return true; }
 export const addLiquidity = async (amountA: number, amountB: number): Promise<boolean> => { return true; }
 export const listBounties = async (): Promise<BountyEntity[]> => { return [...mockBounties]; };
-export const createBounty = async (bounty: Omit<BountyEntity, 'id' | 'createdAt' | 'status' | 'escrowState'>): Promise<BountyEntity> => { const platformFee = bounty.reward * 0.10; const totalCost = bounty.reward + platformFee; const idx = mockUserTokens.findIndex(t => t.symbol === 'ARCHI'); if (mockUserTokens[idx].balance < totalCost) { throw new Error('Insufficient ARCHI balance.'); } mockUserTokens[idx].balance -= totalCost; const newBounty: BountyEntity = { ...bounty, id: `bty_${Date.now()}`, status: 'Open', escrowState: 'Unfunded', createdAt: new Date().toISOString() }; mockBounties.unshift(newBounty); return newBounty; }
-export const mintProjectAsNft = async (projectId: string): Promise<ProjectEntity> => { const MINT_FEE = 250; const idx = mockUserTokens.findIndex(t => t.symbol === 'ARCHI'); if (mockUserTokens[idx].balance < MINT_FEE) { throw new Error('Insufficient ARCHI balance for minting fee.'); } const pIdx = mockProjects.findIndex(p => p.id === projectId); if (pIdx === -1) { throw new Error('Project not found'); } mockUserTokens[idx].balance -= MINT_FEE; mockProjects[pIdx].isNft = true; mockProjects[pIdx].updatedAt = new Date().toISOString(); return { ...mockProjects[pIdx] }; };
+export const createBounty = async (bounty: Omit<BountyEntity, 'id' | 'createdAt' | 'status' | 'escrowState'>): Promise<BountyEntity> => { const platformFee = bounty.reward * 0.10; const totalCost = bounty.reward + platformFee; const idx = mockUserTokens.findIndex(t => t.symbol === 'ARCHI'); if (mockUserTokens[idx].balance < totalCost) { throw new Error('Insufficient ARCHI balance.'); } mockUserTokens[idx].balance -= totalCost; const newBounty: BountyEntity = { ...bounty, id: `bty_${Date.now()}`, status: 'Open', escrowState: 'Unfunded', createdAt: new Date().toISOString() }; mockBounties.unshift(newBounty); saveToStorage(); return newBounty; }
+export const mintProjectAsNft = async (projectId: string): Promise<ProjectEntity> => { const MINT_FEE = 250; const idx = mockUserTokens.findIndex(t => t.symbol === 'ARCHI'); if (mockUserTokens[idx].balance < MINT_FEE) { throw new Error('Insufficient ARCHI balance for minting fee.'); } const pIdx = mockProjects.findIndex(p => p.id === projectId); if (pIdx === -1) { throw new Error('Project not found'); } mockUserTokens[idx].balance -= MINT_FEE; mockProjects[pIdx].isNft = true; mockProjects[pIdx].updatedAt = new Date().toISOString(); saveToStorage(); return { ...mockProjects[pIdx] }; };
 export const getDynamicAgreementText = async (bounty: BountyEntity): Promise<string> => { return `This Agreement is made on ${new Date().toLocaleDateString()}...`; };
-export const fundEscrow = async (bountyId: string): Promise<BountyEntity> => { const idx = mockBounties.findIndex(b => b.id === bountyId); if (idx === -1) throw new Error("Bounty not found"); const b = mockBounties[idx]; const tIdx = mockUserTokens.findIndex(t => t.symbol === 'ARCHI'); if(mockUserTokens[tIdx].balance < b.reward) throw new Error("Insufficient ARCHI."); mockUserTokens[tIdx].balance -= b.reward; mockBounties[idx].escrowState = 'Funded'; mockBounties[idx].status = 'In Progress'; return {...mockBounties[idx]}; };
-export const releaseEscrow = async (bountyId: string): Promise<BountyEntity> => { const idx = mockBounties.findIndex(b => b.id === bountyId); if (idx === -1) throw new Error("Bounty not found"); await new Promise(resolve => setTimeout(resolve, 1000)); mockBounties[idx].escrowState = 'Released'; mockBounties[idx].status = 'Complete'; reputationEvents.push({ id: `rev_${Date.now()}`, userId: mockBounties[idx].winnerId!, type: 'BountyCompleted', value: 10, description: `Completed bounty: ${mockBounties[idx].title}`, timestamp: new Date().toISOString()}); return {...mockBounties[idx]}; }
-export const raiseDispute = async (bountyId: string): Promise<BountyEntity> => { const idx = mockBounties.findIndex(b => b.id === bountyId); if (idx === -1) throw new Error("Bounty not found"); mockBounties[idx].status = 'In Dispute'; return {...mockBounties[idx]}; }
+export const fundEscrow = async (bountyId: string): Promise<BountyEntity> => { const idx = mockBounties.findIndex(b => b.id === bountyId); if (idx === -1) throw new Error("Bounty not found"); const b = mockBounties[idx]; const tIdx = mockUserTokens.findIndex(t => t.symbol === 'ARCHI'); if(mockUserTokens[tIdx].balance < b.reward) throw new Error("Insufficient ARCHI."); mockUserTokens[tIdx].balance -= b.reward; mockBounties[idx].escrowState = 'Funded'; mockBounties[idx].status = 'In Progress'; saveToStorage(); return {...mockBounties[idx]}; };
+export const releaseEscrow = async (bountyId: string): Promise<BountyEntity> => { const idx = mockBounties.findIndex(b => b.id === bountyId); if (idx === -1) throw new Error("Bounty not found"); await new Promise(resolve => setTimeout(resolve, 1000)); mockBounties[idx].escrowState = 'Released'; mockBounties[idx].status = 'Complete'; reputationEvents.push({ id: `rev_${Date.now()}`, userId: mockBounties[idx].winnerId!, type: 'BountyCompleted', value: 10, description: `Completed bounty: ${mockBounties[idx].title}`, timestamp: new Date().toISOString()}); saveToStorage(); return {...mockBounties[idx]}; }
+export const raiseDispute = async (bountyId: string): Promise<BountyEntity> => { const idx = mockBounties.findIndex(b => b.id === bountyId); if (idx === -1) throw new Error("Bounty not found"); mockBounties[idx].status = 'In Dispute'; saveToStorage(); return {...mockBounties[idx]}; }
 export const listArbitrators = async (): Promise<ArbitratorEntity[]> => { return [...mockArbitrators]; };
 export const listAvailableArbitrators = async (projectId: string): Promise<ArbitratorEntity[]> => { return mockArbitrators.filter(a => !a.conflictsWithProjectIds?.includes(projectId)); };
-export const selectArbitrator = async (bountyId: string, arbitratorId: string): Promise<BountyEntity> => { const bIdx = mockBounties.findIndex(b => b.id === bountyId); if (bIdx === -1) throw new Error("Bounty not found"); const a = mockArbitrators.find(a => a.id === arbitratorId); if (!a) throw new Error("Arbitrator not found"); const tIdx = mockUserTokens.findIndex(t => t.symbol === 'PiUSD'); if(mockUserTokens[tIdx].balance < a.fee) throw new Error("Insufficient PiUSD for arbitrator fee."); mockUserTokens[tIdx].balance -= a.fee; mockBounties[bIdx].status = 'Arbitration'; return {...mockBounties[bIdx]}; };
-export const resolveArbitration = async (bountyId: string, decision: 'Release' | 'Refund'): Promise<BountyEntity> => { const idx = mockBounties.findIndex(b => b.id === bountyId); if (idx === -1) throw new Error("Bounty not found"); mockBounties[idx].status = 'Complete'; mockBounties[idx].escrowState = decision === 'Release' ? 'Released' : 'Refunded'; if (decision === 'Refund') { const tIdx = mockUserTokens.findIndex(t => t.symbol === 'ARCHI'); mockUserTokens[tIdx].balance += mockBounties[idx].reward; } return {...mockBounties[idx]}; };
+export const selectArbitrator = async (bountyId: string, arbitratorId: string): Promise<BountyEntity> => { const bIdx = mockBounties.findIndex(b => b.id === bountyId); if (bIdx === -1) throw new Error("Bounty not found"); const a = mockArbitrators.find(a => a.id === arbitratorId); if (!a) throw new Error("Arbitrator not found"); const tIdx = mockUserTokens.findIndex(t => t.symbol === 'PiUSD'); if(mockUserTokens[tIdx].balance < a.fee) throw new Error("Insufficient PiUSD for arbitrator fee."); mockUserTokens[tIdx].balance -= a.fee; mockBounties[bIdx].status = 'Arbitration'; saveToStorage(); return {...mockBounties[bIdx]}; };
+export const resolveArbitration = async (bountyId: string, decision: 'Release' | 'Refund'): Promise<BountyEntity> => { const idx = mockBounties.findIndex(b => b.id === bountyId); if (idx === -1) throw new Error("Bounty not found"); mockBounties[idx].status = 'Complete'; mockBounties[idx].escrowState = decision === 'Release' ? 'Released' : 'Refunded'; if (decision === 'Refund') { const tIdx = mockUserTokens.findIndex(t => t.symbol === 'ARCHI'); mockUserTokens[tIdx].balance += mockBounties[idx].reward; } saveToStorage(); return {...mockBounties[idx]}; };
 export const listVendorProducts = async (): Promise<ProductEntity[]> => { return [...mockProducts]; };
 export const listShippingZones = async (): Promise<ShippingZone[]> => { return [...mockShippingZones]; };
 export const updateShippingZone = async (zoneId: string, active: boolean): Promise<ShippingZone> => { const z = mockShippingZones.find(z => z.id === zoneId); if(!z) throw new Error('Zone not found'); z.active = active; return {...z}; };
 export const listPromotions = async (): Promise<PromotionEntity[]> => { return [...mockPromotions]; };
 export const createPromotion = async (promo: Omit<PromotionEntity, 'id'>): Promise<PromotionEntity> => { const newPromo: PromotionEntity = { ...promo, id: `promo_${Date.now()}`, }; mockPromotions.unshift(newPromo); return newPromo; };
 export const listOrders = async (): Promise<OrderEntity[]> => { return [...mockOrders]; };
-export const updateOrderStatus = async (orderId: string, status: OrderStatus): Promise<OrderEntity> => { const idx = mockOrders.findIndex(o => o.id === orderId); if (idx === -1) throw new Error('Order not found'); mockOrders[idx].status = status; const order = mockOrders[idx]; const orderContainsInstallableItems = order.items.some(item => mockProducts.find(p => p.id === item.productId)?.tags?.includes('requires-installation')); if (status === 'Delivered' && orderContainsInstallableItems) { mockOrders[idx].proofOfInstallationStatus = 'pending'; } return { ...mockOrders[idx] }; };
+export const updateOrderStatus = async (orderId: string, status: OrderStatus): Promise<OrderEntity> => { const idx = mockOrders.findIndex(o => o.id === orderId); if (idx === -1) throw new Error('Order not found'); mockOrders[idx].status = status; const order = mockOrders[idx]; const orderContainsInstallableItems = order.items.some(item => mockProducts.find(p => p.id === item.productId)?.tags?.includes('requires-installation')); if (status === 'Delivered' && orderContainsInstallableItems) { mockOrders[idx].proofOfInstallationStatus = 'pending'; } saveToStorage(); return { ...mockOrders[idx] }; };
 export const getInstallationQuote = async (orderId: string): Promise<{ quote: number, providerId: string }> => { await new Promise(res => setTimeout(res, 800)); return { quote: 250, providerId: 'sp_01' }; };
 export const listServiceProviders = async (): Promise<UserEntity[]> => { return mockServiceProviders; };
 export const listGigWorkers = async (): Promise<UserEntity[]> => { return [...mockGigWorkers]; }; 
 export const getProjectDetails = async (projectId: string): Promise<ProjectEntity | undefined> => { return mockProjects.find(p => p.id === projectId); };
-export const createServiceAgreement = async (clientId: string, providerId: string, projectId: string, price: number): Promise<ServiceAgreementEntity> => { const newAgreement: ServiceAgreementEntity = { id: `sa_${Date.now()}`, clientId, providerId, projectId, price, scope: `Installation services for project ${projectId}`, status: 'pending', createdAt: new Date().toISOString() }; mockServiceAgreements.push(newAgreement); return newAgreement; };
+export const createServiceAgreement = async (clientId: string, providerId: string, projectId: string, price: number): Promise<ServiceAgreementEntity> => { const newAgreement: ServiceAgreementEntity = { id: `sa_${Date.now()}`, clientId, providerId, projectId, price, scope: `Installation services for project ${projectId}`, status: 'pending', createdAt: new Date().toISOString() }; mockServiceAgreements.push(newAgreement); saveToStorage(); return newAgreement; };
 export const listServiceAgreements = async (): Promise<ServiceAgreementEntity[]> => { return [...mockServiceAgreements]; };
 export const getServiceLevelAgreementText = async (agreement: ServiceAgreementEntity): Promise<string> => { return `This Service Level Agreement...`; };
-export const fundServiceEscrow = async (agreementId: string, validatorId?: string): Promise<ServiceAgreementEntity> => { const idx = mockServiceAgreements.findIndex(sa => sa.id === agreementId); if (idx === -1) throw new Error('Agreement not found'); mockServiceAgreements[idx].status = 'funded'; if (validatorId) mockServiceAgreements[idx].qualityAssuranceValidatorId = validatorId; return { ...mockServiceAgreements[idx] }; };
-export const confirmServiceCompletion = async (agreementId: string, userType: 'client' | 'validator'): Promise<ServiceAgreementEntity> => { const idx = mockServiceAgreements.findIndex(sa => sa.id === agreementId); if (idx === -1) throw new Error('Agreement not found'); const agreement = mockServiceAgreements[idx]; if (userType === 'client') agreement.status = 'client-confirmed'; if (userType === 'validator' && agreement.status === 'client-confirmed') agreement.status = 'validator-confirmed'; const isComplete = agreement.status === 'client-confirmed' && !agreement.qualityAssuranceValidatorId || agreement.status === 'validator-confirmed'; if (isComplete) { agreement.status = 'complete'; const provider = mockServiceProviders.find(p => p.id === agreement.providerId); if(provider) { provider.trustScore = Math.min(100, provider.trustScore + 2); } } return { ...agreement }; };
+export const fundServiceEscrow = async (agreementId: string, validatorId?: string): Promise<ServiceAgreementEntity> => { const idx = mockServiceAgreements.findIndex(sa => sa.id === agreementId); if (idx === -1) throw new Error('Agreement not found'); mockServiceAgreements[idx].status = 'funded'; if (validatorId) mockServiceAgreements[idx].qualityAssuranceValidatorId = validatorId; saveToStorage(); return { ...mockServiceAgreements[idx] }; };
+export const confirmServiceCompletion = async (agreementId: string, userType: 'client' | 'validator'): Promise<ServiceAgreementEntity> => { const idx = mockServiceAgreements.findIndex(sa => sa.id === agreementId); if (idx === -1) throw new Error('Agreement not found'); const agreement = mockServiceAgreements[idx]; if (userType === 'client') agreement.status = 'client-confirmed'; if (userType === 'validator' && agreement.status === 'client-confirmed') agreement.status = 'validator-confirmed'; const isComplete = agreement.status === 'client-confirmed' && !agreement.qualityAssuranceValidatorId || agreement.status === 'validator-confirmed'; if (isComplete) { agreement.status = 'complete'; const provider = mockServiceProviders.find(p => p.id === agreement.providerId); if(provider) { provider.trustScore = Math.min(100, provider.trustScore + 2); } } saveToStorage(); return { ...agreement }; };
 export const submitRating = async (userId: string, rating: number, comment: string): Promise<boolean> => { reputationEvents.push({ id: `rev_${Date.now()}`, userId, type: 'RatingReceived', value: rating, description: comment, timestamp: new Date().toISOString() }); return true; };
-export const calculateTrustScore = async (userId: string): Promise<number> => { const userEvents = reputationEvents.filter(e => e.userId === userId); let score = 50; for (const event of userEvents) { score += event.value; } mockUser.trustScore = Math.max(0, Math.min(100, score)); return mockUser.trustScore; };
+export const calculateTrustScore = async (userId: string): Promise<number> => { const userEvents = reputationEvents.filter(e => e.userId === userId); let score = 50; for (const event of userEvents) { score += event.value; } mockUser.trustScore = Math.max(0, Math.min(100, score)); saveToStorage(); return mockUser.trustScore; };
 export const listProposals = async (): Promise<ProposalEntity[]> => { mockProposals.forEach(p => { if (new Date() > new Date(p.endsAt) && p.status === 'Voting') { p.status = p.forVotes > p.againstVotes && p.turnout >= p.quorum ? 'Passed' : 'Failed'; } }); return [...mockProposals]; };
-export const stakeArchi = async (amount: number): Promise<UserEntity> => { const tIdx = mockUserTokens.findIndex(t => t.symbol === 'ARCHI'); if (mockUserTokens[tIdx].balance < amount) throw new Error('Insufficient ARCHI'); mockUserTokens[tIdx].balance -= amount; mockUser.stakedArchi = (mockUser.stakedArchi || 0) + amount; return { ...mockUser }; };
-export const unstakeArchi = async (amount: number): Promise<UserEntity> => { if ((mockUser.stakedArchi || 0) < amount) throw new Error('Insufficient staked ARCHI'); const tIdx = mockUserTokens.findIndex(t => t.symbol === 'ARCHI'); mockUserTokens[tIdx].balance += amount; mockUser.stakedArchi -= amount; return { ...mockUser }; };
-export const voteOnProposal = async (proposalId: string, vote: 'for' | 'against', votingPower: number): Promise<ProposalEntity> => { const idx = mockProposals.findIndex(p => p.id === proposalId); if (idx === -1) throw new Error('Proposal not found'); if (vote === 'for') mockProposals[idx].forVotes += votingPower; else mockProposals[idx].againstVotes += votingPower; mockProposals[idx].turnout += (votingPower / TOTAL_VOTING_POWER); return { ...mockProposals[idx] }; };
-export const executeProposal = async(proposalId: string): Promise<ProposalEntity> => { console.log(`[AdminBot] Executing proposal ${proposalId}...`); await new Promise(r => setTimeout(r, 1000)); const idx = mockProposals.findIndex(p => p.id === proposalId); if (idx === -1) throw new Error("Proposal not found."); mockProposals[idx].status = 'Executed'; return {...mockProposals[idx]}; };
-export const submitProofOfInstallation = async(orderId: string, photoData: string): Promise<OrderEntity> => { await new Promise(r => setTimeout(r, 1000)); const idx = mockOrders.findIndex(o => o.id === orderId); if (idx === -1) throw new Error('Order not found'); mockOrders[idx].proofOfInstallationStatus = 'submitted'; return {...mockOrders[idx]}; }
-export const verifyProofOfInstallation = async(orderId: string): Promise<OrderEntity> => { await new Promise(r => setTimeout(r, 2000)); const idx = mockOrders.findIndex(o => o.id === orderId); if (idx === -1) throw new Error('Order not found'); mockOrders[idx].proofOfInstallationStatus = 'verified'; return {...mockOrders[idx]}; };
+export const stakeArchi = async (amount: number): Promise<UserEntity> => { const tIdx = mockUserTokens.findIndex(t => t.symbol === 'ARCHI'); if (mockUserTokens[tIdx].balance < amount) throw new Error('Insufficient ARCHI'); mockUserTokens[tIdx].balance -= amount; mockUser.stakedArchi = (mockUser.stakedArchi || 0) + amount; saveToStorage(); return { ...mockUser }; };
+export const unstakeArchi = async (amount: number): Promise<UserEntity> => { if ((mockUser.stakedArchi || 0) < amount) throw new Error('Insufficient staked ARCHI'); const tIdx = mockUserTokens.findIndex(t => t.symbol === 'ARCHI'); mockUserTokens[tIdx].balance += amount; mockUser.stakedArchi -= amount; saveToStorage(); return { ...mockUser }; };
+export const voteOnProposal = async (proposalId: string, vote: 'for' | 'against', votingPower: number): Promise<ProposalEntity> => { const idx = mockProposals.findIndex(p => p.id === proposalId); if (idx === -1) throw new Error('Proposal not found'); if (vote === 'for') mockProposals[idx].forVotes += votingPower; else mockProposals[idx].againstVotes += votingPower; mockProposals[idx].turnout += (votingPower / TOTAL_VOTING_POWER); saveToStorage(); return { ...mockProposals[idx] }; };
+export const executeProposal = async(proposalId: string): Promise<ProposalEntity> => { console.log(`[AdminBot] Executing proposal ${proposalId}...`); await new Promise(r => setTimeout(r, 1000)); const idx = mockProposals.findIndex(p => p.id === proposalId); if (idx === -1) throw new Error("Proposal not found."); mockProposals[idx].status = 'Executed'; saveToStorage(); return {...mockProposals[idx]}; };
+export const submitProofOfInstallation = async(orderId: string, photoData: string): Promise<OrderEntity> => { await new Promise(r => setTimeout(r, 1000)); const idx = mockOrders.findIndex(o => o.id === orderId); if (idx === -1) throw new Error('Order not found'); mockOrders[idx].proofOfInstallationStatus = 'submitted'; saveToStorage(); return {...mockOrders[idx]}; }
+export const verifyProofOfInstallation = async(orderId: string): Promise<OrderEntity> => { await new Promise(r => setTimeout(r, 2000)); const idx = mockOrders.findIndex(o => o.id === orderId); if (idx === -1) throw new Error('Order not found'); mockOrders[idx].proofOfInstallationStatus = 'verified'; saveToStorage(); return {...mockOrders[idx]}; };
 export const shareToPiFeed = async (projectId: string, caption?: string): Promise<{ success: boolean; message: string }> => { await new Promise(r => setTimeout(r, 1200)); return { success: true, message: 'Project shared to Pi Feed!' }; };
 export const listDesignChallenges = async (): Promise<DesignChallengeEntity[]> => { return [...mockDesignChallenges]; };
 export const getChallengeSubmissions = async (challengeId: string): Promise<ChallengeSubmissionEntity[]> => { return mockChallengeSubmissions.filter(s => s.challengeId === challengeId); };
@@ -356,6 +392,7 @@ export const registerAffiliate = async (referralCode: string): Promise<Affiliate
         tier: 'Scout',
         campaigns: []
     };
+    saveToStorage();
     return mockUser.affiliateProfile;
 };
 
@@ -365,6 +402,7 @@ export const claimAffiliateEarnings = async (): Promise<void> => {
         mockUserTokens[idx].balance += mockUser.affiliateProfile.pendingEarnings;
         mockUser.affiliateProfile.totalEarnings += mockUser.affiliateProfile.pendingEarnings;
         mockUser.affiliateProfile.pendingEarnings = 0;
+        saveToStorage();
     }
 };
 
@@ -376,6 +414,7 @@ export const activateDropshipping = async (storeName: string): Promise<DropshipP
         totalSales: 0,
         reputationScore: 50
     };
+    saveToStorage();
     return mockUser.dropshipProfile;
 };
 
@@ -409,6 +448,7 @@ export const forwardOrderToVendor = async (orderId: string): Promise<void> => {
     const order = mockOrders.find(o => o.id === orderId);
     if (order) {
         order.status = 'Forwarded to Vendor';
+        saveToStorage();
     }
 };
 
@@ -441,10 +481,15 @@ export const restoreSystemState = async (jsonString: string): Promise<boolean> =
         const parsed = JSON.parse(jsonString);
         if (!parsed.data || !parsed.timestamp) throw new Error("Invalid backup format");
         
-        // In a real backend, this would overwrite DB tables.
-        // Here we can update our in-memory mocks.
+        // Restore memory state
         if(parsed.data.projects) mockProjects = parsed.data.projects;
         if(parsed.data.orders) mockOrders = parsed.data.orders;
+        if(parsed.data.users && parsed.data.users[0]) mockUser = parsed.data.users[0];
+        if(parsed.data.tokens) mockUserTokens = parsed.data.tokens;
+        if(parsed.data.bounties) mockBounties = parsed.data.bounties;
+
+        // Save to local storage
+        saveToStorage();
         
         console.log(`[System] Restored state from backup generated at ${parsed.timestamp}`);
         return true;

@@ -41,6 +41,7 @@ import { LegalModal } from './components/LegalModal';
 import { LanguageSelectorModal } from './components/LanguageSelectorModal';
 import { GlobeIcon } from './components/icons/GlobeIcon';
 import { useLanguage } from './core/i18n/LanguageContext';
+import { PiBrowserGate } from './components/PiBrowserGate';
 
 // Lazy Loaded Heavy Components
 const ScannerInterface = React.lazy(() => import('./components/ScannerInterface').then(module => ({ default: module.ScannerInterface })));
@@ -50,7 +51,7 @@ const PublicGallery = React.lazy(() => import('./components/PublicGallery').then
 
 const App: React.FC = () => {
   const { setUser } = useAppStore();
-  const { t } = useLanguage(); // Use translation hook
+  const { t, dir } = useLanguage(); // Use translation hook
   const [showLangModal, setShowLangModal] = useState(false);
 
   const {
@@ -161,71 +162,73 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-brand-dark text-slate-100 flex flex-col items-center overflow-hidden antialiased relative">
-      <AmbientBackground />
-      <CommandPalette isOpen={isCommandPaletteOpen} onClose={toggleCommandPalette} onNavigate={(tab) => setActiveTab(tab as any)} onOpenWhitePaper={openWhitePaper} />
+    <PiBrowserGate>
+        <div dir={dir} className="min-h-screen w-full bg-brand-dark text-slate-100 flex flex-col items-center overflow-hidden antialiased relative">
+        <AmbientBackground />
+        <CommandPalette isOpen={isCommandPaletteOpen} onClose={toggleCommandPalette} onNavigate={(tab) => setActiveTab(tab as any)} onOpenWhitePaper={openWhitePaper} />
 
-      {/* Intro Screen */}
-      <div className={`absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-1000 z-[60] ${phase === 'intro' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-        <div className={`transition-all duration-700 ease-out ${isMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-          <GlassPanel className="p-10 text-center bg-black/40 border-white/5"><ArchitexLogo className="w-24 h-24 mx-auto mb-6" /><h1 className="text-5xl font-bold text-white tracking-tighter">{t('app.title')}</h1><p className="mt-2 text-slate-300 font-light text-lg">{t('app.subtitle')}</p></GlassPanel>
+        {/* Intro Screen */}
+        <div className={`absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-1000 z-[60] ${phase === 'intro' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+            <div className={`transition-all duration-700 ease-out ${isMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+            <GlassPanel className="p-10 text-center bg-black/40 border-white/5"><ArchitexLogo className="w-24 h-24 mx-auto mb-6" /><h1 className="text-5xl font-bold text-white tracking-tighter">{t('app.title')}</h1><p className="mt-2 text-slate-300 font-light text-lg">{t('app.subtitle')}</p></GlassPanel>
+            </div>
+            <button onClick={initialize} className={`group mt-12 flex items-center justify-center px-8 py-3 bg-white/10 border border-white/20 rounded-full text-lg font-semibold text-white backdrop-blur-md hover:bg-white hover:text-brand-dark hover:shadow-glow-violet transition-all duration-300 ${isMounted ? 'opacity-100 translate-y-0 delay-300' : 'opacity-0 translate-y-10'}`}>{t('app.init')} <ChevronRightIcon className={`w-6 h-6 ml-2 group-hover:translate-x-1 transition-transform duration-300 ${dir === 'rtl' ? 'rotate-180' : ''}`} /></button>
         </div>
-        <button onClick={initialize} className={`group mt-12 flex items-center justify-center px-8 py-3 bg-white/10 border border-white/20 rounded-full text-lg font-semibold text-white backdrop-blur-md hover:bg-white hover:text-brand-dark hover:shadow-glow-violet transition-all duration-300 ${isMounted ? 'opacity-100 translate-y-0 delay-300' : 'opacity-0 translate-y-10'}`}>{t('app.init')} <ChevronRightIcon className="w-6 h-6 ml-2 group-hover:translate-x-1 transition-transform duration-300" /></button>
-      </div>
 
-      {/* Dashboard Container */}
-      <div className={`w-full max-w-md h-full flex flex-col transition-opacity duration-1000 z-10 ${phase === 'dashboard' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-        <header className="relative flex-shrink-0 pt-6 pb-2 px-4 flex justify-between items-center">
-             <div className="flex items-center">
-                 <ArchitexLogo className="w-8 h-8 mr-2 text-ai-violet"/>
-                 <span className="font-bold text-lg tracking-tight">{t('app.title')}</span>
-             </div>
-             <div className="flex items-center space-x-2">
-                 <button onClick={() => setShowLangModal(true)} className="p-2 text-slate-400 hover:text-white transition-colors"><GlobeIcon className="w-5 h-5" /></button>
-                 <button onClick={toggleCommandPalette} className="p-2 text-slate-400 hover:text-white transition-colors"><span className="text-xs bg-white/10 px-2 py-1 rounded border border-white/5">CMD+K</span></button>
-                 <button onClick={toggleProfile} className="p-2 text-slate-400 hover:text-white transition-colors"><UserIcon className="w-6 h-6" /></button>
-             </div>
-        </header>
+        {/* Dashboard Container */}
+        <div className={`w-full max-w-md h-full flex flex-col transition-opacity duration-1000 z-10 ${phase === 'dashboard' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+            <header className="relative flex-shrink-0 pt-6 pb-2 px-4 flex justify-between items-center">
+                <div className="flex items-center">
+                    <ArchitexLogo className="w-8 h-8 mr-2 text-ai-violet"/>
+                    <span className="font-bold text-lg tracking-tight">{t('app.title')}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <button onClick={() => setShowLangModal(true)} className="p-2 text-slate-400 hover:text-white transition-colors"><GlobeIcon className="w-5 h-5" /></button>
+                    <button onClick={toggleCommandPalette} className="p-2 text-slate-400 hover:text-white transition-colors"><span className="text-xs bg-white/10 px-2 py-1 rounded border border-white/5">CMD+K</span></button>
+                    <button onClick={toggleProfile} className="p-2 text-slate-400 hover:text-white transition-colors"><UserIcon className="w-6 h-6" /></button>
+                </div>
+            </header>
 
-        <main className="flex-grow flex items-center justify-center p-2 min-h-0">{renderDashboardContent()}</main>
-        
-        {/* Floating Dock */}
-        <footer className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 w-auto">
-          <GlassPanel className="p-2 rounded-2xl bg-black/60 border-white/10 shadow-2xl backdrop-blur-2xl">
-              <nav className="flex items-center space-x-1 px-2">
-                  <IconButton icon={<DesignIcon />} label={t('nav.explore')} isActive={activeTab === 'explore'} onClick={() => setActiveTab('explore')} activeColor="ai-violet"/>
-                  <IconButton icon={<ScanIcon />} label={t('nav.scan')} isActive={activeTab === 'scan'} onClick={() => setActiveTab('scan')} activeColor="pi-gold"/>
-                  <IconButton icon={<DesignIcon />} label={t('nav.design')} isActive={activeTab === 'design'} onClick={() => setActiveTab('design')} activeColor="ai-violet"/>
-                  <IconButton icon={<MarketIcon />} label={t('nav.market')} isActive={activeTab === 'market'} onClick={() => setActiveTab('market')} activeColor="eco-green"/>
-                  <IconButton icon={<AwardIcon />} label={t('nav.challenges')} isActive={activeTab === 'challenges'} onClick={() => setActiveTab('challenges')} activeColor="pi-gold"/>
-              </nav>
-          </GlassPanel>
-        </footer>
-      </div>
+            <main className="flex-grow flex items-center justify-center p-2 min-h-0">{renderDashboardContent()}</main>
+            
+            {/* Floating Dock */}
+            <footer className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 w-auto">
+            <GlassPanel className="p-2 rounded-2xl bg-black/60 border-white/10 shadow-2xl backdrop-blur-2xl">
+                <nav className="flex items-center space-x-1 px-2">
+                    <IconButton icon={<DesignIcon />} label={t('nav.explore')} isActive={activeTab === 'explore'} onClick={() => setActiveTab('explore')} activeColor="ai-violet"/>
+                    <IconButton icon={<ScanIcon />} label={t('nav.scan')} isActive={activeTab === 'scan'} onClick={() => setActiveTab('scan')} activeColor="pi-gold"/>
+                    <IconButton icon={<DesignIcon />} label={t('nav.design')} isActive={activeTab === 'design'} onClick={() => setActiveTab('design')} activeColor="ai-violet"/>
+                    <IconButton icon={<MarketIcon />} label={t('nav.market')} isActive={activeTab === 'market'} onClick={() => setActiveTab('market')} activeColor="eco-green"/>
+                    <IconButton icon={<AwardIcon />} label={t('nav.challenges')} isActive={activeTab === 'challenges'} onClick={() => setActiveTab('challenges')} activeColor="pi-gold"/>
+                </nav>
+            </GlassPanel>
+            </footer>
+        </div>
 
-      {/* Modals */}
-      {showLangModal && <LanguageSelectorModal onClose={() => setShowLangModal(false)} />}
-      {showPaymentModal && <PaymentModal onConfirm={confirmPayment} onCancel={cancelPayment} isProcessing={isProcessingPayment} />}
-      {isProfileVisible && user && <ProfileScreen user={user} projects={projects} orders={orders} serviceAgreements={serviceAgreements} userTokens={[]} onConfirmDelivery={handleConfirmDelivery} onRequestReturn={handleRequestReturn} onConfirmServiceCompletion={handleConfirmServiceCompletion} onClaimVestedTokens={async () => {}} onSubscribe={() => {}} onClose={toggleProfile} onBecomeProvider={() => {}} onBecomeArbitrator={() => {}} onOpenEnterprise={() => {}} onOpenWhitePaper={openWhitePaper} onOpenAbout={openAboutModal} onOpenLegal={openLegalModal} />}
-      {showUpsellModal && <UpsellModal onConfirm={() => { setActiveTab('market'); closeUpsellModal(); }} onCancel={closeUpsellModal}/>}
-      {showCreateBountyModal && <CreateBountyModal user={user} onConfirm={handleCreateBounty} onCancel={closeCreateBountyModal}/>}
-      {showMintNftModal && projectToMint && <MintNftModal project={projectToMint} onConfirm={() => handleMintNft(projectToMint.id)} onCancel={closeMintNftModal}/>}
-      {selectedBounty && <BountyDetailsModal bounty={selectedBounty} arbitrators={availableArbitrators} onClose={closeBountyDetailsModal} onFund={handleInitiateFunding} onRelease={handleReleaseFunds} onDispute={() => handleRaiseDispute(selectedBounty)} onSelectArbitrator={(arbitrator: ArbitratorEntity) => handleSelectArbitrator(selectedBounty, arbitrator)} onOpenLegalShield={() => setShowUserLegalShieldModal(true)} onResolve={handleResolveArbitration}/>}
-      {showAgreementModal && agreementText && <AgreementModal agreementText={agreementText} onConfirm={handleConfirmFunding} onCancel={closeAgreementModal}/>}
-      {showInstallationUpsellModal && orderForUpsell && <InstallationUpsellModal order={orderForUpsell} onConfirm={() => setShowInstallationUpsellModal(false)} onCancel={() => setShowInstallationUpsellModal(false)}/>}
-      {showProjectDetailsModal && selectedProject && <ProjectDetailsModal project={selectedProject} onGetQuotes={handleGetQuotes} onClose={() => setShowProjectDetailsModal(false)} onShare={handleShareProject} onSubmitToChallenge={() => openSubmitToChallengeModal(selectedProject)} />}
-      {showServiceAgreementModal && activeServiceAgreement && user && <ServiceAgreementModal agreement={activeServiceAgreement} user={user} arbitrators={arbitrators} onConfirm={handleConfirmServiceHiring} onCancel={() => setShowServiceAgreementModal(false)}/>}
-      {showUserLegalShieldModal && <UserLegalShieldModal onClose={() => setShowUserLegalShieldModal(false)}/>}
-      {showDisputeResolutionModal && selectedBounty && <DisputeResolutionModal bounty={selectedBounty} arbitrators={availableArbitrators} onConfirmDispute={handleConfirmDispute} onSelectArbitrator={handleSelectArbitrator} onClose={() => setShowDisputeResolutionModal(false)}/>}
-      {showRatingModal && userToRate && <RatingModal onConfirm={handleSubmitRating} onCancel={() => setShowRatingModal(false)} />}
-      {showProofOfInstallationModal && orderForProof && <ProofOfInstallationModal order={orderForProof} onConfirm={handleSubmitProofOfInstallation} onCancel={() => setShowProofOfInstallationModal(false)}/>}
-      {showGovernanceTosModal && <GovernanceTosModal onClose={closeGovernanceTosModal} />}
-      {selectedChallenge && <ChallengeDetailsModal challenge={selectedChallenge} submissions={submissions} onVote={handleVoteOnSubmission} onClose={closeChallengeDetailsModal} />}
-      {showSubmitToChallengeModal && projectToSubmit && <SubmitToChallengeModal project={projectToSubmit} challenges={designChallenges} onSubmit={handleSubmitProjectToChallenge} onCancel={closeSubmitToChallengeModal} />}
-      {showWhitePaper && <WhitePaperModal onClose={closeWhitePaper} />}
-      {showAboutModal && <AboutModal onClose={closeAboutModal} />}
-      {showLegalModal && <LegalModal initialTab={legalActiveTab} onClose={closeLegalModal} />}
-    </div>
+        {/* Modals */}
+        {showLangModal && <LanguageSelectorModal onClose={() => setShowLangModal(false)} />}
+        {showPaymentModal && <PaymentModal onConfirm={confirmPayment} onCancel={cancelPayment} isProcessing={isProcessingPayment} />}
+        {isProfileVisible && user && <ProfileScreen user={user} projects={projects} orders={orders} serviceAgreements={serviceAgreements} userTokens={[]} onConfirmDelivery={handleConfirmDelivery} onRequestReturn={handleRequestReturn} onConfirmServiceCompletion={handleConfirmServiceCompletion} onClaimVestedTokens={async () => {}} onSubscribe={() => {}} onClose={toggleProfile} onBecomeProvider={() => {}} onBecomeArbitrator={() => {}} onOpenEnterprise={() => {}} onOpenWhitePaper={openWhitePaper} onOpenAbout={openAboutModal} onOpenLegal={openLegalModal} />}
+        {showUpsellModal && <UpsellModal onConfirm={() => { setActiveTab('market'); closeUpsellModal(); }} onCancel={closeUpsellModal}/>}
+        {showCreateBountyModal && <CreateBountyModal user={user} onConfirm={handleCreateBounty} onCancel={closeCreateBountyModal}/>}
+        {showMintNftModal && projectToMint && <MintNftModal project={projectToMint} onConfirm={() => handleMintNft(projectToMint.id)} onCancel={closeMintNftModal}/>}
+        {selectedBounty && <BountyDetailsModal bounty={selectedBounty} arbitrators={availableArbitrators} onClose={closeBountyDetailsModal} onFund={handleInitiateFunding} onRelease={handleReleaseFunds} onDispute={() => handleRaiseDispute(selectedBounty)} onSelectArbitrator={(arbitrator: ArbitratorEntity) => handleSelectArbitrator(selectedBounty, arbitrator)} onOpenLegalShield={() => setShowUserLegalShieldModal(true)} onResolve={handleResolveArbitration}/>}
+        {showAgreementModal && agreementText && <AgreementModal agreementText={agreementText} onConfirm={handleConfirmFunding} onCancel={closeAgreementModal}/>}
+        {showInstallationUpsellModal && orderForUpsell && <InstallationUpsellModal order={orderForUpsell} onConfirm={() => setShowInstallationUpsellModal(false)} onCancel={() => setShowInstallationUpsellModal(false)}/>}
+        {showProjectDetailsModal && selectedProject && <ProjectDetailsModal project={selectedProject} onGetQuotes={handleGetQuotes} onClose={() => setShowProjectDetailsModal(false)} onShare={handleShareProject} onSubmitToChallenge={() => openSubmitToChallengeModal(selectedProject)} />}
+        {showServiceAgreementModal && activeServiceAgreement && user && <ServiceAgreementModal agreement={activeServiceAgreement} user={user} arbitrators={arbitrators} onConfirm={handleConfirmServiceHiring} onCancel={() => setShowServiceAgreementModal(false)}/>}
+        {showUserLegalShieldModal && <UserLegalShieldModal onClose={() => setShowUserLegalShieldModal(false)}/>}
+        {showDisputeResolutionModal && selectedBounty && <DisputeResolutionModal bounty={selectedBounty} arbitrators={availableArbitrators} onConfirmDispute={handleConfirmDispute} onSelectArbitrator={handleSelectArbitrator} onClose={() => setShowDisputeResolutionModal(false)}/>}
+        {showRatingModal && userToRate && <RatingModal onConfirm={handleSubmitRating} onCancel={() => setShowRatingModal(false)} />}
+        {showProofOfInstallationModal && orderForProof && <ProofOfInstallationModal order={orderForProof} onConfirm={handleSubmitProofOfInstallation} onCancel={() => setShowProofOfInstallationModal(false)}/>}
+        {showGovernanceTosModal && <GovernanceTosModal onClose={closeGovernanceTosModal} />}
+        {selectedChallenge && <ChallengeDetailsModal challenge={selectedChallenge} submissions={submissions} onVote={handleVoteOnSubmission} onClose={closeChallengeDetailsModal} />}
+        {showSubmitToChallengeModal && projectToSubmit && <SubmitToChallengeModal project={projectToSubmit} challenges={designChallenges} onSubmit={handleSubmitProjectToChallenge} onCancel={closeSubmitToChallengeModal} />}
+        {showWhitePaper && <WhitePaperModal onClose={closeWhitePaper} />}
+        {showAboutModal && <AboutModal onClose={closeAboutModal} />}
+        {showLegalModal && <LegalModal initialTab={legalActiveTab} onClose={closeLegalModal} />}
+        </div>
+    </PiBrowserGate>
   );
 };
 
