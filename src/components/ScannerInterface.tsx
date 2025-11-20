@@ -11,6 +11,8 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [cameraError, setCameraError] = useState(false);
     const [parallax, setParallax] = useState({ x: 0, y: 0 });
+    const [permissionGranted, setPermissionGranted] = useState(false);
+    const [showPermissionButton, setShowPermissionButton] = useState(false);
 
     useEffect(() => {
         const startCamera = async () => {
@@ -29,19 +31,13 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
 
         startCamera();
 
-        // Gyroscope Parallax Handler
-        const handleOrientation = (event: DeviceOrientationEvent) => {
-            if (event.beta && event.gamma) {
-                // Beta: -180 to 180 (x), Gamma: -90 to 90 (y)
-                setParallax({
-                    x: event.gamma * 0.5,
-                    y: event.beta * 0.5
-                });
-            }
-        };
-        
-        if (window.DeviceOrientationEvent) {
-             window.addEventListener('deviceorientation', handleOrientation);
+        // Check if we are on iOS 13+ which requires permission
+        if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+            setShowPermissionButton(true);
+        } else {
+            // Non-iOS or older devices, try adding listener directly
+            window.addEventListener('deviceorientation', handleOrientation);
+            setPermissionGranted(true);
         }
 
         return () => {
@@ -49,11 +45,39 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
                 const stream = videoRef.current.srcObject as MediaStream;
                 stream.getTracks().forEach(track => track.stop());
             }
-            if (window.DeviceOrientationEvent) {
-                window.removeEventListener('deviceorientation', handleOrientation);
-            }
+            window.removeEventListener('deviceorientation', handleOrientation);
         };
     }, []);
+
+    // Gyroscope Parallax Handler
+    const handleOrientation = (event: DeviceOrientationEvent) => {
+        if (event.beta && event.gamma) {
+            // Beta: -180 to 180 (x), Gamma: -90 to 90 (y)
+            // Limit movement
+            setParallax({
+                x: Math.min(Math.max(event.gamma * 0.5, -20), 20),
+                y: Math.min(Math.max(event.beta * 0.5, -20), 20)
+            });
+        }
+    };
+
+    // iOS 13+ Permission Request Logic - Must be triggered by user interaction
+    const requestMotionPermission = async () => {
+        if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+            try {
+                const response = await (DeviceOrientationEvent as any).requestPermission();
+                if (response === 'granted') {
+                    setPermissionGranted(true);
+                    setShowPermissionButton(false);
+                    window.addEventListener('deviceorientation', handleOrientation);
+                } else {
+                    alert('Motion permission is required for the 3D scanning effect.');
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    };
 
     // Visual SLAM Simulation Loop
     useEffect(() => {
@@ -172,6 +196,16 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
             
             {!cameraError && (
                 <>
+                    {/* iOS Permission Button */}
+                    {showPermissionButton && (
+                        <button 
+                            onClick={requestMotionPermission}
+                            className="absolute top-4 right-4 z-50 bg-black/60 text-white text-xs font-bold px-3 py-2 rounded-full border border-white/20 hover:bg-black/80 transition-all"
+                        >
+                            Enable Motion Sensors
+                        </button>
+                    )}
+
                     <div className="relative w-48 h-48 flex items-center justify-center z-10">
                         <svg className="absolute w-full h-full transform -rotate-90" viewBox="0 0 200 200">
                             <circle

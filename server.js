@@ -60,10 +60,12 @@ apiRouter.post('/approve_payment', async (req, res) => {
     res.json({ success: true, message: 'Payment approved.' });
 
   } catch (error) {
-    console.error('[SERVER] Failed to approve payment:', error.response?.data || error.message);
+    const errorData = error.response?.data || error.message;
+    console.error('[SERVER] Failed to approve payment. Details:', JSON.stringify(errorData, null, 2));
+    // Return more details to the client for debugging
     res.status(500).json({ 
       error: 'Failed to approve payment on Pi Network',
-      details: error.response?.data 
+      details: errorData
     });
   }
 });
@@ -116,10 +118,11 @@ apiRouter.post('/complete_payment', async (req, res) => {
     res.json({ success: true, message: 'Payment completed and verified.' });
 
   } catch (error) {
-    console.error('[SERVER] Failed to complete payment:', error.response?.data || error.message);
+    const errorData = error.response?.data || error.message;
+    console.error('[SERVER] Failed to complete payment. Details:', JSON.stringify(errorData, null, 2));
     res.status(500).json({ 
       error: 'Failed to complete payment on Pi Network',
-      details: error.response?.data 
+      details: errorData
     });
   }
 });
