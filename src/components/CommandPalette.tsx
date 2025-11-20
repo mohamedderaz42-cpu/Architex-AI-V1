@@ -5,22 +5,25 @@ import { SearchIcon } from './icons/SearchIcon';
 import { DesignIcon } from './icons/DesignIcon';
 import { MarketIcon } from './icons/MarketIcon';
 import { ScanIcon } from './icons/ScanIcon';
+import { FileTextIcon } from './icons/FileTextIcon';
 
 interface CommandPaletteProps {
     isOpen: boolean;
     onClose: () => void;
     onNavigate: (tab: string) => void;
+    onOpenWhitePaper?: () => void;
 }
 
-export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, onNavigate }) => {
+export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, onNavigate, onOpenWhitePaper }) => {
     if (!isOpen) return null;
 
     const [query, setQuery] = useState('');
     const options = [
-        { id: 'scan', label: 'Start New Scan', icon: <ScanIcon className="w-4 h-4"/>, tab: 'scan' },
-        { id: 'explore', label: 'Explore Gallery', icon: <DesignIcon className="w-4 h-4"/>, tab: 'explore' },
-        { id: 'design', label: 'Go to Studio', icon: <DesignIcon className="w-4 h-4"/>, tab: 'design' },
-        { id: 'market', label: 'Open Marketplace', icon: <MarketIcon className="w-4 h-4"/>, tab: 'market' },
+        { id: 'scan', label: 'Start New Scan', icon: <ScanIcon className="w-4 h-4"/>, action: () => onNavigate('scan') },
+        { id: 'explore', label: 'Explore Gallery', icon: <DesignIcon className="w-4 h-4"/>, action: () => onNavigate('explore') },
+        { id: 'design', label: 'Go to Studio', icon: <DesignIcon className="w-4 h-4"/>, action: () => onNavigate('design') },
+        { id: 'market', label: 'Open Marketplace', icon: <MarketIcon className="w-4 h-4"/>, action: () => onNavigate('market') },
+        { id: 'whitepaper', label: 'Read White Paper', icon: <FileTextIcon className="w-4 h-4"/>, action: () => onOpenWhitePaper?.() },
     ];
 
     const filtered = options.filter(o => o.label.toLowerCase().includes(query.toLowerCase()));
@@ -45,7 +48,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
                     {filtered.map((opt, idx) => (
                         <button 
                             key={opt.id}
-                            onClick={() => { onNavigate(opt.tab); onClose(); }}
+                            onClick={() => { opt.action(); onClose(); }}
                             className={`w-full flex items-center px-3 py-3 rounded-lg text-left transition-colors ${idx === 0 ? 'bg-ai-violet/20 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}
                         >
                             <span className="mr-3 opacity-70">{opt.icon}</span>

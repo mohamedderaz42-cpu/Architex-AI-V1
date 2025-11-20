@@ -35,6 +35,7 @@ import { CommandPalette } from './components/CommandPalette';
 import { ProjectCard } from './components/ProjectCard'; // Import for Design Tab
 import { Loader } from './components/Loader';
 import { useAppStore } from './store/useAppStore';
+import { WhitePaperModal } from './components/WhitePaperModal';
 
 // Lazy Loaded Heavy Components
 const ScannerInterface = React.lazy(() => import('./components/ScannerInterface').then(module => ({ default: module.ScannerInterface })));
@@ -70,7 +71,8 @@ const App: React.FC = () => {
     isCommandPaletteOpen, toggleCommandPalette,
     // Shop & Common Props
     products, cart, addToCart, openShoppingCart, openVendorProfile, 
-    votingPower, handleClaimStakingRewards, openCreateChallengeModal, handleJoinFounderProgram
+    votingPower, handleClaimStakingRewards, openCreateChallengeModal, handleJoinFounderProgram,
+    showWhitePaper, openWhitePaper, closeWhitePaper
   } = useArchitex();
 
   const renderDashboardContent = () => {
@@ -153,7 +155,7 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen w-full bg-brand-dark text-slate-100 flex flex-col items-center overflow-hidden antialiased relative">
       <AmbientBackground />
-      <CommandPalette isOpen={isCommandPaletteOpen} onClose={toggleCommandPalette} onNavigate={(tab) => setActiveTab(tab as any)} />
+      <CommandPalette isOpen={isCommandPaletteOpen} onClose={toggleCommandPalette} onNavigate={(tab) => setActiveTab(tab as any)} onOpenWhitePaper={openWhitePaper} />
 
       {/* Intro Screen */}
       <div className={`absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-1000 z-[60] ${phase === 'intro' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
@@ -194,7 +196,7 @@ const App: React.FC = () => {
 
       {/* Modals */}
       {showPaymentModal && <PaymentModal onConfirm={confirmPayment} onCancel={cancelPayment} isProcessing={isProcessingPayment} />}
-      {isProfileVisible && user && <ProfileScreen user={user} projects={projects} orders={orders} serviceAgreements={serviceAgreements} onConfirmDelivery={handleConfirmDelivery} onRequestReturn={handleRequestReturn} onConfirmServiceCompletion={handleConfirmServiceCompletion} onClose={toggleProfile} userTokens={[]} onClaimVestedTokens={async () => {}} onSubscribe={() => {}} onBecomeProvider={() => {}} onBecomeArbitrator={() => {}} onOpenEnterprise={() => {}} />}
+      {isProfileVisible && user && <ProfileScreen user={user} projects={projects} orders={orders} serviceAgreements={serviceAgreements} onConfirmDelivery={handleConfirmDelivery} onRequestReturn={handleRequestReturn} onConfirmServiceCompletion={handleConfirmServiceCompletion} onClose={toggleProfile} userTokens={[]} onClaimVestedTokens={async () => {}} onSubscribe={() => {}} onBecomeProvider={() => {}} onBecomeArbitrator={() => {}} onOpenEnterprise={() => {}} onOpenWhitePaper={openWhitePaper} />}
       {showUpsellModal && <UpsellModal onConfirm={() => { setActiveTab('market'); closeUpsellModal(); }} onCancel={closeUpsellModal}/>}
       {showCreateBountyModal && <CreateBountyModal user={user} onConfirm={handleCreateBounty} onCancel={closeCreateBountyModal}/>}
       {showMintNftModal && projectToMint && <MintNftModal project={projectToMint} onConfirm={() => handleMintNft(projectToMint.id)} onCancel={closeMintNftModal}/>}
@@ -210,6 +212,7 @@ const App: React.FC = () => {
       {showGovernanceTosModal && <GovernanceTosModal onClose={closeGovernanceTosModal} />}
       {selectedChallenge && <ChallengeDetailsModal challenge={selectedChallenge} submissions={submissions} onVote={handleVoteOnSubmission} onClose={closeChallengeDetailsModal} />}
       {showSubmitToChallengeModal && projectToSubmit && <SubmitToChallengeModal project={projectToSubmit} challenges={designChallenges} onSubmit={handleSubmitProjectToChallenge} onCancel={closeSubmitToChallengeModal} />}
+      {showWhitePaper && <WhitePaperModal onClose={closeWhitePaper} />}
     </div>
   );
 };

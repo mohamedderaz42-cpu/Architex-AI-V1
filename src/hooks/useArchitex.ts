@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity, ProductEntity } from '../core/schemas/entities';
 import * as api from '../core/api/contract';
@@ -22,6 +23,7 @@ export const useArchitex = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isProfileVisible, setIsProfileVisible] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [showWhitePaper, setShowWhitePaper] = useState(false); // New State
   
   // Shop State
   const [products, setProducts] = useState<ProductEntity[]>([]);
@@ -121,6 +123,10 @@ export const useArchitex = () => {
   
   const toggleProfile = () => setIsProfileVisible(prev => !prev);
   const toggleCommandPalette = () => setIsCommandPaletteOpen(prev => !prev);
+  
+  // White Paper Handlers
+  const openWhitePaper = () => setShowWhitePaper(true);
+  const closeWhitePaper = () => setShowWhitePaper(false);
 
   const handleProjectInteraction = async (project: ProjectEntity) => { setSelectedProject(project); setShowProjectDetailsModal(true); };
   const closeUpsellModal = () => setShowUpsellModal(false);
@@ -209,6 +215,8 @@ export const useArchitex = () => {
     isCommandPaletteOpen, toggleCommandPalette,
     // Added for App.tsx compatibility
     products, cart, addToCart, openShoppingCart, openVendorProfile, 
-    votingPower, handleClaimStakingRewards, openCreateChallengeModal, handleJoinFounderProgram
+    votingPower, handleClaimStakingRewards, openCreateChallengeModal, handleJoinFounderProgram,
+    // White Paper
+    showWhitePaper, openWhitePaper, closeWhitePaper
   };
 };
