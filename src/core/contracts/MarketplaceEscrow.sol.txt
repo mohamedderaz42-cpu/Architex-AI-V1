@@ -1,0 +1,18 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+contract MarketplaceEscrow {
+    enum State { AWAITING_DELIVERY, COMPLETE, DISPUTED, REFUNDED }
+    struct Transaction { address payable buyer; address payable seller; uint256 value; State state; }
+    mapping(string => Transaction) public transactions;
+    address public arbitrator;
+    constructor(address _arbitrator) { arbitrator = _arbitrator; }
+    function createEscrow(string memory orderId, address payable _seller) external payable {
+        transactions[orderId] = Transaction(payable(msg.sender), _seller, msg.value, State.AWAITING_DELIVERY);
+    }
+    function resolveDispute(string memory orderId, address payable winner) external {
+        require(msg.sender == arbitrator, "Only Arbitrator");
+        Transaction storage txn = transactions[orderId];
+        txn.state = (winner == txn.buyer) ? State.REFUNDED : State.COMPLETE;
+        winner.transfer(txn.value);
+    }
+}

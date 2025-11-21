@@ -1,0 +1,14 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+contract DesignerMarketplace {
+    address public treasury;
+    uint256 public constant COMMISSION_RATE = 10;
+    event DesignPurchased(string projectId, address indexed buyer, uint256 price, uint256 commission);
+    constructor(address _treasury) { treasury = _treasury; }
+    function purchaseDesign(string memory projectId, address payable seller) external payable {
+        uint256 commission = (msg.value * COMMISSION_RATE) / 100;
+        payable(treasury).transfer(commission);
+        seller.transfer(msg.value - commission);
+        emit DesignPurchased(projectId, msg.sender, msg.value, commission);
+    }
+}

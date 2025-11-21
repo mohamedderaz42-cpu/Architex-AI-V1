@@ -2,8 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import { useState } from 'react';
 
 // Initialize client securely using the environment variable
-const apiKey = process.env.API_KEY || ''; 
-const ai = new GoogleGenAI({ apiKey });
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const useGenAI = () => {
     const [isGenerating, setIsGenerating] = useState(false);
@@ -14,14 +13,14 @@ export const useGenAI = () => {
      * @param prompt Contextual prompt for the AI
      */
     const analyzeImage = async (base64Image: string, prompt: string) => {
-        if (!apiKey) {
+        if (!process.env.API_KEY) {
             console.error("GenAI Error: API Key is missing.");
             return null;
         }
 
         setIsGenerating(true);
         try {
-            // Using gemini-2.5-flash as explicitly requested for production stability
+            // Updated to gemini-2.5-flash as per guidelines
             const response = await ai.models.generateContent({
                 model: 'gemini-2.5-flash',
                 contents: {
