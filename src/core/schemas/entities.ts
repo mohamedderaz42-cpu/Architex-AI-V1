@@ -42,6 +42,7 @@ export interface UserEntity {
 }
 
 export interface VendorProfile {
+    id?: string; // Added for admin listing identification
     companyName?: string;
     taxId?: string;
     hasInsurance: boolean;

@@ -6,7 +6,7 @@ import * as web3 from '../core/blockchain/web3Service';
 import { getProactiveTip, guidedScanInstructions, UXContext } from '../core/ux-engine/engine';
 import { useAppStore } from '../store/useAppStore';
 import { BootStep } from '../components/SystemBootLoader';
-import { useToast } from '../components/Toast'; // Import toast directly if needed, but we can pass msg
+import { useToast } from '../components/Toast'; 
 
 export type Phase = 'intro' | 'booting' | 'dashboard';
 export type ActiveTab = 'scan' | 'design' | 'market' | 'challenges' | 'explore';
@@ -36,6 +36,7 @@ export const useArchitex = () => {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [showWhitePaper, setShowWhitePaper] = useState(false); 
   const [showAboutModal, setShowAboutModal] = useState(false);
+  const [showAdminPortal, setShowAdminPortal] = useState(false); // Added state
   
   // Legal Modal State
   const [showLegalModal, setShowLegalModal] = useState(false);
@@ -105,15 +106,8 @@ export const useArchitex = () => {
   const [showSubmitToChallengeModal, setShowSubmitToChallengeModal] = useState(false);
   const [projectToSubmit, setProjectToSubmit] = useState<ProjectEntity | null>(null);
 
-  // Use custom hook for toast if not globally available, or assume context is above
-  // For this structure, we'll assume a simple alert or internal logic since useToast is inside App
-  // But wait, this hook is used IN App. We can't use useToast here easily unless we pass it or move logic.
-  // We will use a simple notification approach or assume the components handle the toast display via success/failure states
-  // For now, we'll just use console logs and let components handle visual feedback via state.
-
   useEffect(() => { setIsMounted(true); }, []);
   
-  // Helper to delay for effect
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   const updateBootStep = (id: string, status: BootStep['status']) => {
@@ -202,24 +196,23 @@ export const useArchitex = () => {
   };
   const closeLegalModal = () => setShowLegalModal(false);
 
+  const openAdminPortal = () => setShowAdminPortal(true); // Added action
+  const closeAdminPortal = () => setShowAdminPortal(false); // Added action
+
   const handleProjectInteraction = async (project: ProjectEntity) => { setSelectedProject(project); setShowProjectDetailsModal(true); };
   const closeUpsellModal = () => setShowUpsellModal(false);
 
   // --- Web3 Integration Handlers ---
   const handlePurchaseDesign = async (projectId: string, price: number) => {
       if (!user) return;
-      // Trigger blockchain transaction
       const receipt = await web3.web3Service.purchaseDesign(projectId, price, user.walletAddress);
       console.log("Purchase successful, tx:", receipt.txHash);
-      // Refresh projects to show ownership if necessary, or just rely on local state in component
   };
 
   const handleOrderDispute = async (orderId: string) => {
       if (!user) return;
-      // Trigger blockchain freeze
       const receipt = await web3.web3Service.freezeForDispute(orderId, user.walletAddress);
       console.log("Dispute started, tx:", receipt.txHash);
-      // Update local order state
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'In Dispute' } : o));
   };
 
@@ -373,8 +366,7 @@ export const useArchitex = () => {
     showWhitePaper, openWhitePaper, closeWhitePaper,
     showAboutModal, openAboutModal, closeAboutModal,
     showLegalModal, openLegalModal, closeLegalModal, legalActiveTab,
-    // Web3 Integrations
-    handlePurchaseDesign,
-    handleOrderDispute
+    handlePurchaseDesign, handleOrderDispute,
+    showAdminPortal, openAdminPortal, closeAdminPortal // New exports
   };
 };

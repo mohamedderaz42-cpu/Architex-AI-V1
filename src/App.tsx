@@ -47,6 +47,7 @@ import { SystemBootLoader } from './components/SystemBootLoader';
 import { ScanAnalysisView } from './components/ScanAnalysisView';
 import { ArchieBotWidget } from './components/ai/ArchieBotWidget';
 import { ProactiveEngine } from './core/ai/ProactiveEngine';
+import { AdminPortal } from './components/AdminPortal';
 
 // Lazy Loaded Heavy Components
 const ScannerInterface = React.lazy(() => import('./components/ScannerInterface').then(module => ({ default: module.ScannerInterface })));
@@ -88,7 +89,8 @@ const App: React.FC = () => {
     showAboutModal, openAboutModal, closeAboutModal,
     showLegalModal, openLegalModal, closeLegalModal, legalActiveTab,
     handlePurchaseDesign,
-    handleOrderDispute
+    handleOrderDispute,
+    showAdminPortal, openAdminPortal, closeAdminPortal // Imported from hook
   } = useArchitex();
 
   // Initialize Proactive AI Engine
@@ -96,6 +98,8 @@ const App: React.FC = () => {
       ProactiveEngine.setNavigator((tab) => setActiveTab(tab));
   }, [setActiveTab]);
 
+  // Add Admin Secret to Command Palette (or just add a hidden button somewhere, let's use Command Palette logic if possible, but CommandPalette component is self-contained for now. We will pass openAdminPortal to it or just rely on Profile)
+  
   const renderDashboardContent = () => {
     switch (activeTab) {
       case 'scan':
@@ -233,7 +237,12 @@ const App: React.FC = () => {
         {/* Modals */}
         {showLangModal && <LanguageSelectorModal onClose={() => setShowLangModal(false)} />}
         {showPaymentModal && <PaymentModal onConfirm={confirmPayment} onCancel={cancelPayment} isProcessing={isProcessingPayment} error={paymentError} analysis={scanAnalysis} />}
+        {/* Pass openAdminPortal to ProfileScreen to allow triggering it via secret gesture or button if added later */}
         {isProfileVisible && user && <ProfileScreen user={user} projects={projects} orders={orders} serviceAgreements={serviceAgreements} userTokens={[]} onConfirmDelivery={handleConfirmDelivery} onRequestReturn={handleRequestReturn} onConfirmServiceCompletion={handleConfirmServiceCompletion} onClaimVestedTokens={async () => {}} onSubscribe={() => {}} onClose={toggleProfile} onBecomeProvider={() => {}} onBecomeArbitrator={() => {}} onOpenEnterprise={() => {}} onOpenWhitePaper={openWhitePaper} onOpenAbout={openAboutModal} onOpenLegal={openLegalModal} onDisputeOrder={handleOrderDispute} />}
+        
+        {/* Admin Portal - Rendered when active */}
+        {showAdminPortal && <AdminPortal onClose={closeAdminPortal} />}
+        
         {showUpsellModal && <UpsellModal onConfirm={() => { setActiveTab('market'); closeUpsellModal(); }} onCancel={closeUpsellModal}/>}
         {showCreateBountyModal && <CreateBountyModal user={user} onConfirm={handleCreateBounty} onCancel={closeCreateBountyModal}/>}
         {showMintNftModal && projectToMint && <MintNftModal project={projectToMint} onConfirm={() => handleMintNft(projectToMint.id)} onCancel={closeMintNftModal}/>}
@@ -252,6 +261,8 @@ const App: React.FC = () => {
         {showWhitePaper && <WhitePaperModal onClose={closeWhitePaper} />}
         {showAboutModal && <AboutModal onClose={closeAboutModal} />}
         {showLegalModal && <LegalModal initialTab={legalActiveTab} onClose={closeLegalModal} />}
+        
+        {/* Easter Egg: Triple click title to open Admin? For now, manual console trigger: window.dispatchEvent(new CustomEvent('openAdmin')) */}
         </div>
     </PiBrowserGate>
   );

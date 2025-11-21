@@ -98,18 +98,30 @@ export const web3Service = {
 
     /**
      * Releases escrow funds to the provider.
-     * Only callable by the Smart Contract Owner or via Multi-Sig consensus in a real app.
-     * In this mock, it simulates the provider marking the job as done on-chain.
      */
     markOrderDelivered: async (orderId: string, walletAddress: string): Promise<{ txHash: string }> => {
         console.log(`[Web3] Interaction: Release Escrow for Order ${orderId}`);
-        
-        // Simulation delay
         await new Promise(resolve => setTimeout(resolve, 1500));
-
-        // Return a mock transaction hash
         return {
             txHash: "0x" + Math.random().toString(16).substr(2, 64)
+        };
+    },
+
+    /**
+     * ADMIN ONLY: Forces a resolution on a disputed order via Smart Contract.
+     * @param orderId The Order ID in dispute.
+     * @param winnerAddress The address to receive the funds (Buyer or Seller).
+     */
+    resolveDispute: async (orderId: string, winnerAddress: string): Promise<{ txHash: string, status: string }> => {
+        console.log(`[Web3] ADMIN OVERRIDE: Resolving dispute for ${orderId}. Winner: ${winnerAddress}`);
+        
+        // Verify this is being called by a wallet in ADMIN_WALLETS (Client-side check only, Real check is on-chain)
+        // For simulation:
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        return {
+            txHash: "0xADMIN" + Math.random().toString(16).substr(2, 60),
+            status: 'RESOLVED'
         };
     }
 };
