@@ -13,7 +13,7 @@ import { ArchitexLogo } from '../../components/icons/ArchitexLogo';
 import { LegalEngine } from '../services/LegalEngine';
 
 // ==========================================
-// ARCHITEX MASTER INTERFACE
+// MASTER INTERFACE
 // ==========================================
 export interface IArchitexProtocol {
     identity: {
@@ -89,7 +89,7 @@ export interface IArchitexProtocol {
         fundBountyEscrow(bountyId: string): Promise<BountyEntity>;
         releaseBountyEscrow(bountyId: string): Promise<BountyEntity>;
         raiseDispute(referenceId: string): Promise<BountyEntity>; 
-        freezeEscrow(bountyId: string): Promise<void>; // Explicit freeze for Amazon Killer logic
+        freezeEscrow(bountyId: string): Promise<void>; 
         selectArbitrator(bountyId: string, arbitratorId: string): Promise<BountyEntity>;
         resolveDispute(disputeId: string, ruling: 'Release' | 'Refund'): Promise<BountyEntity>;
         listSignedAgreements(userId: string): Promise<SignedAgreement[]>;
@@ -138,6 +138,12 @@ export const mockLiquidityPool = {
     protocolLiquidity: 3000000 
 } as unknown as LiquidityPoolEntity;
 
+const mockProductsList: ProductEntity[] = [
+    { id: 'prod_1', vendorId: 'v1', name: 'Eco-Wood Panel', price: 45.00, inStock: 12, imageUrl: 'https://placehold.co/200/10B981/FFF?text=Wood', isEcoFriendly: true, tags: ['Structural', 'Eco', 'requires-installation'] },
+    { id: 'prod_2', vendorId: 'v1', name: 'Smart Bulb', price: 15.00, inStock: 500, imageUrl: 'https://placehold.co/200/FDB300/000?text=Bulb', tags: ['Smart Home'] },
+    { id: 'prod_alt', vendorId: 'v2', name: 'Bamboo Composite', price: 42.00, inStock: 500, imageUrl: 'https://placehold.co/200/10B981/FFF?text=Bamboo', tags: ['Structural', 'Eco', 'requires-installation'] }
+];
+
 // ==========================================
 // MOCK ADAPTER IMPLEMENTATION
 // ==========================================
@@ -167,11 +173,7 @@ export const MockAdapter: IArchitexProtocol = {
         shareToFeed: async () => ({ success: true, message: 'Posted to Pi Network Feed' }),
     },
     commerce: {
-        listProducts: async () => [
-            { id: 'prod_1', vendorId: 'v1', name: 'Eco-Wood Panel', price: 45.00, inStock: 12, imageUrl: 'https://placehold.co/200/10B981/FFF?text=Wood', isEcoFriendly: true, tags: ['Structural', 'Eco', 'requires-installation'] },
-            { id: 'prod_2', vendorId: 'v1', name: 'Smart Bulb', price: 15.00, inStock: 500, imageUrl: 'https://placehold.co/200/FDB300/000?text=Bulb', tags: ['Smart Home'] },
-            { id: 'prod_alt', vendorId: 'v2', name: 'Bamboo Composite', price: 42.00, inStock: 500, imageUrl: 'https://placehold.co/200/10B981/FFF?text=Bamboo', tags: ['Structural', 'Eco', 'requires-installation'] }
-        ],
+        listProducts: async () => mockProductsList,
         listOrders: async () => [
              { id: 'ord_01', userId: 'user_01', items: [{ productId: 'prod_1', quantity: 2 }], total: 90, status: 'Shipped', createdAt: new Date().toISOString(), proofOfInstallationStatus: 'none' }
         ],
@@ -179,18 +181,28 @@ export const MockAdapter: IArchitexProtocol = {
         updateOrderStatus: async (oid, status) => ({ id: oid, userId: 'user_01', items: [], total: 100, status, createdAt: new Date().toISOString(), proofOfInstallationStatus: 'none' }),
         optimizeCart: async () => [{ originalProductId: 'prod_1', suggestedProductId: 'prod_2', reason: 'Cheaper & Greener', savings: 15 }],
         
-        // Smart Inventory Logic (Amazon Killer Phase 8)
+        // AUDIT FIX: Hardened Inventory Logic
+        // Explicitly handles the condition quantity > stock (simulated as 10 for 'prod_1')
+        // Returns a structured conflict that MUST trigger the AI Alternative UI.
         checkInventory: async (cart) => {
              const conflicts: InventoryConflict[] = [];
              for(const item of cart) {
-                 // Simulate logic: if cart contains 'prod_1' (Eco-Wood) > 10, simulate stockout
-                 if(item.product.id === 'prod_1' && item.quantity > 10) { 
-                     conflicts.push({
-                         productId: item.product.id,
-                         requested: item.quantity,
-                         available: 10,
-                         alternativeProductId: 'prod_alt' // Automatically suggest Bamboo Composite
-                     });
+                 // Logic: Check global mock list
+                 const globalProduct = mockProductsList.find(p => p.id === item.product.id);
+                 
+                 if (globalProduct) {
+                     // Simulate Stockout if requesting more than 10 units of prod_1
+                     const isStockout = item.product.id === 'prod_1' && item.quantity > 10;
+                     
+                     if(isStockout) { 
+                         console.log(`[Logistics] Stockout Detected for ${item.product.name}. Triggering ArchieBot Recommendation.`);
+                         conflicts.push({
+                             productId: item.product.id,
+                             requested: item.quantity,
+                             available: 10, // Simulated remaining stock
+                             alternativeProductId: 'prod_alt' // Strict linkage to Bamboo Composite
+                         });
+                     }
                  }
              }
              return conflicts;

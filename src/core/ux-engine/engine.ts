@@ -66,7 +66,8 @@ export const getProactiveTip = (context: UXContext): string => {
   }
 
   // --- 3. WORKFLOW OPTIMIZATION (Weight 50-70) ---
-  if (activeTab === 'design' && currentProjectModificationCount && currentProjectModificationCount >= 3) {
+  // AUDIT FIX: Threshold lowered to 2 to trigger upsell earlier in the funnel.
+  if (activeTab === 'design' && currentProjectModificationCount && currentProjectModificationCount >= 2) {
       insights.push({
           message: "Stuck on the details? You can hire a professional designer from the marketplace to finalize this blueprint.",
           type: 'opportunity',
@@ -100,8 +101,9 @@ export const getProactiveTip = (context: UXContext): string => {
   return insights[0].message;
 };
 
+// AUDIT FIX: Helper function alignment - Ensuring consistency with the main logic
 export const shouldTriggerDesignerUpsell = (modificationCount: number): boolean => {
-    return modificationCount >= 3;
+    return modificationCount >= 2;
 };
 
 export const getUpsellPrompt = (): { title: string, body: string } => {
