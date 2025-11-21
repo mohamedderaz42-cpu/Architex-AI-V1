@@ -1,5 +1,5 @@
 
-import React, { Suspense, useState } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import { GlassPanel } from './components/GlassPanel';
 import { IconButton } from './components/IconButton';
 import { ArchitexLogo } from './components/icons/ArchitexLogo';
@@ -45,6 +45,8 @@ import { PiBrowserGate } from './components/PiBrowserGate';
 import { OfflineNotice } from './components/OfflineNotice';
 import { SystemBootLoader } from './components/SystemBootLoader'; 
 import { ScanAnalysisView } from './components/ScanAnalysisView';
+import { ArchieBotWidget } from './components/ai/ArchieBotWidget';
+import { ProactiveEngine } from './core/ai/ProactiveEngine';
 
 // Lazy Loaded Heavy Components
 const ScannerInterface = React.lazy(() => import('./components/ScannerInterface').then(module => ({ default: module.ScannerInterface })));
@@ -88,6 +90,11 @@ const App: React.FC = () => {
     handlePurchaseDesign,
     handleOrderDispute
   } = useArchitex();
+
+  // Initialize Proactive AI Engine
+  useEffect(() => {
+      ProactiveEngine.setNavigator((tab) => setActiveTab(tab));
+  }, [setActiveTab]);
 
   const renderDashboardContent = () => {
     switch (activeTab) {
@@ -173,10 +180,12 @@ const App: React.FC = () => {
   return (
     <PiBrowserGate>
         <OfflineNotice />
-        {/* Use h-[100dvh] for mobile viewport adjustment and pb-safe for iOS home indicator area */}
         <div dir={dir} className="h-[100dvh] w-full bg-brand-dark text-slate-100 flex flex-col items-center overflow-hidden antialiased relative pb-safe">
         <AmbientBackground />
         <CommandPalette isOpen={isCommandPaletteOpen} onClose={toggleCommandPalette} onNavigate={(tab) => setActiveTab(tab as any)} onOpenWhitePaper={openWhitePaper} />
+        
+        {/* Proactive AI Widget */}
+        <ArchieBotWidget />
 
         {/* Intro Screen */}
         <div className={`absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-1000 z-[60] ${phase === 'intro' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
