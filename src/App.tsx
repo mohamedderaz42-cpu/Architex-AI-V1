@@ -2,7 +2,6 @@
 import React, { Suspense, useState, useEffect } from 'react';
 import { GlassPanel } from './components/GlassPanel';
 import { IconButton } from './components/IconButton';
-import { ArchitexLogo } from './components/icons/ArchitexLogo';
 import { ScanIcon } from './components/icons/ScanIcon';
 import { DesignIcon } from './components/icons/DesignIcon';
 import { MarketIcon } from './components/icons/MarketIcon';
@@ -11,7 +10,6 @@ import { useArchitex } from './hooks/useArchitex';
 import { PlusCircleIcon } from './components/icons/PlusCircleIcon';
 import { PaymentModal } from './components/PaymentModal';
 import { ProfileScreen } from './components/ProfileScreen';
-import { UserIcon } from './components/icons/UserIcon';
 import { UpsellModal } from './components/UpsellModal';
 import { CreateBountyModal } from './components/CreateBountyModal';
 import { MintNftModal } from './components/MintNftModal';
@@ -39,7 +37,6 @@ import { WhitePaperModal } from './components/WhitePaperModal';
 import { AboutModal } from './components/AboutModal';
 import { LegalModal } from './components/LegalModal';
 import { LanguageSelectorModal } from './components/LanguageSelectorModal';
-import { GlobeIcon } from './components/icons/GlobeIcon';
 import { useLanguage } from './core/i18n/LanguageContext';
 import { PiBrowserGate } from './components/PiBrowserGate';
 import { OfflineNotice } from './components/OfflineNotice';
@@ -48,6 +45,10 @@ import { ScanAnalysisView } from './components/ScanAnalysisView';
 import { ArchieBotWidget } from './components/ai/ArchieBotWidget';
 import { ProactiveEngine } from './core/ai/ProactiveEngine';
 import { AdminPortal } from './components/AdminPortal';
+import { VendorPortal } from './components/VendorPortal';
+import { Navbar } from './components/layout/Navbar';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { ArchitexLogo } from './components/icons/ArchitexLogo';
 
 // Lazy Loaded Heavy Components
 const ScannerInterface = React.lazy(() => import('./components/ScannerInterface').then(module => ({ default: module.ScannerInterface })));
@@ -55,14 +56,18 @@ const DeFiGateway = React.lazy(() => import('./components/DeFiGateway').then(mod
 const ChallengesGallery = React.lazy(() => import('./components/ChallengesGallery').then(module => ({ default: module.ChallengesGallery })));
 const PublicGallery = React.lazy(() => import('./components/PublicGallery').then(module => ({ default: module.PublicGallery })));
 
+// Extended Tabs for Router
+type RouterTab = 'scan' | 'design' | 'market' | 'challenges' | 'explore' | 'admin' | 'vendor';
+
 const App: React.FC = () => {
   const { setUser } = useAppStore();
   const { t, dir } = useLanguage(); 
   const [showLangModal, setShowLangModal] = useState(false);
 
+  // Using specific hook, but we will override activeTab behavior locally to support routing extensions
   const {
-    phase, isMounted, activeTab, projects, publicProjects, bounties, arbitrators, availableArbitrators, uxTip, user, orders, serviceProviders, serviceAgreements, proposals, designChallenges,
-    bootSteps, initialize, setActiveTab, isScanning, scanFinished, scanAnalysis, scanProgress, currentScanInstruction, startScan, cancelScan,
+    phase, isMounted, activeTab: hookActiveTab, projects, publicProjects, bounties, arbitrators, availableArbitrators, uxTip, user, orders, serviceProviders, serviceAgreements, proposals, designChallenges,
+    bootSteps, initialize, setActiveTab: setHookActiveTab, isScanning, scanFinished, scanAnalysis, scanProgress, currentScanInstruction, startScan, cancelScan,
     showPaymentModal, confirmPayment, cancelPayment, isProcessingPayment, paymentError, isProfileVisible, toggleProfile,
     handleProjectInteraction, showUpsellModal, closeUpsellModal, showCreateBountyModal, openCreateBountyModal,
     closeCreateBountyModal, handleCreateBounty, showMintNftModal, projectToMint, openMintNftModal,
@@ -90,18 +95,29 @@ const App: React.FC = () => {
     showLegalModal, openLegalModal, closeLegalModal, legalActiveTab,
     handlePurchaseDesign,
     handleOrderDispute,
-    showAdminPortal, openAdminPortal, closeAdminPortal // Imported from hook
   } = useArchitex();
 
-  // Initialize Proactive AI Engine
-  useEffect(() => {
-      ProactiveEngine.setNavigator((tab) => setActiveTab(tab));
-  }, [setActiveTab]);
+  // Local Router State
+  const [currentRoute, setCurrentRoute] = useState<RouterTab>('explore');
 
-  // Add Admin Secret to Command Palette (or just add a hidden button somewhere, let's use Command Palette logic if possible, but CommandPalette component is self-contained for now. We will pass openAdminPortal to it or just rely on Profile)
-  
+  // Sync hook state when valid for core tabs
+  useEffect(() => {
+      if (['scan', 'design', 'market', 'challenges', 'explore'].includes(currentRoute)) {
+          setHookActiveTab(currentRoute as any);
+      }
+  }, [currentRoute, setHookActiveTab]);
+
+  // Initialize Proactive AI Engine Navigator
+  useEffect(() => {
+      ProactiveEngine.setNavigator((tab) => setCurrentRoute(tab));
+  }, [setCurrentRoute]);
+
+  const handleNavigate = (tab: RouterTab) => {
+      setCurrentRoute(tab);
+  };
+
   const renderDashboardContent = () => {
-    switch (activeTab) {
+    switch (currentRoute) {
       case 'scan':
         if (isScanning) {
             return <Suspense fallback={<Loader />}><ScannerInterface instruction={currentScanInstruction} progress={scanProgress} onCancel={cancelScan} /></Suspense>;
@@ -126,19 +142,21 @@ const App: React.FC = () => {
         );
       case 'design':
         return (
-          <div className="w-full h-full flex flex-col animate-fade-in">
-            <div className="flex justify-between items-center mb-4 px-2 pt-2">
-                <h2 className="text-2xl font-bold text-white">{t('studio.title')}</h2>
-                <button className="flex items-center text-ai-violet hover:text-white transition-colors duration-300 bg-white/5 px-3 py-1 rounded-full border border-white/10 hover:border-ai-violet"><PlusCircleIcon className="w-5 h-5 mr-2" /><span className="font-semibold text-sm">{t('studio.new')}</span></button>
-            </div>
-            <div className="flex-grow overflow-y-auto space-y-4 pr-2 pb-20">
-                {projects.length === 0 ? (
-                    <div className="text-center text-slate-500 mt-20">{t('studio.empty')}</div>
-                ) : (
-                    projects.map((project) => (<ProjectCard key={project.id} project={project} onCardClick={() => handleProjectInteraction(project)} onMintClick={() => openMintNftModal(project)} />))
-                )}
-            </div>
-          </div>
+          <ProtectedRoute onRedirect={() => setCurrentRoute('explore')}>
+              <div className="w-full h-full flex flex-col animate-fade-in">
+                <div className="flex justify-between items-center mb-4 px-2 pt-2">
+                    <h2 className="text-2xl font-bold text-white">{t('studio.title')}</h2>
+                    <button className="flex items-center text-ai-violet hover:text-white transition-colors duration-300 bg-white/5 px-3 py-1 rounded-full border border-white/10 hover:border-ai-violet"><PlusCircleIcon className="w-5 h-5 mr-2" /><span className="font-semibold text-sm">{t('studio.new')}</span></button>
+                </div>
+                <div className="flex-grow overflow-y-auto space-y-4 pr-2 pb-20">
+                    {projects.length === 0 ? (
+                        <div className="text-center text-slate-500 mt-20">{t('studio.empty')}</div>
+                    ) : (
+                        projects.map((project) => (<ProjectCard key={project.id} project={project} onCardClick={() => handleProjectInteraction(project)} onMintClick={() => openMintNftModal(project)} />))
+                    )}
+                </div>
+              </div>
+          </ProtectedRoute>
         );
       case 'market':
         return (
@@ -177,6 +195,18 @@ const App: React.FC = () => {
                 <ChallengesGallery challenges={designChallenges} onSelectChallenge={handleSelectChallenge} />
             </Suspense>
         );
+      case 'admin':
+        return (
+            <ProtectedRoute requiredRole="admin_wallet" onRedirect={() => setCurrentRoute('explore')}>
+                <AdminPortal onClose={() => setCurrentRoute('explore')} />
+            </ProtectedRoute>
+        );
+      case 'vendor':
+        return (
+            <ProtectedRoute requiredRole="vendor" onRedirect={() => setCurrentRoute('explore')}>
+                <VendorPortal />
+            </ProtectedRoute>
+        );
       default: return null;
     }
   };
@@ -186,7 +216,7 @@ const App: React.FC = () => {
         <OfflineNotice />
         <div dir={dir} className="h-[100dvh] w-full bg-brand-dark text-slate-100 flex flex-col items-center overflow-hidden antialiased relative pb-safe">
         <AmbientBackground />
-        <CommandPalette isOpen={isCommandPaletteOpen} onClose={toggleCommandPalette} onNavigate={(tab) => setActiveTab(tab as any)} onOpenWhitePaper={openWhitePaper} />
+        <CommandPalette isOpen={isCommandPaletteOpen} onClose={toggleCommandPalette} onNavigate={(tab) => setCurrentRoute(tab as any)} onOpenWhitePaper={openWhitePaper} />
         
         {/* Proactive AI Widget */}
         <ArchieBotWidget />
@@ -206,44 +236,40 @@ const App: React.FC = () => {
 
         {/* Dashboard Container */}
         <div className={`w-full max-w-md h-full flex flex-col transition-opacity duration-1000 z-10 ${phase === 'dashboard' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-            <header className="relative flex-shrink-0 pt-safe pb-2 px-4 flex justify-between items-center mt-2">
-                <div className="flex items-center">
-                    <ArchitexLogo className="w-8 h-8 mr-2 text-ai-violet"/>
-                    <span className="font-bold text-lg tracking-tight">{t('app.title')}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <button onClick={() => setShowLangModal(true)} className="p-2 text-slate-400 hover:text-white transition-colors"><GlobeIcon className="w-5 h-5" /></button>
-                    <button onClick={toggleCommandPalette} className="p-2 text-slate-400 hover:text-white transition-colors"><span className="text-xs bg-white/10 px-2 py-1 rounded border border-white/5">CMD+K</span></button>
-                    <button onClick={toggleProfile} className="p-2 text-slate-400 hover:text-white transition-colors"><UserIcon className="w-6 h-6" /></button>
-                </div>
-            </header>
+            
+            {/* Dynamic Navbar */}
+            <Navbar 
+                activeTab={currentRoute}
+                onNavigate={handleNavigate}
+                onToggleProfile={toggleProfile}
+                onToggleLang={() => setShowLangModal(true)}
+                onToggleCmd={toggleCommandPalette}
+            />
 
             <main className="flex-grow flex items-center justify-center p-2 min-h-0">{renderDashboardContent()}</main>
             
-            {/* Floating Dock - Added bottom padding for safety */}
-            <footer className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 w-auto mb-safe">
-            <GlassPanel className="p-2 rounded-2xl bg-black/60 border-white/10 shadow-2xl backdrop-blur-2xl">
-                <nav className="flex items-center space-x-1 px-2">
-                    <IconButton icon={<DesignIcon />} label={t('nav.explore')} isActive={activeTab === 'explore'} onClick={() => setActiveTab('explore')} activeColor="ai-violet"/>
-                    <IconButton icon={<ScanIcon />} label={t('nav.scan')} isActive={activeTab === 'scan'} onClick={() => setActiveTab('scan')} activeColor="pi-gold"/>
-                    <IconButton icon={<DesignIcon />} label={t('nav.design')} isActive={activeTab === 'design'} onClick={() => setActiveTab('design')} activeColor="ai-violet"/>
-                    <IconButton icon={<MarketIcon />} label={t('nav.market')} isActive={activeTab === 'market'} onClick={() => setActiveTab('market')} activeColor="eco-green"/>
-                    <IconButton icon={<AwardIcon />} label={t('nav.challenges')} isActive={activeTab === 'challenges'} onClick={() => setActiveTab('challenges')} activeColor="pi-gold"/>
-                </nav>
-            </GlassPanel>
-            </footer>
+            {/* Floating Dock - Hidden in full screen views like Admin/Vendor if desired, but keeping accessible for now */}
+            {currentRoute !== 'admin' && (
+                <footer className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 w-auto mb-safe">
+                <GlassPanel className="p-2 rounded-2xl bg-black/60 border-white/10 shadow-2xl backdrop-blur-2xl">
+                    <nav className="flex items-center space-x-1 px-2">
+                        <IconButton icon={<DesignIcon />} label={t('nav.explore')} isActive={currentRoute === 'explore'} onClick={() => setCurrentRoute('explore')} activeColor="ai-violet"/>
+                        <IconButton icon={<ScanIcon />} label={t('nav.scan')} isActive={currentRoute === 'scan'} onClick={() => setCurrentRoute('scan')} activeColor="pi-gold"/>
+                        <IconButton icon={<DesignIcon />} label={t('nav.design')} isActive={currentRoute === 'design'} onClick={() => setCurrentRoute('design')} activeColor="ai-violet"/>
+                        <IconButton icon={<MarketIcon />} label={t('nav.market')} isActive={currentRoute === 'market'} onClick={() => setCurrentRoute('market')} activeColor="eco-green"/>
+                        <IconButton icon={<AwardIcon />} label={t('nav.challenges')} isActive={currentRoute === 'challenges'} onClick={() => setCurrentRoute('challenges')} activeColor="pi-gold"/>
+                    </nav>
+                </GlassPanel>
+                </footer>
+            )}
         </div>
 
-        {/* Modals */}
+        {/* Modals & Portals */}
         {showLangModal && <LanguageSelectorModal onClose={() => setShowLangModal(false)} />}
         {showPaymentModal && <PaymentModal onConfirm={confirmPayment} onCancel={cancelPayment} isProcessing={isProcessingPayment} error={paymentError} analysis={scanAnalysis} />}
-        {/* Pass openAdminPortal to ProfileScreen to allow triggering it via secret gesture or button if added later */}
         {isProfileVisible && user && <ProfileScreen user={user} projects={projects} orders={orders} serviceAgreements={serviceAgreements} userTokens={[]} onConfirmDelivery={handleConfirmDelivery} onRequestReturn={handleRequestReturn} onConfirmServiceCompletion={handleConfirmServiceCompletion} onClaimVestedTokens={async () => {}} onSubscribe={() => {}} onClose={toggleProfile} onBecomeProvider={() => {}} onBecomeArbitrator={() => {}} onOpenEnterprise={() => {}} onOpenWhitePaper={openWhitePaper} onOpenAbout={openAboutModal} onOpenLegal={openLegalModal} onDisputeOrder={handleOrderDispute} />}
         
-        {/* Admin Portal - Rendered when active */}
-        {showAdminPortal && <AdminPortal onClose={closeAdminPortal} />}
-        
-        {showUpsellModal && <UpsellModal onConfirm={() => { setActiveTab('market'); closeUpsellModal(); }} onCancel={closeUpsellModal}/>}
+        {showUpsellModal && <UpsellModal onConfirm={() => { setCurrentRoute('market'); closeUpsellModal(); }} onCancel={closeUpsellModal}/>}
         {showCreateBountyModal && <CreateBountyModal user={user} onConfirm={handleCreateBounty} onCancel={closeCreateBountyModal}/>}
         {showMintNftModal && projectToMint && <MintNftModal project={projectToMint} onConfirm={() => handleMintNft(projectToMint.id)} onCancel={closeMintNftModal}/>}
         {selectedBounty && <BountyDetailsModal bounty={selectedBounty} arbitrators={availableArbitrators} onClose={closeBountyDetailsModal} onFund={handleInitiateFunding} onRelease={handleReleaseFunds} onDispute={() => handleRaiseDispute(selectedBounty)} onSelectArbitrator={(arbitrator: ArbitratorEntity) => handleSelectArbitrator(selectedBounty, arbitrator)} onOpenLegalShield={() => setShowUserLegalShieldModal(true)} onResolve={handleResolveArbitration}/>}
@@ -261,8 +287,6 @@ const App: React.FC = () => {
         {showWhitePaper && <WhitePaperModal onClose={closeWhitePaper} />}
         {showAboutModal && <AboutModal onClose={closeAboutModal} />}
         {showLegalModal && <LegalModal initialTab={legalActiveTab} onClose={closeLegalModal} />}
-        
-        {/* Easter Egg: Triple click title to open Admin? For now, manual console trigger: window.dispatchEvent(new CustomEvent('openAdmin')) */}
         </div>
     </PiBrowserGate>
   );

@@ -7,7 +7,8 @@ import {
     TeamMemberEntity, DesignTemplateEntity, SpendingMetric, SignedAgreement, AffiliateProfile, 
     DropshipProfile, DropshipListing, TokenEntity, LiquidityPoolEntity, ServiceProviderProfile,
     ArbitratorProfile, MessageEntity, VendorProfile, ProjectStatus, BountyStatus, SubscriptionTier,
-    ServiceAgreementStatus, ProposalStatus, DesignChallengeStatus, ProofOfInstallationStatus
+    ServiceAgreementStatus, ProposalStatus, DesignChallengeStatus, ProofOfInstallationStatus,
+    UserRole, EscrowState
 } from '../schemas/entities';
 import { PiCoinIcon } from '../../components/icons/PiCoinIcon';
 import { ArchitexLogo } from '../../components/icons/ArchitexLogo';
@@ -172,12 +173,12 @@ export const MockAdapter = {
                 ...b, 
                 id: `bty_${Date.now()}`, 
                 status: 'Open' as BountyStatus, 
-                escrowState: 'Unfunded', 
+                escrowState: 'Unfunded' as EscrowState, 
                 createdAt: new Date().toISOString() 
             } as BountyEntity;
         },
         listBounties: async () => [
-             { id: 'bty_1', projectId: 'p1', title: '3D Rendering Needed', description: 'Need high quality render.', reward: 500, status: 'Open' as BountyStatus, createdAt: new Date().toISOString(), escrowState: 'Unfunded' }
+             { id: 'bty_1', projectId: 'p1', title: '3D Rendering Needed', description: 'Need high quality render.', reward: 500, status: 'Open' as BountyStatus, createdAt: new Date().toISOString(), escrowState: 'Unfunded' as EscrowState }
         ],
         getDynamicAgreementText: async (bounty: BountyEntity) => {
             const agreement = await LegalEngine.generateAgreement({
@@ -194,19 +195,19 @@ export const MockAdapter = {
             console.log(`[MarketplaceEscrow] Verifying Agreement Hash on-chain...`);
             await new Promise(resolve => setTimeout(resolve, 800)); 
             console.log(`[MarketplaceEscrow] Hash Verified. Funds Locked.`);
-            return { id, projectId: 'p1', title: '', description: '', reward: 0, createdAt: '', status: 'In Progress' as BountyStatus, escrowState: 'Funded' };
+            return { id, projectId: 'p1', title: '', description: '', reward: 0, createdAt: '', status: 'In Progress' as BountyStatus, escrowState: 'Funded' as EscrowState } as BountyEntity;
         },
-        releaseBountyEscrow: async (id: string) => ({ id, projectId: 'p1', title: '', description: '', reward: 0, createdAt: '', status: 'Complete' as BountyStatus, escrowState: 'Released' }),
+        releaseBountyEscrow: async (id: string) => ({ id, projectId: 'p1', title: '', description: '', reward: 0, createdAt: '', status: 'Complete' as BountyStatus, escrowState: 'Released' as EscrowState } as BountyEntity),
         raiseDispute: async (id: string) => {
              console.log(`[Smart Contract] Escrow Frozen for Dispute ${id}`);
-             return { id, projectId: 'p1', title: 'Disputed Bounty', description: '', reward: 100, status: 'In Dispute' as BountyStatus, createdAt: '', escrowState: 'Funded' };
+             return { id, projectId: 'p1', title: 'Disputed Bounty', description: '', reward: 100, status: 'In Dispute' as BountyStatus, createdAt: '', escrowState: 'Funded' as EscrowState } as BountyEntity;
         },
         freezeEscrow: async (id: string) => {
              console.log(`[EscrowContract] CRITICAL: Funds Frozen for Transaction ${id}. Awaiting Arbitrator.`);
              return;
         },
-        selectArbitrator: async (bid: string, aid: string) => ({ id: bid, projectId: 'p1', title: '', description: '', reward: 0, createdAt: '', status: 'Arbitration' as BountyStatus, escrowState: 'Funded' }),
-        resolveDispute: async (id: string, ruling: any) => ({ id, projectId: 'p1', title: 'Resolved Bounty', description: '', reward: 100, status: 'Complete' as BountyStatus, createdAt: '', escrowState: ruling === 'Release' ? 'Released' : 'Refunded' }),
+        selectArbitrator: async (bid: string, aid: string) => ({ id: bid, projectId: 'p1', title: '', description: '', reward: 0, createdAt: '', status: 'Arbitration' as BountyStatus, escrowState: 'Funded' as EscrowState } as BountyEntity),
+        resolveDispute: async (id: string, ruling: any) => ({ id, projectId: 'p1', title: 'Resolved Bounty', description: '', reward: 100, status: 'Complete' as BountyStatus, createdAt: '', escrowState: (ruling === 'Release' ? 'Released' : 'Refunded') as EscrowState } as BountyEntity),
         listSignedAgreements: async (userId?: string) => [
             { id: 'agg_1', type: 'Service' as const, status: 'Active' as const, referenceId: 'sa_01', contentHash: '0x123...', timestamp: new Date().toISOString(), signatories: ['user_01', 'prov_1'] }
         ],
@@ -284,6 +285,7 @@ export const listPublicProjects = MockAdapter.engineering.listPublicProjects;
 export const generateModelFromScan = MockAdapter.engineering.createProjectFromScan;
 export const incrementProjectModification = MockAdapter.engineering.incrementProjectModification;
 export const mintProjectAsNft = MockAdapter.engineering.mintNft;
+export const shareToFeed = MockAdapter.engineering.shareToFeed;
 export const shareToPiFeed = MockAdapter.engineering.shareToFeed;
 
 export const listOrders = MockAdapter.commerce.listOrders;
@@ -305,6 +307,10 @@ export const listPromotions = MockAdapter.commerce.listPromotions;
 export const createPromotion = MockAdapter.commerce.createPromotion;
 export const processBulkOrder = MockAdapter.commerce.processBulkOrder;
 export const getInstallationQuote = MockAdapter.commerce.getInstallationQuote;
+export const listProducts = MockAdapter.commerce.listProducts;
+export const createProduct = MockAdapter.commerce.createProduct;
+export const updateProduct = MockAdapter.commerce.updateProduct;
+export const deleteProduct = MockAdapter.commerce.deleteProduct;
 
 export const listServiceProviders = MockAdapter.services.listProviders;
 export const listGigWorkers = MockAdapter.services.listGigWorkers;
