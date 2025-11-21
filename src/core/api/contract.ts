@@ -6,7 +6,7 @@ import {
     CartOptimization, IntegrationTestResult, StressTestResult, VestingSchedule, FuzzTestResult, 
     TeamMemberEntity, DesignTemplateEntity, SpendingMetric, SignedAgreement, AffiliateProfile, 
     DropshipProfile, DropshipListing, TokenEntity, LiquidityPoolEntity, ServiceProviderProfile,
-    ArbitratorProfile, MessageEntity
+    ArbitratorProfile, MessageEntity, VendorProfile
 } from '../schemas/entities';
 import { PiCoinIcon } from '../../components/icons/PiCoinIcon';
 import { ArchitexLogo } from '../../components/icons/ArchitexLogo';
@@ -22,6 +22,7 @@ export interface IArchitexProtocol {
         updateProfile(userId: string, data: Partial<UserEntity>): Promise<UserEntity>;
         registerAsProvider(profile: ServiceProviderProfile): Promise<UserEntity>;
         registerAsArbitrator(profile: ArbitratorProfile): Promise<UserEntity>;
+        registerAsVendor(profile: VendorProfile): Promise<UserEntity>; // Added
         getVestingSchedule(userId: string): Promise<VestingSchedule>;
         joinFounderProgram(): Promise<boolean>;
     };
@@ -37,6 +38,10 @@ export interface IArchitexProtocol {
     };
     commerce: {
         listProducts(): Promise<ProductEntity[]>;
+        getProduct(productId: string): Promise<ProductEntity | undefined>; // Added
+        createProduct(product: ProductEntity): Promise<ProductEntity>; // Added
+        updateProduct(product: ProductEntity): Promise<ProductEntity>; // Added
+        deleteProduct(productId: string): Promise<boolean>; // Added
         listOrders(userId: string): Promise<OrderEntity[]>;
         createOrder(cart: { productId: string; quantity: number }[]): Promise<OrderEntity>;
         updateOrderStatus(orderId: string, status: OrderStatus): Promise<OrderEntity>;
@@ -64,6 +69,8 @@ export interface IArchitexProtocol {
         fundEscrow(agreementId: string, validatorId?: string): Promise<ServiceAgreementEntity>;
         completeAgreement(agreementId: string, userType: 'client' | 'validator'): Promise<ServiceAgreementEntity>;
         getServiceLevelAgreementText(agreement: any): Promise<string>;
+        listPendingJobs(providerId: string): Promise<OrderEntity[]>; // Added
+        completeJob(orderId: string): Promise<OrderEntity>; // Added
     };
     governance: {
         listProposals(): Promise<ProposalEntity[]>;
@@ -139,9 +146,9 @@ export const mockLiquidityPool = {
 } as unknown as LiquidityPoolEntity;
 
 const mockProductsList: ProductEntity[] = [
-    { id: 'prod_1', vendorId: 'v1', name: 'Eco-Wood Panel', price: 45.00, inStock: 12, imageUrl: 'https://placehold.co/200/10B981/FFF?text=Wood', isEcoFriendly: true, tags: ['Structural', 'Eco', 'requires-installation'] },
-    { id: 'prod_2', vendorId: 'v1', name: 'Smart Bulb', price: 15.00, inStock: 500, imageUrl: 'https://placehold.co/200/FDB300/000?text=Bulb', tags: ['Smart Home'] },
-    { id: 'prod_alt', vendorId: 'v2', name: 'Bamboo Composite', price: 42.00, inStock: 500, imageUrl: 'https://placehold.co/200/10B981/FFF?text=Bamboo', tags: ['Structural', 'Eco', 'requires-installation'] }
+    { id: 'prod_1', vendorId: 'v1', name: 'Eco-Wood Panel', sku: 'WOOD-001', price: 45.00, inStock: 12, imageUrl: 'https://placehold.co/200/10B981/FFF?text=Wood', isEcoFriendly: true, tags: ['Structural', 'Eco', 'requires-installation'], sustainabilityRating: 'A' },
+    { id: 'prod_2', vendorId: 'v1', name: 'Smart Bulb', sku: 'LITE-22', price: 15.00, inStock: 500, imageUrl: 'https://placehold.co/200/FDB300/000?text=Bulb', tags: ['Smart Home'], sustainabilityRating: 'B' },
+    { id: 'prod_alt', vendorId: 'v2', name: 'Bamboo Composite', sku: 'BAM-99', price: 42.00, inStock: 500, imageUrl: 'https://placehold.co/200/10B981/FFF?text=Bamboo', tags: ['Structural', 'Eco', 'requires-installation'], sustainabilityRating: 'A' }
 ];
 
 // ==========================================
@@ -154,6 +161,7 @@ export const MockAdapter: IArchitexProtocol = {
         updateProfile: async (uid, data) => ({ ...defaultUser, ...data }),
         registerAsProvider: async (profile) => ({ ...defaultUser, role: 'service-provider', serviceProviderProfile: profile }),
         registerAsArbitrator: async (profile) => ({ ...defaultUser, role: 'arbitrator', arbitratorProfile: profile }),
+        registerAsVendor: async (profile) => ({ ...defaultUser, role: 'vendor', vendorProfile: profile }),
         getVestingSchedule: async () => ({ startTime: new Date().toISOString(), duration: 31536000, cliff: 0, totalAmount: 10000, releasedAmount: 2500 }),
         joinFounderProgram: async () => true,
     },
@@ -174,6 +182,10 @@ export const MockAdapter: IArchitexProtocol = {
     },
     commerce: {
         listProducts: async () => mockProductsList,
+        getProduct: async (id) => mockProductsList.find(p => p.id === id),
+        createProduct: async (p) => ({ ...p, id: `new_${Date.now()}` }),
+        updateProduct: async (p) => p,
+        deleteProduct: async (id) => true,
         listOrders: async () => [
              { id: 'ord_01', userId: 'user_01', items: [{ productId: 'prod_1', quantity: 2 }], total: 90, status: 'Shipped', createdAt: new Date().toISOString(), proofOfInstallationStatus: 'none' }
         ],
@@ -182,25 +194,19 @@ export const MockAdapter: IArchitexProtocol = {
         optimizeCart: async () => [{ originalProductId: 'prod_1', suggestedProductId: 'prod_2', reason: 'Cheaper & Greener', savings: 15 }],
         
         // AUDIT FIX: Hardened Inventory Logic
-        // Explicitly handles the condition quantity > stock (simulated as 10 for 'prod_1')
-        // Returns a structured conflict that MUST trigger the AI Alternative UI.
         checkInventory: async (cart) => {
              const conflicts: InventoryConflict[] = [];
              for(const item of cart) {
-                 // Logic: Check global mock list
                  const globalProduct = mockProductsList.find(p => p.id === item.product.id);
-                 
                  if (globalProduct) {
-                     // Simulate Stockout if requesting more than 10 units of prod_1
                      const isStockout = item.product.id === 'prod_1' && item.quantity > 10;
-                     
                      if(isStockout) { 
                          console.log(`[Logistics] Stockout Detected for ${item.product.name}. Triggering ArchieBot Recommendation.`);
                          conflicts.push({
                              productId: item.product.id,
                              requested: item.quantity,
-                             available: 10, // Simulated remaining stock
-                             alternativeProductId: 'prod_alt' // Strict linkage to Bamboo Composite
+                             available: 10,
+                             alternativeProductId: 'prod_alt' 
                          });
                      }
                  }
@@ -236,6 +242,11 @@ export const MockAdapter: IArchitexProtocol = {
         fundEscrow: async (aid, vid) => ({ id: aid, clientId: 'c', providerId: 'p', projectId: 'p', scope: 'Work', price: 100, status: 'funded', createdAt: new Date().toISOString(), qualityAssuranceValidatorId: vid }),
         completeAgreement: async (aid) => ({ id: aid, clientId: 'c', providerId: 'p', projectId: 'p', scope: 'Work', price: 100, status: 'complete', createdAt: new Date().toISOString() }),
         getServiceLevelAgreementText: async () => "Service Level Agreement Terms...",
+        listPendingJobs: async (pid) => [
+            { id: 'job_1', userId: 'client_1', items: [{productId: 'install_svc', quantity: 1}], total: 500, status: 'Shipped', createdAt: new Date().toISOString(), proofOfInstallationStatus: 'none', providerId: pid },
+            { id: 'job_2', userId: 'client_2', items: [{productId: 'repair_svc', quantity: 1}], total: 250, status: 'Processing', createdAt: new Date(Date.now()-86400000).toISOString(), proofOfInstallationStatus: 'none', providerId: pid }
+        ],
+        completeJob: async (oid) => ({ id: oid, userId: 'x', items: [], total: 0, status: 'Delivered', createdAt: '', proofOfInstallationStatus: 'submitted' })
     },
     governance: {
         listProposals: async () => [
@@ -293,10 +304,8 @@ export const MockAdapter: IArchitexProtocol = {
             return { id, projectId: 'p1', title: '', description: '', reward: 0, createdAt: '', status: 'In Progress', escrowState: 'Funded' };
         },
         releaseBountyEscrow: async (id) => ({ id, projectId: 'p1', title: '', description: '', reward: 0, createdAt: '', status: 'Complete', escrowState: 'Released' }),
-        // Arbitration Flow Phase 8
         raiseDispute: async (id) => {
              console.log(`[Smart Contract] Escrow Frozen for Dispute ${id}`);
-             // Simulating the freeze effect
              return { id, projectId: 'p1', title: 'Disputed Bounty', description: '', reward: 100, status: 'In Dispute', createdAt: '', escrowState: 'Funded' };
         },
         freezeEscrow: async (id) => {
@@ -341,9 +350,6 @@ export const MockAdapter: IArchitexProtocol = {
     }
 };
 
-// ==========================================
-// LEGACY EXPORT WRAPPERS (For Backward Compatibility)
-// ==========================================
 export const authenticateWithPi = MockAdapter.identity.authenticate;
 export const listProjects = () => MockAdapter.engineering.listProjects('user_01');
 export const listPublicProjects = MockAdapter.engineering.listPublicProjects;
@@ -428,7 +434,6 @@ export const verifyProofOfInstallation = MockAdapter.system.verifyProofOfInstall
 export const getVestingSchedule = MockAdapter.identity.getVestingSchedule;
 export const joinFounderProgram = MockAdapter.identity.joinFounderProgram;
 
-// Constants
 export const treasuryBalance = 1500000;
 export const escrowBalance = 500000;
 export const addLiquidity = async (amtA: number, amtB: number) => true;

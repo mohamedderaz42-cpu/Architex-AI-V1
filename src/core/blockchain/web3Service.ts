@@ -94,5 +94,22 @@ export const web3Service = {
         // Pi SDK doesn't support generic contract calls yet in the same way, 
         // so we throw for now if not Ethereum-compatible or handled via backend.
         throw new Error("Dispute requires advanced wallet features not currently detected.");
+    },
+
+    /**
+     * Releases escrow funds to the provider.
+     * Only callable by the Smart Contract Owner or via Multi-Sig consensus in a real app.
+     * In this mock, it simulates the provider marking the job as done on-chain.
+     */
+    markOrderDelivered: async (orderId: string, walletAddress: string): Promise<{ txHash: string }> => {
+        console.log(`[Web3] Interaction: Release Escrow for Order ${orderId}`);
+        
+        // Simulation delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        // Return a mock transaction hash
+        return {
+            txHash: "0x" + Math.random().toString(16).substr(2, 64)
+        };
     }
 };

@@ -42,11 +42,15 @@ export interface UserEntity {
 }
 
 export interface VendorProfile {
+    companyName?: string;
+    taxId?: string;
     hasInsurance: boolean;
     agreedToIndemnity: boolean;
     verificationDate?: string;
     businessName?: string;
-    taxId?: string;
+    status: 'pending' | 'verified' | 'rejected' | 'unregistered';
+    licenseUrl?: string;
+    insuranceUrl?: string;
 }
 
 export interface ServiceProviderProfile {
@@ -153,6 +157,7 @@ export type OrderStatus = 'Processing' | 'Shipped' | 'Delivered' | 'Returned' | 
 export type PromotionType = 'item' | 'invoice';
 export type ProofOfInstallationStatus = 'none' | 'pending' | 'submitted' | 'verified' | 'rejected';
 export type GigCategory = 'Plumbing' | 'Electrical' | 'Carpentry' | 'Painting' | 'HVAC' | 'General';
+export type SustainabilityRating = 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
 
 export interface ProductEntity {
     id: string;
@@ -166,7 +171,12 @@ export interface ProductEntity {
     sustainabilityCertifications?: string[];
     allowDropshipping?: boolean;
     wholesalePrice?: number;
-    dropshipListings?: DropshipListing[]; 
+    dropshipListings?: DropshipListing[];
+    
+    // New Fields
+    sku?: string;
+    sustainabilityRating?: SustainabilityRating;
+    modelUrl?: string; 
 }
 
 export interface DropshipListing {
@@ -195,6 +205,7 @@ export interface OrderEntity {
     proofOfInstallationStatus: ProofOfInstallationStatus;
     isDropshipOrder?: boolean;
     dropshipperId?: string;
+    providerId?: string; // For service jobs
 }
 
 export interface ShippingZone {
