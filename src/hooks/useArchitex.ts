@@ -2,9 +2,11 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { ProjectEntity, UserEntity, BountyEntity, ArbitratorEntity, OrderEntity, ServiceAgreementEntity, ProposalEntity, TokenEntity, DesignChallengeEntity, ChallengeSubmissionEntity, ProductEntity, ScanAnalysis } from '../core/schemas/entities';
 import * as api from '../core/api/contract';
+import * as web3 from '../core/blockchain/web3Service';
 import { getProactiveTip, guidedScanInstructions, UXContext } from '../core/ux-engine/engine';
 import { useAppStore } from '../store/useAppStore';
 import { BootStep } from '../components/SystemBootLoader';
+import { useToast } from '../components/Toast'; // Import toast directly if needed, but we can pass msg
 
 export type Phase = 'intro' | 'booting' | 'dashboard';
 export type ActiveTab = 'scan' | 'design' | 'market' | 'challenges' | 'explore';
@@ -103,6 +105,11 @@ export const useArchitex = () => {
   const [showSubmitToChallengeModal, setShowSubmitToChallengeModal] = useState(false);
   const [projectToSubmit, setProjectToSubmit] = useState<ProjectEntity | null>(null);
 
+  // Use custom hook for toast if not globally available, or assume context is above
+  // For this structure, we'll assume a simple alert or internal logic since useToast is inside App
+  // But wait, this hook is used IN App. We can't use useToast here easily unless we pass it or move logic.
+  // We will use a simple notification approach or assume the components handle the toast display via success/failure states
+  // For now, we'll just use console logs and let components handle visual feedback via state.
 
   useEffect(() => { setIsMounted(true); }, []);
   
@@ -117,18 +124,15 @@ export const useArchitex = () => {
     setPhase('booting');
     setIsLoading(true);
     
-    // Reset steps if retrying
     setBootSteps(prev => prev.map(s => ({ ...s, status: 'pending' })));
 
     try {
-        // Step 1: Auth
         updateBootStep('auth', 'active');
         const userData = await api.authenticateWithPi();
         await delay(800); 
         updateBootStep('auth', 'complete');
         setUser(userData);
 
-        // Step 2: Ledger (Critical Data)
         updateBootStep('ledger', 'active');
         const [userProjects, userBounties, ordersData, agreementsData] = await Promise.all([
             api.listProjects(),
@@ -143,7 +147,6 @@ export const useArchitex = () => {
         setOrders(ordersData);
         setServiceAgreements(agreementsData);
 
-        // Step 3: Assets (Public Data)
         updateBootStep('assets', 'active');
         const [pubProjects, arbitratorsData, serviceProvidersData, proposalsData, challengesData, productsData] = await Promise.all([
             api.listPublicProjects(),
@@ -162,19 +165,16 @@ export const useArchitex = () => {
         setDesignChallenges(challengesData);
         setProducts(productsData);
 
-        // Step 4: Ready
         updateBootStep('ready', 'active');
         await delay(400);
         updateBootStep('ready', 'complete');
 
-        // Transition
         await delay(500);
         setIsLoading(false);
         setPhase('dashboard');
 
     } catch (error) {
         console.error("Boot failed:", error);
-        // Find the active step and set it to error
         setBootSteps(prev => {
             const activeIndex = prev.findIndex(s => s.status === 'active' || s.status === 'pending');
             if (activeIndex !== -1) {
@@ -204,6 +204,24 @@ export const useArchitex = () => {
 
   const handleProjectInteraction = async (project: ProjectEntity) => { setSelectedProject(project); setShowProjectDetailsModal(true); };
   const closeUpsellModal = () => setShowUpsellModal(false);
+
+  // --- Web3 Integration Handlers ---
+  const handlePurchaseDesign = async (projectId: string, price: number) => {
+      if (!user) return;
+      // Trigger blockchain transaction
+      const receipt = await web3.web3Service.purchaseDesign(projectId, price, user.walletAddress);
+      console.log("Purchase successful, tx:", receipt.txHash);
+      // Refresh projects to show ownership if necessary, or just rely on local state in component
+  };
+
+  const handleOrderDispute = async (orderId: string) => {
+      if (!user) return;
+      // Trigger blockchain freeze
+      const receipt = await web3.web3Service.freezeForDispute(orderId, user.walletAddress);
+      console.log("Dispute started, tx:", receipt.txHash);
+      // Update local order state
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'In Dispute' } : o));
+  };
 
   // --- Scanning & Payment ---
   const startScan = () => { 
@@ -329,7 +347,7 @@ export const useArchitex = () => {
 
   return {
     phase, isMounted, activeTab, projects, publicProjects, bounties, arbitrators, availableArbitrators, user, isLoading, uxTip, orders, serviceProviders, serviceAgreements, proposals, designChallenges,
-    bootSteps, // Export boot steps
+    bootSteps, 
     initialize, setActiveTab, toggleProfile, isProfileVisible,
     isScanning, scanFinished, scanAnalysis, scanProgress, currentScanInstruction, startScan, cancelScan, showPaymentModal, confirmPayment, cancelPayment, isProcessingPayment, paymentError,
     handleProjectInteraction, showUpsellModal, closeUpsellModal, showProjectDetailsModal, selectedProject, setShowProjectDetailsModal, handleGetQuotes,
@@ -354,6 +372,9 @@ export const useArchitex = () => {
     votingPower, handleClaimStakingRewards, openCreateChallengeModal, handleJoinFounderProgram,
     showWhitePaper, openWhitePaper, closeWhitePaper,
     showAboutModal, openAboutModal, closeAboutModal,
-    showLegalModal, openLegalModal, closeLegalModal, legalActiveTab
+    showLegalModal, openLegalModal, closeLegalModal, legalActiveTab,
+    // Web3 Integrations
+    handlePurchaseDesign,
+    handleOrderDispute
   };
 };

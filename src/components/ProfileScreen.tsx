@@ -31,12 +31,13 @@ interface ProfileScreenProps {
     onOpenEnterprise: () => void;
     onOpenWhitePaper: () => void;
     onOpenAbout: () => void;
-    onOpenLegal: (tab: 'privacy' | 'terms') => void; 
+    onOpenLegal: (tab: 'privacy' | 'terms') => void;
+    onDisputeOrder: (orderId: string) => Promise<void>;
 }
 
 type ProfileTab = 'gallery' | 'orders' | 'services' | 'wallet' | 'contracts';
 
-export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, projects, orders, serviceAgreements, userTokens, onConfirmDelivery, onRequestReturn, onConfirmServiceCompletion, onClaimVestedTokens, onSubscribe, onClose, onBecomeProvider, onBecomeArbitrator, onOpenEnterprise, onOpenWhitePaper, onOpenAbout, onOpenLegal }) => {
+export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, projects, orders, serviceAgreements, userTokens, onConfirmDelivery, onRequestReturn, onConfirmServiceCompletion, onClaimVestedTokens, onSubscribe, onClose, onBecomeProvider, onBecomeArbitrator, onOpenEnterprise, onOpenWhitePaper, onOpenAbout, onOpenLegal, onDisputeOrder }) => {
     const publicProjects = projects.filter(p => p.isPublic);
     const [activeTab, setActiveTab] = useState<ProfileTab>('gallery');
     const [agreements, setAgreements] = useState<SignedAgreement[]>([]);
@@ -80,6 +81,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, projects, or
                                 order={order}
                                 onConfirmDelivery={onConfirmDelivery}
                                 onRequestReturn={onRequestReturn}
+                                onDisputeOrder={onDisputeOrder}
                             />
                         ))}
                         {!orders.length && (

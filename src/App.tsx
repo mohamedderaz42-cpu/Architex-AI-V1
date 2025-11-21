@@ -84,7 +84,9 @@ const App: React.FC = () => {
     votingPower, handleClaimStakingRewards, openCreateChallengeModal, handleJoinFounderProgram,
     showWhitePaper, openWhitePaper, closeWhitePaper,
     showAboutModal, openAboutModal, closeAboutModal,
-    showLegalModal, openLegalModal, closeLegalModal, legalActiveTab
+    showLegalModal, openLegalModal, closeLegalModal, legalActiveTab,
+    handlePurchaseDesign,
+    handleOrderDispute
   } = useArchitex();
 
   const renderDashboardContent = () => {
@@ -222,14 +224,14 @@ const App: React.FC = () => {
         {/* Modals */}
         {showLangModal && <LanguageSelectorModal onClose={() => setShowLangModal(false)} />}
         {showPaymentModal && <PaymentModal onConfirm={confirmPayment} onCancel={cancelPayment} isProcessing={isProcessingPayment} error={paymentError} analysis={scanAnalysis} />}
-        {isProfileVisible && user && <ProfileScreen user={user} projects={projects} orders={orders} serviceAgreements={serviceAgreements} userTokens={[]} onConfirmDelivery={handleConfirmDelivery} onRequestReturn={handleRequestReturn} onConfirmServiceCompletion={handleConfirmServiceCompletion} onClaimVestedTokens={async () => {}} onSubscribe={() => {}} onClose={toggleProfile} onBecomeProvider={() => {}} onBecomeArbitrator={() => {}} onOpenEnterprise={() => {}} onOpenWhitePaper={openWhitePaper} onOpenAbout={openAboutModal} onOpenLegal={openLegalModal} />}
+        {isProfileVisible && user && <ProfileScreen user={user} projects={projects} orders={orders} serviceAgreements={serviceAgreements} userTokens={[]} onConfirmDelivery={handleConfirmDelivery} onRequestReturn={handleRequestReturn} onConfirmServiceCompletion={handleConfirmServiceCompletion} onClaimVestedTokens={async () => {}} onSubscribe={() => {}} onClose={toggleProfile} onBecomeProvider={() => {}} onBecomeArbitrator={() => {}} onOpenEnterprise={() => {}} onOpenWhitePaper={openWhitePaper} onOpenAbout={openAboutModal} onOpenLegal={openLegalModal} onDisputeOrder={handleOrderDispute} />}
         {showUpsellModal && <UpsellModal onConfirm={() => { setActiveTab('market'); closeUpsellModal(); }} onCancel={closeUpsellModal}/>}
         {showCreateBountyModal && <CreateBountyModal user={user} onConfirm={handleCreateBounty} onCancel={closeCreateBountyModal}/>}
         {showMintNftModal && projectToMint && <MintNftModal project={projectToMint} onConfirm={() => handleMintNft(projectToMint.id)} onCancel={closeMintNftModal}/>}
         {selectedBounty && <BountyDetailsModal bounty={selectedBounty} arbitrators={availableArbitrators} onClose={closeBountyDetailsModal} onFund={handleInitiateFunding} onRelease={handleReleaseFunds} onDispute={() => handleRaiseDispute(selectedBounty)} onSelectArbitrator={(arbitrator: ArbitratorEntity) => handleSelectArbitrator(selectedBounty, arbitrator)} onOpenLegalShield={() => setShowUserLegalShieldModal(true)} onResolve={handleResolveArbitration}/>}
         {showAgreementModal && agreementText && <AgreementModal agreementText={agreementText} onConfirm={handleConfirmFunding} onCancel={closeAgreementModal}/>}
         {showInstallationUpsellModal && orderForUpsell && <InstallationUpsellModal order={orderForUpsell} onConfirm={() => setShowInstallationUpsellModal(false)} onCancel={() => setShowInstallationUpsellModal(false)}/>}
-        {showProjectDetailsModal && selectedProject && <ProjectDetailsModal project={selectedProject} onGetQuotes={handleGetQuotes} onClose={() => setShowProjectDetailsModal(false)} onShare={handleShareProject} onSubmitToChallenge={() => openSubmitToChallengeModal(selectedProject)} />}
+        {showProjectDetailsModal && selectedProject && <ProjectDetailsModal project={selectedProject} userWalletAddress={user?.walletAddress} onGetQuotes={handleGetQuotes} onClose={() => setShowProjectDetailsModal(false)} onShare={handleShareProject} onSubmitToChallenge={() => openSubmitToChallengeModal(selectedProject)} />}
         {showServiceAgreementModal && activeServiceAgreement && user && <ServiceAgreementModal agreement={activeServiceAgreement} user={user} arbitrators={arbitrators} onConfirm={handleConfirmServiceHiring} onCancel={() => setShowServiceAgreementModal(false)}/>}
         {showUserLegalShieldModal && <UserLegalShieldModal onClose={() => setShowUserLegalShieldModal(false)}/>}
         {showDisputeResolutionModal && selectedBounty && <DisputeResolutionModal bounty={selectedBounty} arbitrators={availableArbitrators} onConfirmDispute={handleConfirmDispute} onSelectArbitrator={handleSelectArbitrator} onClose={() => setShowDisputeResolutionModal(false)}/>}

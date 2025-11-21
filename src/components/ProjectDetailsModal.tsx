@@ -7,19 +7,33 @@ import { ShareIcon } from './icons/ShareIcon';
 import { CheckCircleIcon } from './icons/CheckCircleIcon';
 import { AwardIcon } from './icons/AwardIcon';
 import { RoomViewer3D } from './RoomViewer3D';
+import { PiCoinIcon } from './icons/PiCoinIcon';
+import { LoaderIcon } from './icons/LoaderIcon';
+import { AlertTriangleIcon } from './icons/AlertTriangleIcon';
+import { CheckoutController } from '../core/commerce/CheckoutController';
 
 interface ProjectDetailsModalProps {
     project: ProjectEntity;
+    userWalletAddress?: string; // Added prop
     onGetQuotes: () => void;
     onClose: () => void;
     onShare: (projectId: string) => Promise<{ success: boolean; message: string }>;
     onSubmitToChallenge: () => void;
+    onPurchaseDesign?: (projectId: string, price: number) => Promise<void>; // Optional now as we use controller internally
 }
 
-export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ project, onGetQuotes, onClose, onShare, onSubmitToChallenge }) => {
+export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ project, userWalletAddress, onGetQuotes, onClose, onShare, onSubmitToChallenge }) => {
     const [isNightMode, setIsNightMode] = useState(false);
     const [isSharing, setIsSharing] = useState(false);
     const [shareStatus, setShareStatus] = useState<'idle' | 'success'>('idle');
+    
+    // Purchase State
+    const [isPurchasing, setIsPurchasing] = useState(false);
+    const [isPurchased, setIsPurchased] = useState(false);
+    const [purchaseError, setPurchaseError] = useState<string | null>(null);
+    const [isFindingAlternative, setIsFindingAlternative] = useState(false);
+    
+    const mockPrice = 500; // Assume dynamic price in real app
 
     const handleShare = async () => {
         setIsSharing(true);
@@ -28,6 +42,34 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ projec
         setIsSharing(false);
         setShareStatus('success');
         setTimeout(() => setShareStatus('idle'), 3000);
+    };
+
+    const handlePurchase = async () => {
+        if (!userWalletAddress) {
+            setPurchaseError("Wallet not connected.");
+            return;
+        }
+
+        setIsPurchasing(true);
+        setPurchaseError(null);
+        setIsFindingAlternative(false);
+
+        // Call Smart Checkout Controller
+        const result = await CheckoutController.handleSmartCheckout(project.id, mockPrice, userWalletAddress);
+
+        if (result.success) {
+            setIsPurchased(true);
+        } else {
+            if (result.reason === 'INVENTORY_FAIL') {
+                setIsFindingAlternative(true);
+                // Keep error visible
+                setPurchaseError(result.message);
+            } else {
+                setPurchaseError(result.message);
+            }
+        }
+        
+        setIsPurchasing(false);
     };
 
     return (
@@ -77,7 +119,39 @@ export const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({ projec
                         Contest
                     </button>
                 </div>
-                 <button onClick={onGetQuotes} className="w-full mt-3 py-3 text-slate-300 font-semibold bg-slate-800/30 border border-white/5 rounded-full transition-colors duration-300 hover:bg-slate-700 hover:text-white">
+
+                {/* Purchase Action */}
+                <div className="mt-4 pt-4 border-t border-white/10">
+                    {isPurchased ? (
+                        <div className="w-full py-3 bg-eco-green/20 border border-eco-green/50 rounded-xl flex items-center justify-center text-eco-green font-bold">
+                            <CheckCircleIcon className="w-5 h-5 mr-2" /> Blueprints Owned
+                        </div>
+                    ) : (
+                        <>
+                            <button 
+                                onClick={handlePurchase}
+                                disabled={isPurchasing}
+                                className="w-full flex items-center justify-between px-6 py-4 bg-white text-brand-dark rounded-xl font-bold hover:bg-slate-200 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <span className="flex items-center">
+                                    {isPurchasing ? <LoaderIcon className="w-5 h-5 mr-2 animate-spin" /> : <PiCoinIcon className="w-5 h-5 mr-2 text-pi-gold" />}
+                                    {isPurchasing ? "Processing..." : "Buy Blueprints"}
+                                </span>
+                                {!isPurchasing && <span>{mockPrice} ARCHI</span>}
+                            </button>
+                            
+                            {/* Smart Logic Feedback */}
+                            {purchaseError && (
+                                <div className={`mt-3 p-3 rounded-lg flex items-start text-xs ${isFindingAlternative ? 'bg-ai-violet/20 border border-ai-violet/50 text-white' : 'bg-red-500/20 border border-red-500/50 text-red-200'}`}>
+                                    {isFindingAlternative ? <LoaderIcon className="w-4 h-4 mr-2 animate-spin text-ai-violet flex-shrink-0" /> : <AlertTriangleIcon className="w-4 h-4 mr-2 text-red-400 flex-shrink-0" />}
+                                    <span>{purchaseError}</span>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+
+                 <button onClick={onGetQuotes} className="w-full mt-3 py-3 text-slate-300 text-sm font-semibold bg-slate-800/30 border border-white/5 rounded-full transition-colors duration-300 hover:bg-slate-700 hover:text-white">
                     Request Installation Quotes
                 </button>
             </GlassPanel>

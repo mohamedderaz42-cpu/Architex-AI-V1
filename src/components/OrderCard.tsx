@@ -1,15 +1,17 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { OrderEntity } from '../core/schemas/entities';
 import { PiCoinIcon } from './icons/PiCoinIcon';
 import { CheckCircleIcon } from './icons/CheckCircleIcon';
 import { ArchiveIcon } from './icons/ArchiveIcon';
 import { AlertTriangleIcon } from './icons/AlertTriangleIcon';
+import { LoaderIcon } from './icons/LoaderIcon';
 
 interface OrderCardProps {
     order: OrderEntity;
     onConfirmDelivery: (orderId: string) => void;
     onRequestReturn: (orderId: string) => void;
+    onDisputeOrder: (orderId: string) => Promise<void>;
 }
 
 const statusColors: { [key in OrderEntity['status']]: string } = {
@@ -34,9 +36,17 @@ const timeAgo = (date: string): string => {
     return "just now";
 }
 
-export const OrderCard: React.FC<OrderCardProps> = ({ order, onConfirmDelivery, onRequestReturn }) => {
+export const OrderCard: React.FC<OrderCardProps> = ({ order, onConfirmDelivery, onRequestReturn, onDisputeOrder }) => {
+    const [isDisputing, setIsDisputing] = useState(false);
+
+    const handleDispute = async () => {
+        setIsDisputing(true);
+        await onDisputeOrder(order.id);
+        setIsDisputing(false);
+    };
+
     return (
-        <div className="bg-slate-900/50 p-3 rounded-xl border border-white/10">
+        <div className="bg-slate-900/50 p-3 rounded-xl border border-white/10 relative">
             <div className="flex justify-between items-start">
                 <div>
                     <h5 className="font-bold text-white text-sm">Order #{order.id.slice(-6)}</h5>
@@ -70,6 +80,17 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onConfirmDelivery, 
                          <div className="flex items-center text-xs text-red-400 font-bold">
                             <AlertTriangleIcon className="w-4 h-4 mr-1" /> Escrow Frozen
                         </div>
+                    )}
+                    {/* Dispute Button available for active orders */}
+                    {(order.status === 'Shipped' || order.status === 'Delivered') && !isDisputing && (
+                        <button onClick={handleDispute} className="text-xs text-red-400 hover:text-red-300 underline ml-2 font-medium">
+                            Dispute
+                        </button>
+                    )}
+                    {isDisputing && (
+                        <span className="flex items-center text-xs text-red-400 ml-2">
+                            <LoaderIcon className="w-3 h-3 animate-spin mr-1" /> Freezing...
+                        </span>
                     )}
                 </div>
             </div>
