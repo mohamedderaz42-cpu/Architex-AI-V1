@@ -1,5 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useGenAI } from '../hooks/useGenAI';
+import { LoaderIcon } from './icons/LoaderIcon';
+import { SparklesIcon } from './icons/SparklesIcon';
 
 interface ScannerInterfaceProps {
     instruction: string;
@@ -7,7 +10,7 @@ interface ScannerInterfaceProps {
     onCancel: () => void;
 }
 
-// Extend Window definition for iOS 13+ permission
+// Extended Window definition for iOS 13+ permission
 interface DeviceOrientationEventiOS extends DeviceOrientationEvent {
     requestPermission?: () => Promise<'granted' | 'denied'>;
 }
@@ -19,8 +22,13 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
     const [parallax, setParallax] = useState({ x: 0, y: 0 });
     const [showPermissionButton, setShowPermissionButton] = useState(false);
     const lastProgressRef = useRef(0);
+    
+    // GenAI Integration
+    const { analyzeImage } = useGenAI();
+    const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-    // Haptic Feedback Effect
+    // Haptic Feedback & Trigger Logic
     useEffect(() => {
         // Trigger haptic on significant progress steps (every 10%)
         if (progress > lastProgressRef.current + 10) {
@@ -28,8 +36,42 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
                 navigator.vibrate(15); // Short, crisp vibration
             }
             lastProgressRef.current = progress;
+            
+            // TRIGGER REAL AI: At 50% progress, capture frame and analyze
+            if (progress >= 50 && progress < 60 && !aiAnalysis && !isAnalyzing && videoRef.current) {
+                captureAndAnalyze();
+            }
         }
-    }, [progress]);
+    }, [progress, aiAnalysis, isAnalyzing]);
+
+    const captureAndAnalyze = async () => {
+        if (!videoRef.current || !canvasRef.current) return;
+        
+        const ctx = canvasRef.current.getContext('2d');
+        if (!ctx) return;
+        
+        setIsAnalyzing(true);
+
+        // Sync canvas size to video
+        canvasRef.current.width = videoRef.current.videoWidth;
+        canvasRef.current.height = videoRef.current.videoHeight;
+        
+        // Draw current video frame to canvas
+        ctx.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
+        
+        // Convert to base64 (strip prefix)
+        const base64 = canvasRef.current.toDataURL('image/jpeg', 0.7).split(',')[1];
+        
+        // Call Gemini 1.5 Flash
+        const result = await analyzeImage(base64, "Identify the room type and architectural style in exactly 3-5 words. Example: 'Modern Minimalist Kitchen'. Do not add period.");
+        
+        if (result) {
+            setAiAnalysis(result.trim());
+            if (navigator.vibrate) navigator.vibrate([50, 50, 50]); // Success vibration
+        }
+        
+        setIsAnalyzing(false);
+    };
 
     useEffect(() => {
         const startCamera = async () => {
@@ -48,7 +90,7 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
 
         startCamera();
 
-        // Check if we are on iOS 13+ which requires permission
+        // Check if we are on iOS 13+ which requires permission for orientation
         if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
             setShowPermissionButton(true);
         } else {
@@ -66,6 +108,7 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
 
     const handleOrientation = (event: DeviceOrientationEvent) => {
         if (event.beta && event.gamma) {
+            // Limit parallax effect
             setParallax({
                 x: Math.min(Math.max(event.gamma * 0.5, -20), 20),
                 y: Math.min(Math.max(event.beta * 0.5, -20), 20)
@@ -86,7 +129,7 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
         }
     };
 
-    // Visual SLAM Simulation Loop
+    // Visual SLAM / Lidar Simulation Loop (Canvas Drawing)
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -97,13 +140,16 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
         const points: {x: number, y: number, age: number}[] = [];
 
         const render = () => {
-            if (canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
-                canvas.width = canvas.clientWidth;
-                canvas.height = canvas.clientHeight;
+            // Keep canvas sized to container for the overlay effect
+            if (canvas.clientWidth !== 0 && (canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight)) {
+               canvas.width = canvas.clientWidth;
+               canvas.height = canvas.clientHeight;
             }
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+
+            // Clear previous frame
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+            // Add new random points to simulate Lidar hits
             if (Math.random() > 0.5) {
                 for (let i = 0; i < 3; i++) {
                     points.push({
@@ -114,7 +160,8 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
                 }
             }
 
-            ctx.fillStyle = '#10B981';
+            // Draw points
+            ctx.fillStyle = '#10B981'; // Eco-green
             for (let i = points.length - 1; i >= 0; i--) {
                 const p = points[i];
                 p.age++;
@@ -127,10 +174,16 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
             }
             ctx.globalAlpha = 1.0;
 
-            // LiDAR Grid Line
+            // Draw Horizontal Lidar Scan Line
             const time = Date.now() / 1000;
-            const scanY = (time % 2) * canvas.height;
-            ctx.strokeStyle = 'rgba(253, 179, 0, 0.3)';
+            const scanY = (Math.sin(time * 2) + 1) / 2 * canvas.height;
+            
+            const gradient = ctx.createLinearGradient(0, scanY, canvas.width, scanY);
+            gradient.addColorStop(0, 'rgba(253, 179, 0, 0)');
+            gradient.addColorStop(0.5, 'rgba(253, 179, 0, 0.8)'); // Pi Gold
+            gradient.addColorStop(1, 'rgba(253, 179, 0, 0)');
+            
+            ctx.strokeStyle = gradient;
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(0, scanY);
@@ -163,7 +216,7 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
 
             <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-0" />
 
-            {/* AR HUD Overlay */}
+            {/* AR HUD Overlay (Grid) */}
             <div className="absolute inset-0 opacity-20 pointer-events-none" style={{
                 transform: `translate(${parallax.x}px, ${parallax.y}px)`,
                 transition: 'transform 0.1s ease-out',
@@ -180,9 +233,31 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
                         <button onClick={requestMotionPermission} className="absolute top-4 right-4 z-50 bg-black/60 text-white text-xs font-bold px-3 py-2 rounded-full border border-white/20 hover:bg-black/80 transition-all pointer-events-auto">Enable Motion Sensors</button>
                     )}
 
+                    {/* AI Analysis Result Popup */}
+                    {(aiAnalysis || isAnalyzing) && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -20, scale: 0.9 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            className="absolute top-8 left-1/2 -translate-x-1/2 bg-slate-900/80 backdrop-blur-xl px-4 py-2 rounded-full border border-ai-violet/50 z-30 flex items-center shadow-glow-violet"
+                        >
+                            {isAnalyzing ? (
+                                <>
+                                    <LoaderIcon className="w-4 h-4 text-pi-gold animate-spin mr-2" />
+                                    <span className="text-xs font-bold text-white">Analyzing Scene...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <SparklesIcon className="w-4 h-4 text-pi-gold mr-2" />
+                                    <span className="text-xs font-bold text-white">{aiAnalysis}</span>
+                                </>
+                            )}
+                        </motion.div>
+                    )}
+
+                    {/* Circular Progress HUD */}
                     <div className="relative w-48 h-48 flex items-center justify-center z-10">
                         <svg className="absolute w-full h-full transform -rotate-90" viewBox="0 0 200 200">
-                            <circle cx="100" cy="100" r={radius} strokeWidth="8" className="stroke-pi-gold/10" fill="transparent" />
+                            <circle cx="100" cy="100" r={radius} strokeWidth="8" className="stroke-white/10" fill="transparent" />
                             <circle cx="100" cy="100" r={radius} strokeWidth="8" className="stroke-pi-gold drop-shadow-[0_0_15px_rgba(253,179,0,0.6)]" fill="transparent" strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" style={{ transition: 'stroke-dashoffset 0.5s ease-out' }} />
                         </svg>
                         <div className="text-center">
@@ -190,7 +265,7 @@ export const ScannerInterface: React.FC<ScannerInterfaceProps> = ({ instruction,
                                 key={Math.round(progress)}
                                 initial={{ scale: 0.8, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
-                                className="text-4xl font-bold text-pi-gold drop-shadow-md"
+                                className="text-4xl font-bold text-pi-gold drop-shadow-md font-mono"
                             >
                                 {Math.round(progress)}%
                             </motion.div>
