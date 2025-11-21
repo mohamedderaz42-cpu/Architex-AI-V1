@@ -89,6 +89,7 @@ export interface IArchitexProtocol {
         fundBountyEscrow(bountyId: string): Promise<BountyEntity>;
         releaseBountyEscrow(bountyId: string): Promise<BountyEntity>;
         raiseDispute(referenceId: string): Promise<BountyEntity>; 
+        freezeEscrow(bountyId: string): Promise<void>; // Explicit freeze for Amazon Killer logic
         selectArbitrator(bountyId: string, arbitratorId: string): Promise<BountyEntity>;
         resolveDispute(disputeId: string, ruling: 'Release' | 'Refund'): Promise<BountyEntity>;
         listSignedAgreements(userId: string): Promise<SignedAgreement[]>;
@@ -167,8 +168,8 @@ export const MockAdapter: IArchitexProtocol = {
     },
     commerce: {
         listProducts: async () => [
-            { id: 'prod_1', vendorId: 'v1', name: 'Eco-Wood Panel', price: 45.00, inStock: 12, imageUrl: 'https://placehold.co/200/555/FFF?text=Wood', isEcoFriendly: true, tags: ['Structural', 'Eco', 'requires-installation'] },
-            { id: 'prod_2', vendorId: 'v1', name: 'Smart Bulb', price: 15.00, inStock: 500, imageUrl: 'https://placehold.co/200/555/FFF?text=Bulb', tags: ['Smart Home'] },
+            { id: 'prod_1', vendorId: 'v1', name: 'Eco-Wood Panel', price: 45.00, inStock: 12, imageUrl: 'https://placehold.co/200/10B981/FFF?text=Wood', isEcoFriendly: true, tags: ['Structural', 'Eco', 'requires-installation'] },
+            { id: 'prod_2', vendorId: 'v1', name: 'Smart Bulb', price: 15.00, inStock: 500, imageUrl: 'https://placehold.co/200/FDB300/000?text=Bulb', tags: ['Smart Home'] },
             { id: 'prod_alt', vendorId: 'v2', name: 'Bamboo Composite', price: 42.00, inStock: 500, imageUrl: 'https://placehold.co/200/10B981/FFF?text=Bamboo', tags: ['Structural', 'Eco', 'requires-installation'] }
         ],
         listOrders: async () => [
@@ -178,7 +179,7 @@ export const MockAdapter: IArchitexProtocol = {
         updateOrderStatus: async (oid, status) => ({ id: oid, userId: 'user_01', items: [], total: 100, status, createdAt: new Date().toISOString(), proofOfInstallationStatus: 'none' }),
         optimizeCart: async () => [{ originalProductId: 'prod_1', suggestedProductId: 'prod_2', reason: 'Cheaper & Greener', savings: 15 }],
         
-        // Updated Smart Inventory Logic
+        // Smart Inventory Logic (Amazon Killer Phase 8)
         checkInventory: async (cart) => {
              const conflicts: InventoryConflict[] = [];
              for(const item of cart) {
@@ -188,7 +189,7 @@ export const MockAdapter: IArchitexProtocol = {
                          productId: item.product.id,
                          requested: item.quantity,
                          available: 10,
-                         alternativeProductId: 'prod_alt' // Suggest 'Bamboo Composite' as alternative
+                         alternativeProductId: 'prod_alt' // Automatically suggest Bamboo Composite
                      });
                  }
              }
@@ -280,9 +281,15 @@ export const MockAdapter: IArchitexProtocol = {
             return { id, projectId: 'p1', title: '', description: '', reward: 0, createdAt: '', status: 'In Progress', escrowState: 'Funded' };
         },
         releaseBountyEscrow: async (id) => ({ id, projectId: 'p1', title: '', description: '', reward: 0, createdAt: '', status: 'Complete', escrowState: 'Released' }),
+        // Arbitration Flow Phase 8
         raiseDispute: async (id) => {
              console.log(`[Smart Contract] Escrow Frozen for Dispute ${id}`);
+             // Simulating the freeze effect
              return { id, projectId: 'p1', title: 'Disputed Bounty', description: '', reward: 100, status: 'In Dispute', createdAt: '', escrowState: 'Funded' };
+        },
+        freezeEscrow: async (id) => {
+             console.log(`[EscrowContract] CRITICAL: Funds Frozen for Transaction ${id}. Awaiting Arbitrator.`);
+             return;
         },
         selectArbitrator: async (bid, aid) => ({ id: bid, projectId: 'p1', title: '', description: '', reward: 0, createdAt: '', status: 'Arbitration', escrowState: 'Funded' }),
         resolveDispute: async (id, ruling) => ({ id, projectId: 'p1', title: 'Resolved Bounty', description: '', reward: 100, status: 'Complete', createdAt: '', escrowState: ruling === 'Release' ? 'Released' : 'Refunded' }),
@@ -383,6 +390,7 @@ export const getDynamicAgreementText = MockAdapter.legal.getDynamicAgreementText
 export const fundEscrow = MockAdapter.legal.fundBountyEscrow;
 export const releaseEscrow = MockAdapter.legal.releaseBountyEscrow;
 export const raiseDispute = MockAdapter.legal.raiseDispute;
+export const freezeEscrow = MockAdapter.legal.freezeEscrow;
 export const selectArbitrator = MockAdapter.legal.selectArbitrator;
 export const resolveArbitration = MockAdapter.legal.resolveDispute;
 export const listSignedAgreements = MockAdapter.legal.listSignedAgreements;

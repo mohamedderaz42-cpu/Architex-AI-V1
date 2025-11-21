@@ -3,14 +3,13 @@ import React from 'react';
 import { ProjectEntity } from '../core/schemas/entities';
 import { GlassPanel } from './GlassPanel';
 import { ChevronRightIcon } from './icons/ChevronRightIcon';
-import { MessageSquareIcon } from './icons/MessageSquareIcon';
 import { NftIcon } from './icons/NftIcon';
-import { ThumbsUpIcon } from './icons/ThumbsUpIcon'; // Assume this exists or use another icon
+import { ThumbsUpIcon } from './icons/ThumbsUpIcon';
 
 interface ProjectCardProps {
   project: ProjectEntity;
   onCardClick: () => void;
-  onMintClick?: () => void; // Optional now
+  onMintClick?: () => void;
 }
 
 const statusColors: { [key in ProjectEntity['status']]: string } = {
@@ -38,42 +37,46 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onCardClick, 
     <GlassPanel 
       spotlight={true}
       onClick={onCardClick}
-      className="p-0 rounded-2xl cursor-pointer group h-full flex flex-col"
+      className="p-0 rounded-2xl cursor-pointer group h-full flex flex-col transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl"
     >
-      <div className="relative h-32 w-full overflow-hidden bg-slate-800">
-         <img src={project.thumbnailUrl} alt={project.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-80 group-hover:opacity-100" />
-         <div className="absolute inset-0 bg-gradient-to-t from-brand-dark/90 via-transparent to-transparent"></div>
+      <div className="relative h-32 w-full overflow-hidden bg-slate-900">
+         <img 
+            src={project.thumbnailUrl} 
+            alt={project.name} 
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-80 group-hover:opacity-100" 
+         />
+         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent opacity-80"></div>
          
          {/* Status Badge */}
          <div className="absolute top-2 left-2">
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border backdrop-blur-md ${statusColors[project.status]}`}>
-                {project.status}
+                {project.status.toUpperCase()}
             </span>
          </div>
 
          {/* NFT Badge */}
          {project.isNft && (
-            <div className="absolute top-2 right-2 bg-black/40 backdrop-blur-md p-1 rounded-full border border-white/10 text-ai-violet">
+            <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md p-1.5 rounded-full border border-ai-violet/50 text-ai-violet shadow-[0_0_10px_rgba(139,92,246,0.5)]">
                 <NftIcon className="w-3 h-3" />
             </div>
          )}
       </div>
 
-      <div className="p-3 flex-grow flex flex-col">
-        <div className="flex justify-between items-start">
+      <div className="p-4 flex-grow flex flex-col">
+        <div className="flex justify-between items-start mb-1">
             <div>
                 <h3 className="font-bold text-white text-sm leading-tight group-hover:text-ai-violet transition-colors">{project.name}</h3>
                 {project.ownerName && (
-                    <p className="text-[10px] text-slate-500 mt-0.5">by {project.ownerName}</p>
+                    <p className="text-[10px] text-slate-500 mt-0.5 font-mono uppercase tracking-wide">by {project.ownerName}</p>
                 )}
             </div>
         </div>
 
-        <div className="mt-auto pt-3 flex items-center justify-between">
+        <div className="mt-auto pt-3 flex items-center justify-between border-t border-white/5">
             <div className="flex items-center space-x-3">
                 <span className="text-[10px] text-slate-400 font-mono">{timeAgo(project.updatedAt)}</span>
                 {project.likes !== undefined && (
-                    <div className="flex items-center text-[10px] text-slate-300">
+                    <div className="flex items-center text-[10px] text-slate-300 bg-white/5 px-1.5 py-0.5 rounded">
                         <ThumbsUpIcon className="w-3 h-3 mr-1 text-slate-500" /> {project.likes}
                     </div>
                 )}
@@ -81,19 +84,21 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onCardClick, 
 
             <div className="flex items-center">
                 {project.unreadMessages && project.unreadMessages > 0 && (
-                    <div className="mr-2 w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                    <div className="mr-2 w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_5px_red]"></div>
                 )}
                 
                 {!project.isNft && project.status === 'Complete' && onMintClick && (
                     <button 
                         onClick={(e) => { e.stopPropagation(); onMintClick(); }}
-                        className="text-[10px] font-bold text-slate-400 hover:text-white border border-white/10 hover:bg-white/5 px-2 py-1 rounded transition-colors"
+                        className="text-[10px] font-bold text-slate-300 hover:text-white border border-white/10 hover:bg-white/10 px-3 py-1 rounded-full transition-colors uppercase tracking-wider"
                     >
                         MINT
                     </button>
                 )}
                 {(!project.status || project.status !== 'Complete' || project.isNft) && (
-                     <ChevronRightIcon className="w-4 h-4 text-slate-600 group-hover:text-white transition-colors" />
+                     <div className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-ai-violet transition-colors">
+                        <ChevronRightIcon className="w-3 h-3 text-slate-400 group-hover:text-white" />
+                     </div>
                 )}
             </div>
         </div>

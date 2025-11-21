@@ -38,15 +38,15 @@ export const GlassPanel: React.FC<GlassPanelProps> = ({ children, className = ''
       className={`relative bg-slate-900/30 backdrop-blur-xl border border-white/10 rounded-3xl shadow-lg overflow-hidden group ${className}`}
     >
       {/* Cinematic Noise Overlay */}
-      <div className="absolute inset-0 bg-noise opacity-[0.05] pointer-events-none mix-blend-overlay"></div>
+      <div className="absolute inset-0 bg-noise opacity-[0.07] pointer-events-none mix-blend-overlay z-0"></div>
 
       {/* Spotlight Gradient Overlay */}
       {spotlight && (
         <div
-          className="pointer-events-none absolute -inset-px transition duration-300 opacity-0 group-hover:opacity-100"
+          className="pointer-events-none absolute -inset-px transition duration-500 opacity-0 group-hover:opacity-100 z-10"
           style={{
             opacity,
-            background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, rgba(255,255,255,0.06), transparent 40%)`,
+            background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, rgba(255,255,255,0.08), transparent 40%)`,
           }}
         />
       )}
@@ -54,10 +54,10 @@ export const GlassPanel: React.FC<GlassPanelProps> = ({ children, className = ''
        {/* Spotlight Border Reveal */}
        {spotlight && (
         <div
-            className="pointer-events-none absolute -inset-px rounded-3xl transition duration-300 opacity-0 group-hover:opacity-100"
+            className="pointer-events-none absolute -inset-px rounded-3xl transition duration-500 opacity-0 group-hover:opacity-100 z-10"
             style={{
                 opacity,
-                background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, rgba(255,255,255,0.3), transparent 40%)`,
+                background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, rgba(255,255,255,0.4), transparent 40%)`,
                 maskImage: 'linear-gradient(black, black) content-box, linear-gradient(black, black)',
                 WebkitMaskImage: 'linear-gradient(black, black) content-box, linear-gradient(black, black)',
                 maskComposite: 'exclude',
@@ -67,7 +67,7 @@ export const GlassPanel: React.FC<GlassPanelProps> = ({ children, className = ''
         />
       )}
 
-      <div className="relative z-10 h-full">
+      <div className="relative z-20 h-full">
         {children}
       </div>
     </div>
