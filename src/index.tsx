@@ -3,8 +3,6 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LanguageProvider } from './core/i18n/LanguageContext';
-// 1. استيراد المزود الجديد
-// المسار الصحيح الآن:
 import { ToastProvider } from './components/ToastProvider';
 
 const rootElement = document.getElementById('root');
@@ -15,13 +13,13 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <ErrorBoundary>
-      <LanguageProvider>
-        {/* 2. تغليف التطبيق بالمزود هنا */}
-        <ToastProvider>
+    {/* التغيير الجذري: ToastProvider في القمة ليغطي الجميع */}
+    <ToastProvider>
+      <ErrorBoundary>
+        <LanguageProvider>
           <App />
-        </ToastProvider>
-      </LanguageProvider>
-    </ErrorBoundary>
+        </LanguageProvider>
+      </ErrorBoundary>
+    </ToastProvider>
   </React.StrictMode>
 );
