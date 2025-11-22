@@ -4,7 +4,8 @@ import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LanguageProvider } from './core/i18n/LanguageContext';
 // 1. استيراد المزود الجديد
-import { ToastProvider } from './components/ui/ToastProvider';
+// المسار الصحيح الآن:
+import { ToastProvider } from './components/ToastProvider';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
