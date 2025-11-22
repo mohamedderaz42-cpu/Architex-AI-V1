@@ -1,7 +1,7 @@
 
 import React, { useEffect } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { useToast } from '../Toast';
+import { useToast } from '../ToastProvider';
 import { AdminAuth } from '../../core/admin/AdminAuth';
 import { UserRole } from '../../core/schemas/entities';
 
