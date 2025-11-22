@@ -9,7 +9,7 @@ import { ShareService } from '../core/social/ShareService';
 import { ShareIcon } from './icons/ShareIcon';
 import { SunMoonIcon } from './icons/SunMoonIcon';
 import { LoaderIcon } from './icons/LoaderIcon';
-import { useToast } from './Toast';
+import { useToast } from './ToastProvider';
 
 interface RoomViewer3DProps {
   isNightMode: boolean;
