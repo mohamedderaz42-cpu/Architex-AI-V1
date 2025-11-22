@@ -1,8 +1,11 @@
 import { GoogleGenAI } from "@google/genai";
 import { useState } from 'react';
 
-// Initialize client securely using the environment variable
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// تعريف المفتاح بطريقة ذكية تقبل كل الاحتمالات
+const apiKey = import.meta.env.VITE_API_KEY || process.env.VITE_API_KEY || process.env.API_KEY || '';
+
+// إنشاء العميل
+const ai = new GoogleGenAI({ apiKey });
 
 export const useGenAI = () => {
     const [isGenerating, setIsGenerating] = useState(false);
@@ -13,7 +16,7 @@ export const useGenAI = () => {
      * @param prompt Contextual prompt for the AI
      */
     const analyzeImage = async (base64Image: string, prompt: string) => {
-        if (!process.env.API_KEY) {
+        if (!apiKey) {
             console.error("GenAI Error: API Key is missing.");
             return null;
         }
