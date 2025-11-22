@@ -8,7 +8,7 @@ import { BoxIcon } from './icons/BoxIcon';
 import { PlusIcon } from './icons/PlusIcon';
 import { SearchIcon } from './icons/SearchIcon';
 import { PiCoinIcon } from './icons/PiCoinIcon';
-import { useToast } from './Toast';
+import { useToast } from './ToastProvider';
 import * as api from '../core/api/contract';
 
 interface DropshipPortalProps {
@@ -153,7 +153,7 @@ export const DropshipPortal: React.FC<DropshipPortalProps> = ({ user, onUpdateUs
                                 <div className="text-xs text-slate-400">Pending Orders</div>
                                 <div className="font-bold text-white">0</div>
                             </button>
-                             <button className="p-3 bg-slate-800 rounded-xl border border-white/5 hover:border-white/20 text-left">
+                             <button className.tsx="p-3 bg-slate-800 rounded-xl border border-white/5 hover:border-white/20 text-left">
                                 <GlobeIcon className="w-6 h-6 text-eco-green mb-2" />
                                 <div className="text-xs text-slate-400">Active Listings</div>
                                 <div className="font-bold text-white">{myListings.length}</div>
