@@ -5,9 +5,9 @@ import { ShieldCheckIcon } from './icons/ShieldCheckIcon';
 import { LockIcon } from './icons/LockIcon';
 import { GavelIcon } from './icons/GavelIcon';
 import { DatabaseIcon } from './icons/DatabaseIcon';
-import { UsersIcon } from './icons/UsersIcon'; // Assuming exists or reusing logic
+import { UsersIcon } from './icons/UsersIcon';
 import { ChartBarIcon } from './icons/ChartBarIcon';
-import { useToast } from './Toast';
+import { useToast } from './ToastProvider';
 import { AdminAuth } from '../core/admin/AdminAuth';
 import { useAppStore } from '../store/useAppStore';
 
