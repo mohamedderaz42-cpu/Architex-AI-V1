@@ -5,16 +5,17 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   build: {
-    // رفع حد التحذير لملفات الـ 3D الكبيرة
+    // رفع حد التحذير
     chunkSizeWarningLimit: 1600,
     
-    // تقسيم الكود لتسريع التحميل
+    // إعدادات التقسيم الآمنة
     rollupOptions: {
       output: {
         manualChunks: {
+          // تقسيم مكتبات React الأساسية
           vendor: ['react', 'react-dom', 'framer-motion'],
-          three_engine: ['three', '@react-three/fiber', '@react-three/drei'],
-          ai_engine: ['@google/generative-ai']
+          // تقسيم محرك الـ 3D فقط (لأنه الأكبر حجماً)
+          three_engine: ['three', '@react-three/fiber', '@react-three/drei']
         },
       },
     },
