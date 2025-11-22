@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { DatabaseIcon } from './icons/DatabaseIcon';
 import { TrendingUpIcon } from './icons/TrendingUpIcon';
-import { useToast } from './Toast';
+import { useToast } from './ToastProvider';
 import * as api from '../core/api/contract';
 import { LockIcon } from './icons/LockIcon';
 import { RefreshIcon } from './icons/RefreshIcon';
